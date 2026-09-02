@@ -1,0 +1,359 @@
+<meta charset="utf-8">
+<title>Rack Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --panel-2:#f6f8fa; --ink:#1b2430; --ink-soft:#5a6b7b;
+  --line:#d9e0e7; --line-2:#e8edf1;
+  --accent:#1f7a8c; --accent-ink:#0e4d5a; --accent-wash:#e2f0f2;
+  --good:#2f8f5b; --good-wash:#e3f2e9; --bad:#c0483b; --bad-wash:#f6e4e1;
+  --warn:#b8791f; --warn-wash:#f6ecd9;
+  --diamond:#243447;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 6px 18px rgba(20,30,40,.06);
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
+    --line:#26333f; --line-2:#1f2b35;
+    --accent:#4bb6c9; --accent-ink:#a7e0e9; --accent-wash:#123038;
+    --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
+    --warn:#d8a24a; --warn-wash:#2e2410;
+    --diamond:#9db4c9;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
+  --line:#26333f; --line-2:#1f2b35;
+  --accent:#4bb6c9; --accent-ink:#a7e0e9; --accent-wash:#123038;
+  --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
+  --warn:#d8a24a; --warn-wash:#2e2410;
+  --diamond:#9db4c9;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.disp{font-family:Oswald,system-ui,sans-serif;font-weight:600;letter-spacing:.01em}
+.tnum{font-variant-numeric:tabular-nums}
+a{color:var(--accent-ink)}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px 64px}
+
+/* header */
+header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow)}
+.head-in{max-width:960px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.mark{width:26px;height:26px;transform:rotate(45deg);border-radius:5px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-ink));flex:0 0 auto}
+.brand b{font-family:Oswald;font-size:20px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.brand span{color:var(--ink-soft);font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-top:-3px}
+.tabs{display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;font-weight:500;
+  border:0;background:transparent;color:var(--ink-soft);padding:7px 14px;border-radius:7px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:#fff}
+.theme-btn{margin-left:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);
+  width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px}
+
+/* controls */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0}
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-soft)}
+select,input[type=search]{font-family:Barlow;font-size:15px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:9px;padding:9px 12px;min-width:200px}
+select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:16px 18px;margin:14px 0}
+.card h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;margin:0 0 2px;
+  display:flex;align-items:center;gap:8px}
+.sub{color:var(--ink-soft);font-size:13px;margin:0 0 12px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);font-weight:600}
+
+/* SL diamond badge */
+.sl{display:inline-grid;place-items:center;width:22px;height:22px;flex:0 0 auto;
+  background:var(--diamond);color:var(--panel);border-radius:4px;transform:rotate(45deg);margin:0 3px}
+.sl i{transform:rotate(-45deg);font-style:normal;font-family:Oswald;font-weight:600;font-size:12px}
+
+/* matchup rows */
+.mrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+  padding:11px 0;border-top:1px solid var(--line-2)}
+.mrow:first-of-type{border-top:0}
+.who{display:flex;align-items:center;gap:7px;min-width:0}
+.who .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who.them{justify-content:flex-end;text-align:right}
+.verdict{text-align:center;min-width:96px}
+.pct{font-family:Oswald;font-weight:700;font-size:22px;line-height:1}
+.arrow{font-size:11px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:999px}
+.p-good{background:var(--good-wash);color:var(--good)} .p-bad{background:var(--bad-wash);color:var(--bad)}
+.p-even{background:var(--panel-2);color:var(--ink-soft)}
+.conf{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:5px;border:1px solid var(--line)}
+.c-high{color:var(--good)} .c-med{color:var(--warn)} .c-low{color:var(--bad)}
+.why{grid-column:1/-1;color:var(--ink-soft);font-size:12.5px;padding:2px 0 2px}
+.why b{color:var(--ink);font-weight:600}
+
+/* vs-SL grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.cell{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;text-align:center}
+.cell .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.cell .v{font-family:Oswald;font-weight:600;font-size:19px;margin-top:2px}
+.cell .n{font-size:11px;color:var(--ink-soft)}
+.cell.thin{opacity:.72;border-style:dashed}
+.bar-mini{height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.bar-mini i{display:block;height:100%;background:var(--accent)}
+
+/* lists */
+.h2h{display:flex;flex-direction:column;gap:2px}
+.h2h .op{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line-2);cursor:pointer}
+.h2h .op:first-child{border-top:0}
+.rec{font-family:Oswald;font-weight:600;margin-left:auto;font-size:15px}
+.meets{font-size:12px;color:var(--ink-soft);padding:0 0 8px 30px;display:none}
+.meets.open{display:block}
+.meets div{padding:2px 0}
+.win{color:var(--good);font-weight:600} .loss{color:var(--bad);font-weight:600}
+
+.traj{display:flex;align-items:flex-end;gap:0;height:60px;margin:6px 0 2px}
+.muted{color:var(--ink-soft)}
+.foot{color:var(--ink-soft);font-size:12px;text-align:center;margin-top:26px;line-height:1.6}
+.hide{display:none!important}
+@media(max-width:560px){
+  .brand span{display:none}
+  .verdict{min-width:74px}.pct{font-size:19px}
+  select,input[type=search]{min-width:0;width:100%}
+  label.fld{flex:1 1 100%}
+}
+</style>
+
+<header>
+  <div class="head-in">
+    <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-mode="matchup">Matchup</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
+    </div>
+    <button class="theme-btn" id="theme" title="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- MATCHUP MODE -->
+  <section id="m-matchup">
+    <div class="bar">
+      <label class="fld">Upcoming match
+        <select id="schedSel"></select>
+      </label>
+    </div>
+    <div id="matchOut"></div>
+  </section>
+
+  <!-- PLAYERS MODE -->
+  <section id="m-players" class="hide">
+    <div class="bar">
+      <label class="fld">Find a player
+        <input type="search" id="pSearch" placeholder="Type a name…" autocomplete="off">
+      </label>
+      <label class="fld">&nbsp;
+        <select id="pSel"></select>
+      </label>
+    </div>
+    <div id="playerOut"></div>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>window.APA_DATA=__APA_DATA__;</script>
+<script>
+const D=window.APA_DATA, P=D.players, B=D.baselines;
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const sl=n=>`<span class="sl"><i>${n}</i></span>`;
+const K_SL=8,K_H2H=3;
+
+/* ---- engine: P(A beats Q) ---- */
+function score(A,Q,fmt){
+  const base=(B[fmt]||{})[`${A.sl}-${Q.sl}`]||[0.5,0];
+  let p=base[0]; const why=[`base <b>${Math.round(base[0]*100)}%</b> <span class="muted">(n=${base[1]})</span>`];
+  let ev=0;
+  const prof=P[`${A.mid}:${fmt}`];
+  if(prof){
+    const cell=(prof.predictiveVsSL||[]).find(c=>c.vsSL===Q.sl);
+    if(cell&&cell.games){const w=cell.wins/cell.games,wt=cell.games/(cell.games+K_SL);
+      p=(1-wt)*p+wt*w;ev+=cell.games;
+      why.push(`vs SL${Q.sl}: <b>${cell.wins}-${cell.games-cell.wins}</b> @ current SL`);}
+    const h=(prof.headToHead||[]).find(x=>x.oppMid===Q.mid);
+    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(.6,h.meetings/(h.meetings+K_H2H));
+      p=(1-wt)*p+wt*w;ev+=h.meetings*2;
+      why.push(`head-to-head <b>${h.wins}-${h.meetings-h.wins}</b>`);}
+  }
+  const conf=ev>=12?'high':ev>=5?'med':'low';
+  return {p,conf,why:why.join(' &nbsp;•&nbsp; ')};
+}
+const pctPill=p=>{const c=p>=0.55?'p-good':p<=0.45?'p-bad':'p-even';
+  return `<span class="pill ${c}">${p>=.5?'favored':'underdog'}</span>`;};
+
+/* ---- matchup mode ---- */
+function fillSchedule(){
+  const s=$('#schedSel');
+  const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${m.date} · ${esc(m.ourTeam)} vs ${esc(m.oppTeam)} (${m.fmt}-ball)</option>`).join('');
+  s._data=sched;
+  s.onchange=()=>renderMatch(sched[s.value]);
+  if(sched.length)renderMatch(sched[0]);
+  else $('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches on the schedule.</p></div>';
+}
+function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
+function renderMatch(m){
+  const out=$('#matchOut');out.innerHTML='';
+  const ours=roster(m.ourTeamId), theirs=roster(m.oppTeamId), fmt=m.fmt;
+  if(!theirs.length){out.innerHTML=`<div class="card"><p class="sub">No roster available for ${esc(m.oppTeam)} yet.</p></div>`;return;}
+
+  // best counters
+  const c1=el('div','card');
+  c1.appendChild(el('h2',null,`<span class="eyebrow">Best counter</span>`));
+  c1.appendChild(el('p','sub',`If they put up a player, here's your strongest answer — ${esc(m.oppTeam)}, ${fmt}-ball.`));
+  theirs.slice().sort((a,b)=>b.sl-a.sl).forEach(Q=>{
+    const ranked=ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p);
+    const [A,s]=ranked[0];
+    const row=el('div','mrow');
+    row.innerHTML=
+      `<div class="who them"><span class="nm">${esc(Q.name)}</span>${sl(Q.sl)}</div>`+
+      `<div class="verdict"><div class="pct">${Math.round(s.p*100)}%</div><div class="arrow">counter</div></div>`+
+      `<div class="who">${sl(A.sl)}<span class="nm">${esc(A.name)}</span> <span class="conf c-${s.conf}">${s.conf}</span></div>`+
+      `<div class="why">${s.why}</div>`;
+    c1.appendChild(row);
+  });
+  out.appendChild(c1);
+
+  // our players ranked + suggested lineup (greedy assignment)
+  const c2=el('div','card');
+  c2.appendChild(el('h2',null,`<span class="eyebrow">Our lineup edge</span>`));
+  c2.appendChild(el('p','sub',`Each of our players' average win probability across their roster, and a suggested 1-to-1 lineup.`));
+  const avg=ours.map(A=>[A, theirs.reduce((s,Q)=>s+score(A,Q,fmt).p,0)/theirs.length]).sort((a,b)=>b[1]-a[1]);
+  avg.forEach(([A,v])=>{
+    const r=el('div','mrow');r.style.gridTemplateColumns='auto 1fr auto';
+    r.innerHTML=`<div class="who">${sl(A.sl)}<span class="nm">${esc(A.name)}</span></div>`+
+      `<div class="bar-mini" style="align-self:center"><i style="width:${Math.round(v*100)}%"></i></div>`+
+      `<div class="pct" style="font-size:16px;min-width:44px;text-align:right">${Math.round(v*100)}%</div>`;
+    c2.appendChild(r);
+  });
+  // greedy lineup
+  const pairs=[];ours.forEach(A=>theirs.forEach(Q=>pairs.push([A,Q,score(A,Q,fmt).p])));
+  pairs.sort((a,b)=>b[2]-a[2]);
+  const uA=new Set(),uQ=new Set(),line=[];
+  pairs.forEach(([A,Q,p])=>{if(!uA.has(A.mid)&&!uQ.has(Q.mid)){uA.add(A.mid);uQ.add(Q.mid);line.push([A,Q,p]);}});
+  const ln=el('div');ln.style.marginTop='10px';
+  ln.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Suggested pairings (${fmt==='9'?'preset lineup':'if you match blind'})</div>`;
+  line.forEach(([A,Q,p])=>{
+    const r=el('div','mrow');
+    r.innerHTML=`<div class="who">${sl(A.sl)}<span class="nm">${esc(A.name)}</span></div>`+
+      `<div class="verdict">${pctPill(p)}<div class="pct" style="font-size:16px">${Math.round(p*100)}%</div></div>`+
+      `<div class="who them"><span class="nm">${esc(Q.name)}</span>${sl(Q.sl)}</div>`;
+    ln.appendChild(r);
+  });
+  c2.appendChild(ln);
+  out.appendChild(c2);
+}
+
+/* ---- players mode ---- */
+function playerList(){
+  // unique by mid, prefer a display name; collect formats
+  const byMid={};
+  Object.entries(P).forEach(([k,v])=>{const mid=k.split(':')[0];
+    (byMid[mid]=byMid[mid]||{mid,name:v.name,games:0,fmts:{}});
+    byMid[mid].games+=v.totalGames;byMid[mid].fmts[v.format]=k;
+    if(v.name&&v.name.length>(byMid[mid].name||'').length)byMid[mid].name=v.name;});
+  return Object.values(byMid).filter(p=>p.name&&p.name!=='undefined').sort((a,b)=>b.games-a.games);
+}
+const PL=playerList();
+function fillPlayers(filter){
+  const s=$('#pSel');const f=(filter||'').toLowerCase();
+  const list=(f?PL.filter(p=>p.name.toLowerCase().includes(f)):PL).slice(0,300);
+  s.innerHTML=list.map(p=>`<option value="${p.mid}">${esc(p.name)} · ${p.games} games</option>`).join('');
+  if(list.length)renderPlayer(list[0].mid);
+  else $('#playerOut').innerHTML='<div class="card"><p class="sub">No player matches that name.</p></div>';
+}
+function trajSvg(traj){
+  if(!traj||traj.length<2)return '';
+  const xs=traj.map((_,i)=>i),ys=traj.map(t=>t.sl);
+  const mn=Math.min(...ys)-1,mx=Math.max(...ys)+1,W=280,H=56,pad=4;
+  const X=i=>pad+i*(W-2*pad)/(traj.length-1),Y=v=>H-pad-(v-mn)/(mx-mn)*(H-2*pad);
+  let d='';traj.forEach((t,i)=>{d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(t.sl).toFixed(1)+' ';
+    if(i<traj.length-1)d+='L'+X(i+1).toFixed(1)+' '+Y(t.sl).toFixed(1)+' ';});
+  const pts=traj.map((t,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(t.sl).toFixed(1)}" r="2.6" fill="var(--accent)"/>`).join('');
+  const last=traj[traj.length-1];
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>${pts}
+    <circle cx="${X(traj.length-1).toFixed(1)}" cy="${Y(last.sl).toFixed(1)}" r="4" fill="var(--accent)"/></svg>`;
+}
+function vsGrid(rows){
+  return `<div class="grid">`+rows.map(c=>{
+    const thin=c.games<5;const pct=c.winPct;
+    return `<div class="cell${thin?' thin':''}"><div class="k">vs SL${c.vsSL}</div>
+      <div class="v">${c.wins}-${c.games-c.wins}</div><div class="n">${pct}%${thin?' · thin':''}</div>
+      <div class="bar-mini"><i style="width:${pct}%"></i></div></div>`;}).join('')+`</div>`;
+}
+function renderPlayer(mid){
+  const out=$('#playerOut');out.innerHTML='';
+  const formats=['8','9'].filter(f=>P[`${mid}:${f}`]);
+  if(!formats.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
+  formats.forEach(fmt=>{
+    const pr=P[`${mid}:${fmt}`];
+    const c=el('div','card');
+    const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
+    c.innerHTML=`<h2>${sl(pr.currentSL)} ${esc(pr.name)} <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· ${fmt}-ball</span></h2>
+      <p class="sub">Current SL ${pr.currentSL} · ${pr.wins}-${pr.totalGames-pr.wins} lifetime (${wr}%) · ${(pr.firstSeen||'').slice(0,7)}→${(pr.lastSeen||'').slice(0,7)} · ${pr.gamesAtCurrentSL} games at current SL</p>`;
+    // trajectory
+    const tr=el('div');tr.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Skill-level path</div>`+trajSvg(pr.trajectory)+
+      `<div class="muted" style="font-size:12px">${pr.trajectory.map(t=>t.date.slice(0,7)+' → SL'+t.sl).join('   ')}</div>`;
+    c.appendChild(tr);
+    // predictive vs SL
+    const pv=el('div');pv.style.marginTop='14px';
+    pv.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">At current SL${pr.currentSL} — record vs each opponent SL</div>`;
+    pv.insertAdjacentHTML('beforeend', pr.predictiveVsSL.length?vsGrid(pr.predictiveVsSL):'<p class="muted" style="font-size:13px">No games yet at current SL.</p>');
+    c.appendChild(pv);
+    // head to head
+    const h=(pr.headToHead||[]).filter(x=>x.meetings>=1).slice(0,14);
+    if(h.length){const hd=el('div');hd.style.marginTop='14px';
+      hd.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Head-to-head history</div>`;
+      const list=el('div','h2h');
+      h.forEach((o,idx)=>{
+        const op=el('div','op');
+        op.innerHTML=`${esc(o.oppName||'Unknown')} <span class="rec">${o.wins}-${o.meetings-o.wins}</span>`;
+        const mt=el('div','meets');
+        mt.innerHTML=o.games.map(g=>`<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <span class="${g.won?'win':'loss'}">${g.won?'W':'L'}</span></div>`).join('');
+        op.onclick=()=>mt.classList.toggle('open');
+        list.appendChild(op);list.appendChild(mt);
+      });
+      hd.appendChild(list);c.appendChild(hd);
+    }
+    out.appendChild(c);
+  });
+}
+
+/* ---- shell ---- */
+function setMode(mode){
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===mode));
+  $('#m-matchup').classList.toggle('hide',mode!=='matchup');
+  $('#m-players').classList.toggle('hide',mode!=='players');
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+$('#pSearch').oninput=e=>fillPlayers(e.target.value);
+$('#pSel').onchange=e=>renderPlayer(e.target.value);
+// theme toggle
+(function(){const r=document.documentElement;let cur=null;
+  try{cur=localStorage.getItem('rs-theme')}catch(e){}
+  if(cur)r.setAttribute('data-theme',cur);
+  $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
+    const next=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
+    r.setAttribute('data-theme',next);try{localStorage.setItem('rs-theme',next)}catch(e){}};
+})();
+$('#foot').innerHTML=`Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players · league baselines from full match history. Percentages are handicap-adjusted; APA races are built to sit near 50% — the edges are the story.`;
+fillSchedule();fillPlayers('');
+</script>
