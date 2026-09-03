@@ -75,8 +75,11 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk+.rk{margin-top:2px}
 .rk .pos{font-family:Oswald;font-size:12px;color:var(--ink-soft);text-align:right}
 .rk .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.rk .nm.two{display:flex;flex-direction:column;gap:1px;white-space:normal;overflow:visible;min-width:0}
+.rk .nm.two .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px}
 .rk .pv{font-family:Oswald;font-weight:700;font-size:18px;text-align:right}
+.rk .pv-u{font-family:Barlow;font-size:9px;font-weight:600;color:var(--ink-soft);display:block;margin-top:-2px}
 .rk.best{background:var(--good-wash)}
 .rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
 .win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
@@ -100,6 +103,25 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .pick-when{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
 .pick-vs{font-family:Oswald;font-size:18px;font-weight:600;color:var(--ink);line-height:1.15}
 .pick-vs .fmt{font-family:Barlow;font-size:11px;font-weight:600;color:var(--ink-soft);margin-left:7px}
+/* qualification tracker */
+.qt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+table.qt{border-collapse:collapse;min-width:100%;font-size:13px}
+table.qt th,table.qt td{padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center;white-space:nowrap}
+table.qt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-soft);background:var(--panel-2);position:sticky;top:0}
+table.qt td.who,table.qt th.who{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;box-shadow:1px 0 0 var(--line)}
+table.qt th.who{background:var(--panel-2);z-index:2}
+table.qt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
+.qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
+.qchip.yes{background:var(--good-wash);color:var(--good);border-color:var(--good)}
+.qchip.close{background:var(--warn-wash,rgba(184,121,31,.14));color:var(--warn);border-color:var(--warn)}
+.qchip.no{background:var(--panel-2);color:var(--ink-soft)}
+.qchip.unknown{border-style:dashed}
+.qt-sub{display:block;font-size:10.5px;color:var(--ink-soft);font-weight:400;margin-top:2px}
+.rulebox{border:1px dashed var(--line);border-radius:11px;padding:12px 13px;margin-top:10px;background:var(--panel-2)}
+.rulebox h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.rulebox p{font-size:13px;color:var(--ink-soft);margin:0}
 /* hot streak — NBA Jam energy, but the dates stay honest: a 3-game run from last spring
    is not "on fire", so anything older than the recency window is called out as stale. */
 .streaks{display:flex;flex-direction:column;gap:8px;margin-top:12px}
@@ -146,6 +168,8 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .chip{font-family:Oswald;font-size:13px;letter-spacing:.03em;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);padding:5px 11px;border-radius:999px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--diamond);color:var(--panel);border-color:var(--diamond)}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.chip.avail[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
 
 /* vs-SL grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-top:4px}
@@ -206,7 +230,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
      by swiping the strip is a tab nobody finds. Shorten the two longest labels instead. */
   .brand span,.brand b{display:none}
   .head-in{gap:8px;padding:10px 12px}
-  .tab{padding:7px 8px;font-size:12px;letter-spacing:.01em}
+  .tab{padding:7px 7px;font-size:11.5px;letter-spacing:0}
   .tab .lg{display:none}
   .tab .sm{display:inline}
   .theme-btn{width:30px;height:30px;flex:0 0 auto}
@@ -221,7 +245,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
       <button class="tab" role="tab" aria-selected="true" data-mode="me"><span class="lg">My Record</span><span class="sm">Me</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
       <button class="tab" role="tab" aria-selected="false" data-mode="matchup"><span class="lg">Matchup</span><span class="sm">Match</span></button>
-      <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="players"><span class="lg">Players</span><span class="sm">Find</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="rules"><span class="lg">Races</span><span class="sm">Races</span></button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
   </div>
@@ -257,6 +282,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
       <label class="fld" style="max-width:260px">&nbsp;<select id="pSel"></select></label></div>
     <div id="playerOut"></div>
   </section>
+  <section id="m-rules" class="hide"><div id="rulesOut"></div></section>
   <p class="foot" id="foot"></p>
 </div>
 
@@ -307,6 +333,7 @@ function fillSchedule(){
   s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
   const paint=()=>{
     const m=sched[s.value]; if(!m)return;
+    if(live.matchIdx!==s.value){live.matchIdx=s.value;live.outOurs=new Set();live.outTheirs=new Set();live.played=[];live.theirPick=null;}
     $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.fmt}-ball`;
     $('#schedVs').textContent=`vs ${m.oppTeam}`;
     renderMatch(m);
@@ -334,6 +361,14 @@ function rankRow(pos,A,s){
 function renderMatch(m){
   const out=$('#matchOut');out.innerHTML='';
   const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
+  // Plan (rank every pairing) vs Live (sequencing companion for during the match).
+  const modeBar=el('div','ftabs');modeBar.style.margin='4px 0 0';
+  [['plan','Plan'],['live','Live']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
+    b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
+  out.appendChild(modeBar);
+  if((live.mode0||'plan')==='live'){renderLive(m,out);return;}
+
   // Compact header: the dropdown directly above already names the date/teams/format, so
   // repeating it full-size just pushed the actual picks below the fold on a phone.
   const head=el('div','card');
@@ -673,12 +708,237 @@ function drawH2H(out,pr,fmt){
 }
 const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerView('#playerOut');
 
+/* ---------- LIVE companion: sequencing, not just pairwise ----------
+   The Plan view ranks each pairing on its own. At the table the real problem is different:
+   using your best answer now means not having them later, and in APA you alternate who throws
+   first, so half your picks are made blind. This scores a pick as
+       P(win this match) + value of the BEST assignment of everyone still left
+   so it will tell you to burn a bad matchup when that protects a better one. When YOU throw
+   first it assumes they counter you optimally (minimax), because they will. */
+const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null};
+function pWin(A,Q,fmt){return score(A,Q,fmt).p;}
+/* greedy 1-to-1 assignment of the remaining pools -> expected wins. Greedy (not Hungarian)
+   is deliberate: it is what a captain can actually follow, and with <=8 a side the gap is tiny. */
+function remainderValue(ours,theirs,fmt){
+  const pairs=[];
+  ours.forEach(A=>theirs.forEach(Q=>pairs.push([A,Q,pWin(A,Q,fmt)])));
+  pairs.sort((a,b)=>b[2]-a[2]);
+  const uA=new Set(),uQ=new Set(); let tot=0;
+  pairs.forEach(([A,Q,p])=>{if(!uA.has(A.mid)&&!uQ.has(Q.mid)){uA.add(A.mid);uQ.add(Q.mid);tot+=p;}});
+  return tot;
+}
+function livePools(m){
+  const ours=roster(m.ourTeamId).filter(p=>!live.outOurs.has(String(p.mid))&&!live.played.some(x=>x.our===String(p.mid)));
+  const theirs=roster(m.oppTeamId).filter(p=>!live.outTheirs.has(String(p.mid))&&!live.played.some(x=>x.their===String(p.mid)));
+  return {ours,theirs};
+}
+function renderLive(m,host){
+  const fmt=m.fmt, {ours,theirs}=livePools(m);
+  const wrapCard=el('div','card');
+  wrapCard.appendChild(el('h2',null,'<span class="eyebrow">Who\'s here</span>'));
+  wrapCard.appendChild(el('p','sub','Tap anyone who is not playing tonight to grey them out.'));
+  [['Ours',roster(m.ourTeamId),live.outOurs],['Theirs',roster(m.oppTeamId),live.outTheirs]].forEach(([lab,list,outSet])=>{
+    const h=el('div','eyebrow',lab);h.style.marginTop='10px';wrapCard.appendChild(h);
+    const row=el('div','chips');
+    list.forEach(p=>{
+      const gone=outSet.has(String(p.mid))||live.played.some(x=>x.our===String(p.mid)||x.their===String(p.mid));
+      const b=el('button','chip avail'+(gone?'':' on'),`${sl(p.sl)}${esc(p.name)}`);
+      b.setAttribute('aria-pressed',!gone);
+      b.onclick=()=>{const k=String(p.mid);outSet.has(k)?outSet.delete(k):outSet.add(k);renderMatch(m);};
+      row.appendChild(b);
+    });
+    wrapCard.appendChild(row);
+  });
+  host.appendChild(wrapCard);
+
+  // played so far
+  if(live.played.length){
+    const pc=el('div','card');
+    pc.appendChild(el('h2',null,'<span class="eyebrow">Already played</span>'));
+    live.played.forEach((x,i)=>{
+      const A=roster(m.ourTeamId).find(p=>String(p.mid)===x.our),Q=roster(m.oppTeamId).find(p=>String(p.mid)===x.their);
+      const r=el('div','mrow');
+      r.innerHTML=`<div class="who">${A?sl(A.sl)+esc(A.name):'—'}</div>`+
+        `<div class="verdict"><span class="pill p-even">match ${i+1}</span></div>`+
+        `<div class="who them">${Q?esc(Q.name)+sl(Q.sl):'—'}</div>`;
+      const u=el('button','ftab','Undo');u.style.marginLeft='auto';
+      u.onclick=()=>{live.played.splice(i,1);renderMatch(m);};
+      r.appendChild(u); pc.appendChild(r);
+    });
+    host.appendChild(pc);
+  }
+
+  const c=el('div','card');
+  const tabs=el('div','ftabs');
+  [['counter','They threw first'],['throw','We throw first']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',live.mode===v);
+    b.onclick=()=>{live.mode=v;renderMatch(m);};tabs.appendChild(b);});
+  c.appendChild(tabs);
+
+  if(!ours.length||!theirs.length){
+    c.appendChild(el('p','sub','Everyone is used or marked out — nothing left to decide.'));
+    host.appendChild(c);return;
+  }
+
+  if(live.mode==='counter'){
+    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. Value counts what the pick leaves you for the rest of the night, not just this match.'));
+    const pickRow=el('div','chips');
+    theirs.forEach(Q=>{
+      const b=el('button','chip'+(live.theirPick===String(Q.mid)?' on':''),`${sl(Q.sl)}${esc(Q.name)}`);
+      b.setAttribute('aria-pressed',live.theirPick===String(Q.mid));
+      b.onclick=()=>{live.theirPick=String(Q.mid);renderMatch(m);};pickRow.appendChild(b);
+    });
+    c.appendChild(pickRow);
+    const Q=theirs.find(x=>String(x.mid)===live.theirPick);
+    if(Q){
+      const ranked=ours.map(A=>{
+        const now=pWin(A,Q,fmt);
+        const rest=remainderValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt);
+        return {A,now,rest,total:now+rest};
+      }).sort((a,b)=>b.total-a.total);
+      const best=ranked[0];
+      ranked.forEach((r,i)=>{
+        const row=el('div','rk'+(i===0?' best':''));
+        const s=score(r.A,Q,fmt);
+        row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
+          `<div class="nm two"><span class="who">${esc(r.A.name)}<span class="dot d-${s.conf}"></span></span>`+
+          `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} expected wins left after</span></div>`+
+          `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+        c.appendChild(row);
+      });
+      // call out when the best overall pick is NOT the best head-to-head
+      const bestNow=ranked.slice().sort((a,b)=>b.now-a.now)[0];
+      if(bestNow && bestNow.A.mid!==best.A.mid){
+        c.appendChild(el('p','sub',
+          `Note: ${esc(bestNow.A.name)} is the better straight matchup (${Math.round(bestNow.now*100)}%), `+
+          `but using ${esc(best.A.name)} keeps a stronger set of answers for the rest of the night.`));
+      }
+      const mark=el('button','ftab','Mark this matchup played');mark.style.marginTop='10px';
+      mark.onclick=()=>{live.played.push({our:String(best.A.mid),their:String(Q.mid)});live.theirPick=null;renderMatch(m);};
+      c.appendChild(mark);
+    }
+  }else{
+    c.appendChild(el('p','sub','Assumes they counter with their best answer — because they will. Ranked by total expected wins for the whole night, so a deliberate sacrifice can outrank a better single matchup.'));
+    const ranked=ours.map(A=>{
+      let worst=null;
+      theirs.forEach(Q=>{
+        const now=pWin(A,Q,fmt);
+        const rest=remainderValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt);
+        const tot=now+rest;
+        if(worst===null||tot<worst.total)worst={Q,now,rest,total:tot};
+      });
+      return {A,...worst};
+    }).sort((a,b)=>b.total-a.total);
+    ranked.forEach((r,i)=>{
+      const row=el('div','rk'+(i===0?' best':''));
+      // Headline the number we actually rank on (night value); the single-match odds sit
+      // underneath, otherwise a correct sacrificial throw reads as a ranking bug.
+      row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
+        `<div class="nm two"><span class="who">${esc(r.A.name)}</span>`+
+        `<span class="strk-sub">worst case they answer ${esc(r.Q.name)} — ${Math.round(r.now*100)}% that match</span></div>`+
+        `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+      c.appendChild(row);
+    });
+  }
+  host.appendChild(c);
+}
+
+/* ---------- Races: playoff / MVP / Tri-Cup / Gold Cup qualification ----------
+   THE RULES ARE NOT WRITTEN YET. Casey is supplying the real criteria for each race;
+   until then every check returns {status:'unknown'} and the UI shows each player's live
+   session numbers with an explicit "rules not set" chip. Do NOT invent thresholds here —
+   a wrong qualification call is worse than an honest blank.
+
+   To wire a race up, fill in `rule` (what it says on screen) and `check(st, ctx)` where
+   `st` is that player's current-session stats:
+       {games, wins, points, matchNights, first, last}   (null if they have not played yet)
+   and `ctx` = {fmt, roster, sessionStats, allStats}. Return:
+       {status:'yes'|'close'|'no', detail:'8 of 4 nights'}                                  */
+const RACES=[
+  {key:'playoffs', label:'Playoffs', rule:null, check:null},
+  {key:'mvp', label:'MVP race',
+   rule:'Play at least 8 matches in the session to be eligible.',
+   // "matches" = individual player-vs-player matches, NOT match nights. Verified against
+   // APA's own matchesPlayed counter on a season where a player had 8 games across 7 nights
+   // and APA reported 8.
+   check:(st)=>{
+     const need=8, played=st?st.games:0, left=need-played;
+     if(played>=need)return {status:'yes', detail:`${played} of ${need} matches`};
+     if(played>=need-2)return {status:'close', detail:`${played} of ${need} · ${left} to go`};
+     return {status:'no', detail:`${played} of ${need} · ${left} to go`};
+   }},
+  {key:'tricup',   label:'Tri-Cup',  rule:null, check:null},
+  {key:'goldcup',  label:'Gold Cup', rule:null, check:null},
+];
+const raceState={fmt:null};
+function sessionStatsFor(mid,fmt){return (D.sessionStats||{})[`${mid}:${fmt}`]||null;}
+function renderRaces(){
+  const out=$('#rulesOut'); out.innerHTML='';
+  const fmts=teamFormats();
+  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  raceState.fmt=fmts.includes(raceState.fmt)?raceState.fmt:fmts[0];
+  const fmt=raceState.fmt, tm=activeRosterForFormat(fmt);
+  const team=(D.myActiveTeams||[]).map(t=>D.teams[t]).find(t=>t&&t.fmt===fmt);
+
+  const card=el('div','card');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Where everyone stands</span>'));
+  card.appendChild(el('p','sub',`${team?esc(team.name):''} — this session only. Races reset each session, so these counters start at zero and build as we play.`));
+  if(fmts.length>1){const ft=el('div','ftabs');
+    fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
+      b.onclick=()=>{raceState.fmt=f;renderRaces();};ft.appendChild(b);});card.appendChild(ft);}
+
+  const wrap=el('div','qt-wrap'), table=el('table','qt');
+  table.appendChild(el('thead',null,'<tr><th class="who">Player</th><th>Matches</th><th>W-L</th><th>Points</th>'+
+    RACES.map(r=>`<th>${esc(r.label)}</th>`).join('')+'</tr>'));
+  const tb=el('tbody');
+  const ctx={fmt,roster:tm,sessionStats:D.sessionStats||{}};
+  tm.slice().sort((a,b)=>(b.sl-a.sl)||a.name.localeCompare(b.name)).forEach(p=>{
+    const st=sessionStatsFor(p.mid,fmt);
+    const tr=el('tr');
+    const who=el('td','who');who.innerHTML=`<span class="nm">${sl(p.sl)}${esc(p.name)}</span>`;
+    who.style.cursor='pointer';
+    who.onclick=()=>{setMode('me');const s=$('#meSel');if(s){s.value=p.mid;try{localStorage.setItem('rs-me',p.mid)}catch(e){}meView.render(p.mid);}};
+    tr.appendChild(who);
+    tr.appendChild(el('td',null,st?String(st.games):'<span class="muted">0</span>'));
+    tr.appendChild(el('td',null,st?`${st.wins}-${st.games-st.wins}`:'<span class="muted">—</span>'));
+    tr.appendChild(el('td',null,st?String(st.points):'<span class="muted">0</span>'));
+    RACES.forEach(r=>{
+      const td=el('td');
+      let res=null;
+      if(typeof r.check==='function'){try{res=r.check(st,ctx);}catch(e){res=null;}}
+      if(!res)td.innerHTML='<span class="qchip unknown">Rules TBD</span>';
+      else td.innerHTML=`<span class="qchip ${res.status==='yes'?'yes':res.status==='close'?'close':'no'}">`+
+        `${res.status==='yes'?'Qualified':res.status==='close'?'Close':'Not yet'}</span>`+
+        (res.detail?`<span class="qt-sub">${esc(res.detail)}</span>`:'');
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb);wrap.appendChild(table);card.appendChild(wrap);
+  out.appendChild(card);
+
+  // the rules themselves
+  const rc=el('div','card');
+  rc.appendChild(el('h2',null,'<span class="eyebrow">The rules</span>'));
+  const pending=RACES.filter(r=>!r.rule);
+  if(pending.length===RACES.length)
+    rc.appendChild(el('p','sub','Not filled in yet — send me the criteria for each race and the table above starts calling them automatically.'));
+  RACES.forEach(r=>{
+    const b=el('div','rulebox');
+    b.innerHTML=`<h3>${esc(r.label)}</h3><p>${r.rule?esc(r.rule):'Rules not provided yet.'}</p>`;
+    rc.appendChild(b);
+  });
+  out.appendChild(rc);
+}
+
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
   $('#m-me').classList.toggle('hide',m!=='me');
   $('#m-team').classList.toggle('hide',m!=='team');
   $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');
-  if(m==='team')renderTeamOverview();}
+  $('#m-rules').classList.toggle('hide',m!=='rules');
+  if(m==='team')renderTeamOverview();
+  if(m==='rules')renderRaces();}
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);

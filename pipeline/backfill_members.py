@@ -33,6 +33,18 @@ def load_raw():
     return json.loads(p.read_text()) if p.exists() else {}
 
 
+def all_known_member_ids():
+    """Every member id (ours + every opponent) currently present anywhere in games.csv."""
+    ids = set()
+    with open(DATA / "games.csv") as f:
+        for r in csv.DictReader(f):
+            for k in ("mid", "oppMid"):
+                v = r.get(k)
+                if v and v.isdigit():
+                    ids.add(int(v))
+    return ids
+
+
 def teammate_ids():
     site = DATA.parent / "site" / "data.json"
     d = json.loads(site.read_text())
@@ -48,6 +60,8 @@ def main():
     args = sys.argv[1:]
     if args == ["--teammates"]:
         member_ids = teammate_ids()
+    elif args == ["--all-known"]:
+        member_ids = all_known_member_ids()
     else:
         member_ids = {int(a) for a in args}
     if not member_ids:
@@ -68,12 +82,15 @@ def main():
         return mid, tids, (m.get("firstName"), m.get("lastName"))
 
     new_team_ids = set()
+    done = 0
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
         for fut in as_completed({ex.submit(fetch_member_teams, mid): mid for mid in member_ids}):
             mid, tids, name = fut.result()
             fresh = [t for t in tids if t not in known_teams]
             new_team_ids.update(fresh)
-            print("  %s %s (id %s): %d team-seasons, %d NEW" % (name[0] or "", name[1] or "", mid, len(tids), len(fresh)))
+            done += 1
+            if done % 50 == 0:
+                print("  ...discovered %d/%d members, %d new teams so far" % (done, len(member_ids), len(new_team_ids)))
 
     print("New teams discovered beyond existing corpus: %d" % len(new_team_ids))
     if not new_team_ids:
@@ -107,9 +124,13 @@ def main():
                 raw[str(mid)] = m; pulled += 1
             else:
                 failed += 1
-            if (pulled + failed) % 100 == 0:
-                print("  ...pulled %d/%d (failed %d)" % (pulled, len(new_match_ids), failed))
+            # Checkpoint-save often (crash safety) but print rarely — at this scale (tens of
+            # thousands of matches) a log line every 100 floods the caller with hundreds of
+            # notifications. Save every 500, print progress only every 5000.
+            if (pulled + failed) % 500 == 0:
                 (DATA / "matches_raw.json").write_text(json.dumps(raw))
+            if (pulled + failed) % 5000 == 0:
+                print("  ...pulled %d/%d (failed %d)" % (pulled, len(new_match_ids), failed))
     (DATA / "matches_raw.json").write_text(json.dumps(raw))
     print("Pulled +%d matches (%d failed). Corpus now %d matches total." % (pulled, failed, len(raw)))
 
@@ -120,7 +141,7 @@ def main():
         games.extend(persp)
     (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
     cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "fmt", "date", "matchId"]
+            "win", "pts", "fmt", "date", "matchId"]
     with open(DATA / "games.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
         for g in games:

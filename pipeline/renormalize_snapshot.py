@@ -20,7 +20,7 @@ def main():
         games.extend(persp)
     (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
     cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "fmt", "date", "matchId"]
+            "win", "pts", "fmt", "date", "matchId"]
     with open(DATA / "games.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
         for g in games:

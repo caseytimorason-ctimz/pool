@@ -78,11 +78,24 @@ class APA:
             # APA GraphQL expects the raw token WITHOUT a "Bearer " scheme prefix.
             headers["Authorization"] = self.token
         req = urllib.request.Request(GQL, data=body, headers=headers)
-        try:
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.load(r)
-        except urllib.error.HTTPError as e:
-            return json.load(e)
+        # At thousands-of-requests scale a transient timeout/connection-reset is expected,
+        # not exceptional — retry with backoff instead of letting it kill the whole run.
+        last_err = None
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    return json.load(r)
+            except urllib.error.HTTPError as e:
+                return json.load(e)
+            except Exception as e:
+                # Broad on purpose: seen in practice include OSError/URLError/TimeoutError
+                # AND http.client.HTTPException subclasses (e.g. BadStatusLine) that do NOT
+                # inherit from OSError — this environment's egress goes through an HTTP CONNECT
+                # proxy that returns malformed responses under thousands-of-requests concurrency.
+                # A single failed request must never be allowed to kill a large batch run.
+                last_err = e
+                time.sleep(0.5 * (2 ** attempt))
+        return {"errors": [{"message": "NETWORK_ERROR after retries: %s" % last_err}]}
 
     def mint(self):
         m = ("mutation($rt:String!){ generateAccessToken(refreshToken:$rt){ accessToken } }")
@@ -143,16 +156,19 @@ def normalize_match(m):
             h, a = H[i], A[i]; hp = h.get("player") or {}; ap = a.get("player") or {}
             hmid = (hp.get("member") or {}).get("id"); amid = (ap.get("member") or {}).get("id")
             date = (m.get("startTime") or "")[:10]
+            pts = lambda sc: (sc.get("nineBallMatchPointsEarned")
+                              if sc.get("nineBallMatchPointsEarned") is not None
+                              else sc.get("eightBallMatchPointsEarned"))
             persp.append({"mid": hmid, "pid": hp.get("id"), "name": hp.get("displayName"),
                           "team": home.get("id"), "sl": h.get("skillLevel"),
                           "oppMid": amid, "oppPid": ap.get("id"), "oppName": ap.get("displayName"),
                           "oppSl": a.get("skillLevel"), "win": h.get("winLoss") == "W",
-                          "fmt": fmt, "date": date, "matchId": m["id"]})
+                          "pts": pts(h), "fmt": fmt, "date": date, "matchId": m["id"]})
             persp.append({"mid": amid, "pid": ap.get("id"), "name": ap.get("displayName"),
                           "team": away.get("id"), "sl": a.get("skillLevel"),
                           "oppMid": hmid, "oppPid": hp.get("id"), "oppName": hp.get("displayName"),
                           "oppSl": h.get("skillLevel"), "win": a.get("winLoss") == "W",
-                          "fmt": fmt, "date": date, "matchId": m["id"]})
+                          "pts": pts(a), "fmt": fmt, "date": date, "matchId": m["id"]})
     return meta, rows, persp
 
 
@@ -201,7 +217,7 @@ def main():
     (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
     (DATA / "matches_raw.json").write_text(json.dumps(raw))
     cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "fmt", "date", "matchId"]
+            "win", "pts", "fmt", "date", "matchId"]
     with open(DATA / "games.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
         for g in games:

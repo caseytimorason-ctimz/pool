@@ -3,6 +3,7 @@
 Assemble site/data.json for the dashboard: analysis + league baselines + current-season
 rosters + schedule + opponent rosters. Runs headless (Keychain refresh token).
 """
+import csv as _csv0
 import csv, json, sqlite3, urllib.request, urllib.error
 from collections import defaultdict
 from pathlib import Path
@@ -124,9 +125,36 @@ def main():
                 relevant_mids.add(str(p["mid"]))
     players = {k: v for k, v in analysis["players"].items() if k.split(":")[0] in relevant_mids}
 
+    # Current-session stats, scoped to the ACTIVE teams only — playoff/MVP-style races are
+    # per-session, not lifetime, so the qualification tracker needs its own counters.
+    active_ids = {str(t) for t in my_active}
+    sess = {}
+    with open(DATA / "games.csv") as f:
+        for r in _csv0.DictReader(f):
+            if r.get("team") not in active_ids:
+                continue
+            k = "%s:%s" % (r["mid"], r["fmt"])
+            e = sess.setdefault(k, {"mid": r["mid"], "fmt": r["fmt"], "team": r["team"],
+                                    "games": 0, "wins": 0, "points": 0, "nights": [],
+                                    "first": None, "last": None})
+            e["games"] += 1
+            if r["win"] == "True":
+                e["wins"] += 1
+            try:
+                e["points"] += int(r["pts"] or 0)
+            except ValueError:
+                pass
+            if r["matchId"] not in e["nights"]:
+                e["nights"].append(r["matchId"])
+            d = r.get("date") or ""
+            if d:
+                e["first"] = min(e["first"] or d, d); e["last"] = max(e["last"] or d, d)
+    for e in sess.values():
+        e["matchNights"] = len(e.pop("nights"))
+
     base = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
             "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
-            "baselines": baselines()}
+            "sessionStats": sess, "baselines": baselines()}
 
     # site/data.json: SCOPED, for the artifact (hard single-file size ceiling).
     scoped = dict(base, players=players)
