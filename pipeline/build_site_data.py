@@ -124,13 +124,22 @@ def main():
                 relevant_mids.add(str(p["mid"]))
     players = {k: v for k, v in analysis["players"].items() if k.split(":")[0] in relevant_mids}
 
-    bundle = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
-              "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
-              "baselines": baselines(), "players": players}
-    (SITE / "data.json").write_text(json.dumps(bundle, separators=(",", ":")))
-    print("site/data.json: %d teams, %d scheduled matches, %d/%d player profiles embedded, %.2f MB" % (
-        len(teams), len(schedule), len(players), len(analysis["players"]),
-        (SITE / "data.json").stat().st_size / 1024 / 1024))
+    base = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
+            "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
+            "baselines": baselines()}
+
+    # site/data.json: SCOPED, for the artifact (hard single-file size ceiling).
+    scoped = dict(base, players=players)
+    (SITE / "data.json").write_text(json.dumps(scoped, separators=(",", ":")))
+    print("site/data.json (artifact, scoped): %d/%d player profiles, %.2f MB" % (
+        len(players), len(analysis["players"]), (SITE / "data.json").stat().st_size / 1024 / 1024))
+
+    # site/data.full.json: the COMPLETE league-wide dataset, for Netlify (fetched as a plain
+    # static file — no embed-size constraint there, so no scoping needed).
+    full = dict(base, players=analysis["players"])
+    (SITE / "data.full.json").write_text(json.dumps(full, separators=(",", ":")))
+    print("site/data.full.json (deploy, full): %d player profiles, %.2f MB" % (
+        len(analysis["players"]), (SITE / "data.full.json").stat().st_size / 1024 / 1024))
     print("active teams:", [(teams[t]["name"], teams[t]["fmt"]) for t in my_active])
 
 
