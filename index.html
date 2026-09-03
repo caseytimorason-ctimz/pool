@@ -48,6 +48,7 @@ header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1p
 .tabs::-webkit-scrollbar{display:none}
 .tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;border:0;background:transparent;
   color:var(--ink-soft);padding:7px 13px;border-radius:7px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.tab .sm{display:none}
 .tab[aria-selected="true"]{background:var(--accent);color:#fff}
 .theme-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:16px 0 6px}
@@ -65,8 +66,8 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 /* opponent block (matchup) */
 .opp{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
 .opp:first-child{border-top:0;margin-top:4px;padding-top:0}
-.opp-hd{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.opp-hd .nm{font-family:Oswald;font-size:18px;font-weight:600}
+.opp-hd{display:flex;align-items:baseline;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+.opp-hd .nm{font-family:Oswald;font-size:18px;font-weight:600;line-height:1.15}
 .opp-hd .tag{margin-left:auto;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
 
 /* ranked row */
@@ -80,6 +81,32 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
 .win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+/* Identity control. A plain <select> read as a passive form field and teammates didn't
+   realise the name was theirs to change, so the native select is kept (for the OS picker)
+   but made invisible over a loud, obviously-tappable face showing SL badge + name. */
+.pick{position:relative;width:100%}
+.pick select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.pick-face{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;
+  background:var(--accent-wash);border:1.5px solid var(--accent);box-shadow:var(--shadow);pointer-events:none}
+.pick-who{display:flex;align-items:center;gap:9px;font-family:Oswald;font-size:19px;font-weight:600;
+  color:var(--ink);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-cta{margin-left:auto;display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);
+  border:1px solid var(--accent);border-radius:999px;padding:4px 9px;background:var(--panel)}
+.pick-cta .chev{font-size:11px;line-height:1}
+.pick select:focus-visible + .pick-face,.pick:focus-within .pick-face{outline:2px solid var(--accent);outline-offset:2px}
+/* match variant: two-line — when it is, then who against */
+.pick-match{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pick-when{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+.pick-vs{font-family:Oswald;font-size:18px;font-weight:600;color:var(--ink);line-height:1.15}
+.pick-vs .fmt{font-family:Barlow;font-size:11px;font-weight:600;color:var(--ink-soft);margin-left:7px}
+/* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
+.whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.whobtn{display:flex;align-items:center;gap:9px;text-align:left;padding:12px 13px;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:11px;color:var(--ink);
+  font-family:Barlow;font-size:15px;font-weight:500}
+.whobtn:hover{border-color:var(--accent);background:var(--accent-wash)}
+.whobtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-soft)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .dot{margin-left:0}
@@ -122,6 +149,10 @@ table.h2h td{padding:8px 6px;border-bottom:1px solid var(--line-2);vertical-alig
 table.h2h tr.op{cursor:pointer}
 table.h2h tr.op:hover{background:var(--panel-2)}
 table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space:nowrap}
+table.h2h th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+table.h2h th.sortable:hover{color:var(--ink)}
+table.h2h th.sorted{color:var(--accent-ink)}
+table.h2h th .arrow{font-size:9px}
 
 /* team overview grid */
 .tt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
@@ -149,9 +180,13 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   /* On a phone the four tabs + wordmark + theme button overflowed the header and clipped
      the last tab entirely (it was unreachable). Drop the wordmark to the diamond mark and
      tighten the tabs so all four fit; .tabs can still scroll if a label grows. */
+  /* All four tabs must be visible without horizontal scrolling — a tab you can only reach
+     by swiping the strip is a tab nobody finds. Shorten the two longest labels instead. */
   .brand span,.brand b{display:none}
   .head-in{gap:8px;padding:10px 12px}
-  .tab{padding:7px 9px;font-size:12px;letter-spacing:.02em}
+  .tab{padding:7px 8px;font-size:12px;letter-spacing:.01em}
+  .tab .lg{display:none}
+  .tab .sm{display:inline}
   .theme-btn{width:30px;height:30px;flex:0 0 auto}
   .rk .pv{font-size:16px}.phd .nm{font-size:19px}
 }
@@ -161,9 +196,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   <div class="head-in">
     <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-mode="me">My Record</button>
+      <button class="tab" role="tab" aria-selected="true" data-mode="me"><span class="lg">My Record</span><span class="sm">Me</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
-      <button class="tab" role="tab" aria-selected="false" data-mode="matchup">Matchup</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="matchup"><span class="lg">Matchup</span><span class="sm">Match</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
@@ -172,14 +207,27 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 
 <div class="wrap">
   <section id="m-me">
-    <div class="bar"><label class="fld">Your name<select id="meSel"></select></label></div>
+    <div class="bar" id="mePicker">
+      <div class="pick">
+        <div class="pick-face"><span class="pick-who" id="meFace"></span><span class="pick-cta">Change<span class="chev">▾</span></span></div>
+        <select id="meSel" aria-label="Choose which player to view"></select>
+      </div>
+    </div>
     <div id="meOut"></div>
   </section>
   <section id="m-team" class="hide">
     <div id="teamOut"></div>
   </section>
   <section id="m-matchup" class="hide">
-    <div class="bar"><label class="fld">Upcoming match<select id="schedSel"></select></label></div>
+    <div class="bar">
+      <div class="pick">
+        <div class="pick-face">
+          <span class="pick-match"><span class="pick-when" id="schedWhen"></span><span class="pick-vs" id="schedVs"></span></span>
+          <span class="pick-cta">Change<span class="chev">▾</span></span>
+        </div>
+        <select id="schedSel" aria-label="Choose a match"></select>
+      </div>
+    </div>
     <div id="matchOut"></div>
   </section>
   <section id="m-players" class="hide">
@@ -216,19 +264,39 @@ function score(A,Q,fmt){
 
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
 function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function niceDate(iso){                       // "2026-09-09" -> "Wed, Sep 9"
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  return `${DOW[dt.getDay()]}, ${MON[m-1]} ${d}`;
+}
+function whenLabel(iso,today){
+  if(iso===today)return 'Tonight';
+  if(iso<today)return 'Played · '+niceDate(iso);
+  const days=Math.round((new Date(iso)-new Date(today))/864e5);
+  if(days===1)return 'Tomorrow';
+  return (days<=7?'This week · ':'Upcoming · ')+niceDate(iso);
+}
 function fillSchedule(){
   const s=$('#schedSel');
   const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
-  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${m.date} · ${esc(m.ourTeam)} vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
-  s.onchange=()=>renderMatch(sched[s.value]);
+  const today=new Date().toISOString().slice(0,10);
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
+  const paint=()=>{
+    const m=sched[s.value]; if(!m)return;
+    $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.fmt}-ball`;
+    $('#schedVs').textContent=`vs ${m.oppTeam}`;
+    renderMatch(m);
+  };
+  s.onchange=paint;
   if(!sched.length){$('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>';return;}
   // Default to the NEXT match, not the oldest one on the list — the schedule still contains
   // recently-played dates, and this tab's whole job is "who do we put up this week".
-  const today=new Date().toISOString().slice(0,10);
   let idx=sched.findIndex(m=>m.date>=today);
   if(idx<0)idx=sched.length-1;
   s.value=idx;
-  renderMatch(sched[idx]);
+  paint();
 }
 function rankRow(pos,A,s){
   const pct=Math.round(s.p*100);
@@ -257,7 +325,7 @@ function renderMatch(m){
   const c=el('div','card');
   theirs.slice().sort((a,b)=>b.sl-a.sl).forEach(Q=>{
     const blk=el('div','opp');
-    blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span><span class="tag">SL${Q.sl} · our best picks ↓</span>`));
+    blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span><span class="tag">best picks ↓</span>`));
     ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)
       .forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
     c.appendChild(blk);
@@ -285,15 +353,34 @@ function teammates(){
   (D.myActiveTeams||[]).forEach(tid=>roster(tid).forEach(p=>{if(p.mid&&!seen[p.mid]){seen[p.mid]=1;list.push(p);}}));
   return list.sort((a,b)=>a.name.localeCompare(b.name));
 }
+function pickMe(mid){
+  try{localStorage.setItem('rs-me',mid)}catch(e){}
+  const s=$('#meSel'); if(s)s.value=mid;
+  const me=teammates().find(p=>String(p.mid)===String(mid));
+  const face=$('#meFace');
+  if(face&&me)face.innerHTML=`${sl(me.sl)}${esc(me.name)}`;
+  $('#mePicker').classList.remove('hide');
+  meView.render(mid);
+}
 function fillMe(){
   const s=$('#meSel'),tm=teammates();
   if(!tm.length){$('#meOut').innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
   s.innerHTML=tm.map(p=>`<option value="${p.mid}">${esc(p.name)}</option>`).join('');
+  s.onchange=()=>pickMe(s.value);
   let me=null;try{me=localStorage.getItem('rs-me')}catch(e){}
-  if(!me&&D.memberId&&tm.some(p=>String(p.mid)===String(D.memberId)))me=String(D.memberId); // owner default
-  if(me&&tm.some(p=>String(p.mid)===String(me)))s.value=me;
-  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}meView.render(s.value);};
-  meView.render(s.value);
+  if(me&&tm.some(p=>String(p.mid)===String(me))){pickMe(me);return;}
+  // First run: never show somebody else's record by default — teammates opened the app,
+  // saw the owner's numbers, and didn't realize the name at the top was theirs to change.
+  // Make identity an explicit, unmissable first step; after that it's remembered silently.
+  $('#mePicker').classList.add('hide');
+  const out=$('#meOut'); out.innerHTML='';
+  const card=el('div','card');
+  card.innerHTML=`<h2 style="font-size:19px">Who are you?</h2>
+    <p class="sub">Tap your name to see your record. We'll remember it on this phone.</p>`;
+  const grid=el('div','whogrid');
+  tm.forEach(p=>{const b=el('button','whobtn',`${sl(p.sl)}<span>${esc(p.name)}</span>`);
+    b.onclick=()=>pickMe(String(p.mid));grid.appendChild(b);});
+  card.appendChild(grid); out.appendChild(card);
 }
 
 /* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
@@ -399,8 +486,9 @@ function vsGrid(rows){
 }
 /* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
    bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
-function makePlayerView(outSel){
+function makePlayerView(outSel,opts){
   const st={mid:null,fmt:null,ownSL:'all'};
+  opts=opts||{};
   function render(mid){
     st.mid=mid;
     const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
@@ -416,8 +504,10 @@ function makePlayerView(outSel){
     const c=el('div','card');
     const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
     const hd=el('div','phd');
-    hd.innerHTML=`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>
-      <span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
+    // In the "Me" view the identity pill directly above already shows badge + name, so
+    // repeating it here is pure duplication; the Players tab has no pill and keeps it.
+    hd.innerHTML=(opts.hideName?'':`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>`)+
+      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
     c.appendChild(hd);
     if(fmts.length>1){const ft=el('div','ftabs');
       fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
@@ -439,17 +529,55 @@ function makePlayerView(outSel){
 function drawH2H(out,pr,fmt){
   const h=(pr.headToHead||[]).filter(x=>x.meetings>=1);
   const hc=el('div','card');
-  hc.innerHTML=`<div class="eyebrow">Head-to-head — ${h.length} opponents faced (${fmt}-ball)</div>`;
+  const eyebrow=el('div','eyebrow',`Head-to-head — ${h.length} opponents faced (${fmt}-ball)`);
+  hc.appendChild(eyebrow);
   const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
   const q=tools.querySelector('input');
   hc.appendChild(tools);
-  const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Their SL</th><th class="right">Record</th></tr></thead>`;
+  // Sortable columns. Default is most-played first (not any single column), so no arrow
+  // shows until you actually pick one — and the caption says what you're looking at.
+  const COLS=[
+    {key:'name', label:'Opponent', cls:'', get:o=>(o.oppName||'').toLowerCase(), dir:1},
+    {key:'sl',   label:'Their SL', cls:'', get:o=>{const g=o.games||[];return g.length?g[g.length-1].oppSL:null;}, dir:-1},
+    {key:'rec',  label:'Record',   cls:'right', get:o=>o.wins/o.meetings, dir:-1},
+  ];
+  const sort={key:null,dir:-1};
+  const tbl=el('table','h2h');
+  const thead=el('thead');const htr=el('tr');
+  COLS.forEach(c=>{
+    const th=el('th',('sortable '+c.cls).trim(),`${c.label}<span class="arrow"></span>`);
+    th.onclick=()=>{
+      if(sort.key===c.key)sort.dir=-sort.dir; else{sort.key=c.key;sort.dir=c.dir;}
+      paint(q.value.toLowerCase());
+    };
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);tbl.appendChild(thead);
   const tb=el('tbody');tbl.appendChild(tb);hc.appendChild(tbl);out.appendChild(hc);
-  function paint(q){
+  function paint(query){
     tb.innerHTML='';
-    h.filter(o=>!q||(o.oppName||'').toLowerCase().includes(q))
-     .sort((a,b)=>b.meetings-a.meetings)
-     .forEach(o=>{
+    // header state
+    [...htr.children].forEach((th,i)=>{
+      const c=COLS[i], active=sort.key===c.key;
+      th.setAttribute('aria-sort', active ? (sort.dir===1?'ascending':'descending') : 'none');
+      th.classList.toggle('sorted',active);
+      th.querySelector('.arrow').textContent = active ? (sort.dir===1?' ▲':' ▼') : '';
+    });
+    const col=COLS.find(c=>c.key===sort.key);
+    eyebrow.textContent=`Head-to-head — ${h.length} opponents faced (${fmt}-ball) · `+
+      (col?`by ${col.label.toLowerCase()}`:'most played first');
+    const rows=h.filter(o=>!query||(o.oppName||'').toLowerCase().includes(query));
+    rows.sort((a,b)=>{
+      if(!col)return b.meetings-a.meetings;
+      const av=col.get(a), bv=col.get(b);
+      if(av==null&&bv==null)return b.meetings-a.meetings;   // unknown SLs sink, stable by usage
+      if(av==null)return 1;
+      if(bv==null)return -1;
+      if(av<bv)return -sort.dir;
+      if(av>bv)return sort.dir;
+      return b.meetings-a.meetings;                          // tiebreak: who you've played most
+    });
+    rows.forEach(o=>{
        // Per-meeting logs are only carried for players we'd actually scout (roster +
        // everyone they've faced); league-wide players keep totals only, so guard on games.
        const games=o.games||[],p=o.wins/o.meetings;
@@ -470,7 +598,7 @@ function drawH2H(out,pr,fmt){
   }
   paint('');q.oninput=e=>paint(e.target.value.toLowerCase());
 }
-const meView=makePlayerView('#meOut'), playersView=makePlayerView('#playerOut');
+const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerView('#playerOut');
 
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
