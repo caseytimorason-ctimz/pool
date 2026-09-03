@@ -140,11 +140,13 @@ table.qt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
 .streaks{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .strk{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
   padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--panel-2)}
+.strk.heat{border-color:#d81f6a;background:linear-gradient(90deg,rgba(216,31,106,.22),rgba(255,180,60,.06))}
 .strk.fire{border-color:#e2622a;background:linear-gradient(90deg,rgba(226,98,42,.18),rgba(226,98,42,.04))}
 .strk.warm{border-color:var(--warn);background:linear-gradient(90deg,rgba(184,121,31,.14),transparent)}
 .strk.cold{border-color:#4a7fa8;background:linear-gradient(90deg,rgba(74,127,168,.14),transparent)}
 .strk-badge{font-family:Oswald;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   padding:4px 9px;border-radius:999px;white-space:nowrap;color:#fff}
+.strk.heat .strk-badge{background:linear-gradient(135deg,#ff5f6d,#d81f6a);box-shadow:0 0 10px rgba(216,31,106,.5)}
 .strk.fire .strk-badge{background:linear-gradient(135deg,#f0913a,#d8412a)}
 .strk.warm .strk-badge{background:var(--warn)}
 .strk.cold .strk-badge{background:#4a7fa8}
@@ -241,7 +243,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
      tighten the tabs so all four fit; .tabs can still scroll if a label grows. */
   /* All four tabs must be visible without horizontal scrolling — a tab you can only reach
      by swiping the strip is a tab nobody finds. Shorten the two longest labels instead. */
-  .brand span,.brand b{display:none}
+  .brand{display:none}
+  .tabs{margin-right:auto}
   .head-in{gap:8px;padding:10px 12px}
   .tab{padding:7px 7px;font-size:11.5px;letter-spacing:0}
   .tab .lg{display:none}
@@ -259,7 +262,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
       <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
       <button class="tab" role="tab" aria-selected="false" data-mode="matchup"><span class="lg">Matchup</span><span class="sm">Match</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players"><span class="lg">Players</span><span class="sm">Find</span></button>
-      <button class="tab" role="tab" aria-selected="false" data-mode="rules"><span class="lg">Races</span><span class="sm">Races</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="rules"><span class="lg">Rules</span><span class="sm">Rules</span></button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
   </div>
@@ -484,11 +487,13 @@ function renderStreaks(rows,fmt){
     const f=formOf(pr); if(!f)return;
     const stale=f.daysSince>STREAK_FRESH_DAYS;
     let kind=null,badge='';
-    if(f.won&&f.run>=3){kind='fire';badge='On fire';}
+    if(f.won&&f.run>=5){kind='heat';badge='Heat check';}
+    else if(f.won&&f.run>=3){kind='fire';badge='On fire';}
     else if(f.won&&f.run===2){kind='warm';badge='Heating up';}
     else if(!f.won&&f.run>=3){kind='cold';badge='Ice cold';}
     if(!kind)return;
-    items.push({p,f,kind,badge,stale,rank:(kind==='fire'?3:kind==='warm'?2:1)*100+f.run-(stale?500:0)});
+    const tier={heat:4,fire:3,warm:2,cold:1}[kind];
+    items.push({p,f,kind,badge,stale,rank:tier*100+f.run-(stale?500:0)});
   });
   if(!items.length)return null;
   items.sort((a,b)=>b.rank-a.rank);
@@ -519,7 +524,7 @@ function renderStreaks(rows,fmt){
    'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
-const teamState={fmt:null,scope:'all'};
+const teamState={fmt:null,scope:'all',view:'roster'};
 function teamFormats(){
   return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
 }
@@ -529,8 +534,14 @@ function activeRosterForFormat(fmt){
 }
 function renderTeamOverview(){
   const out=$('#teamOut'); out.innerHTML='';
+  const nav=el('div','ftabs');nav.style.marginBottom='2px';
+  [['roster','Roster'],['log',"Captain's log"]].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.view===v);
+    b.onclick=()=>{teamState.view=v;renderTeamOverview();};nav.appendChild(b);});
+  out.appendChild(nav);
+  if(teamState.view==='log'){renderLog(out);return;}
   const fmts=teamFormats();
-  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  if(!fmts.length){out.appendChild(el('div','card','<p class="sub">No roster loaded.</p>'));return;}
   teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
   const fmt=teamState.fmt;
   const tm=activeRosterForFormat(fmt);
@@ -729,24 +740,55 @@ function drawH2H(out,pr,fmt){
 }
 const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerView('#playerOut');
 
-/* ---------- LIVE companion: sequencing, not just pairwise ----------
+/* ---------- LIVE companion: sequencing as an alternating game, not a static assignment ----------
    The Plan view ranks each pairing on its own. At the table the real problem is different:
-   using your best answer now means not having them later, and in APA you alternate who throws
-   first, so half your picks are made blind. This scores a pick as
-       P(win this match) + value of the BEST assignment of everyone still left
-   so it will tell you to burn a bad matchup when that protects a better one. When YOU throw
-   first it assumes they counter you optimally (minimax), because they will. */
+   APA alternates who throws first each match, and whoever throws is COUNTERED — the other
+   side sees the player and answers. So your best asset isn't any one player, it's holding a
+   strong flexible player back to counter WITH. An earlier version scored a pick as
+   P(win) + a single joint-optimal assignment of everyone left; that assignment is symmetric,
+   so it valued your 6 the same whether you burned him blind now or saved him to answer with —
+   and it would happily tell you to throw your strongest player up first. Wrong.
+
+   This instead solves the actual game by recursion over (our pool, their pool, whose throw):
+     - on OUR throw:  max over A of  min over Q of  [ pWin(A,Q) + value(rest, THEIR throw next) ]
+                      (we commit A blind, they counter with their best answer)
+     - on THEIR throw: min over Q of  max over A of  [ pWin(A,Q) + value(rest, OUR throw next) ]
+                      (they commit Q, we answer with our best)
+   Initiative flips every match. Because a state where WE counter pays out max-over-A, the
+   solver correctly rewards keeping a strong player in reserve — so it stops throwing the 6. */
 const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null};
 function pWin(A,Q,fmt){return score(A,Q,fmt).p;}
-/* greedy 1-to-1 assignment of the remaining pools -> expected wins. Greedy (not Hungarian)
-   is deliberate: it is what a captain can actually follow, and with <=8 a side the gap is tiny. */
-function remainderValue(ours,theirs,fmt){
-  const pairs=[];
-  ours.forEach(A=>theirs.forEach(Q=>pairs.push([A,Q,pWin(A,Q,fmt)])));
-  pairs.sort((a,b)=>b[2]-a[2]);
-  const uA=new Set(),uQ=new Set(); let tot=0;
-  pairs.forEach(([A,Q,p])=>{if(!uA.has(A.mid)&&!uQ.has(Q.mid)){uA.add(A.mid);uQ.add(Q.mid);tot+=p;}});
-  return tot;
+// Memoized minimax over the remaining lineup. weThrow=true means it's our turn to put a
+// player up (and be countered). Returns our total expected match wins over the rest of the
+// night under optimal play by both sides. Pools are <=5 a side, so the state space is tiny.
+function gameValue(ours,theirs,fmt,weThrow,memo){
+  if(!ours.length||!theirs.length)return 0;
+  memo=memo||{};
+  const key=weThrow+'|'+ours.map(p=>p.mid).sort().join(',')+'|'+theirs.map(p=>p.mid).sort().join(',');
+  if(key in memo)return memo[key];
+  let best;
+  if(weThrow){                       // we commit A, they counter to minimize our total
+    best=-1;
+    ours.forEach(A=>{
+      let worst=Infinity;
+      theirs.forEach(Q=>{
+        const v=pWin(A,Q,fmt)+gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,false,memo);
+        if(v<worst)worst=v;
+      });
+      if(worst>best)best=worst;
+    });
+  }else{                             // they commit Q, we answer to maximize our total
+    best=Infinity;
+    theirs.forEach(Q=>{
+      let bestA=-1;
+      ours.forEach(A=>{
+        const v=pWin(A,Q,fmt)+gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
+        if(v>bestA)bestA=v;
+      });
+      if(bestA<best)best=bestA;
+    });
+  }
+  memo[key]=best;return best;
 }
 function livePools(m){
   const ours=roster(m.ourTeamId).filter(p=>!live.outOurs.has(String(p.mid))&&!live.played.some(x=>x.our===String(p.mid)));
@@ -812,9 +854,11 @@ function renderLive(m,host){
     c.appendChild(pickRow);
     const Q=theirs.find(x=>String(x.mid)===live.theirPick);
     if(Q){
+      const memo={};
       const ranked=ours.map(A=>{
         const now=pWin(A,Q,fmt);
-        const rest=remainderValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt);
+        // after we answer, the next match alternates to us throwing first
+        const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
         return {A,now,rest,total:now+rest};
       }).sort((a,b)=>b.total-a.total);
       const best=ranked[0];
@@ -823,7 +867,7 @@ function renderLive(m,host){
         const s=score(r.A,Q,fmt);
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="who">${esc(r.A.name)}<span class="dot d-${s.conf}"></span></span>`+
-          `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} expected wins left after</span></div>`+
+          `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} more wins after, playing it out</span></div>`+
           `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
         c.appendChild(row);
       });
@@ -840,11 +884,13 @@ function renderLive(m,host){
     }
   }else{
     c.appendChild(el('p','sub','Assumes they counter with their best answer — because they will. Ranked by total expected wins for the whole night, so a deliberate sacrifice can outrank a better single matchup.'));
+    const memo={};
     const ranked=ours.map(A=>{
       let worst=null;
       theirs.forEach(Q=>{
         const now=pWin(A,Q,fmt);
-        const rest=remainderValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt);
+        // they answered A with Q, so the next match alternates to them throwing first
+        const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,false,memo);
         const tot=now+rest;
         if(worst===null||tot<worst.total)worst={Q,now,rest,total:tot};
       });
@@ -864,203 +910,26 @@ function renderLive(m,host){
   host.appendChild(c);
 }
 
-/* ---------- Races: playoff / MVP / Tri-Cup / Gold Cup qualification ----------
-   THE RULES ARE NOT WRITTEN YET. Casey is supplying the real criteria for each race;
-   until then every check returns {status:'unknown'} and the UI shows each player's live
-   session numbers with an explicit "rules not set" chip. Do NOT invent thresholds here —
-   a wrong qualification call is worse than an honest blank.
-
-   To wire a race up, fill in `rule` (what it says on screen) and `check(st, ctx)` where
-   `st` is that player's current-session stats:
-       {games, wins, points, matchNights, first, last}   (null if they have not played yet)
-   and `ctx` = {fmt, roster, sessionStats, allStats}. Return:
-       {status:'yes'|'close'|'no', detail:'8 of 4 nights'}                                  */
-// Eligibility counters. "Matches" throughout means individual player-vs-player matches,
-// NOT match nights — verified against APA's own matchesPlayed counter on a season where a
-// player had 8 games across 7 nights and APA reported 8.
-function minMatches(need){
-  return (st)=>{
-    const played=st?st.games:0, left=need-played;
-    if(played>=need)return {status:'yes', detail:`${played} matches · needed ${need}`};
-    if(played>=need-2)return {status:'close', detail:`${played} of ${need} · ${left} to go`};
-    return {status:'no', detail:`${played} of ${need} · ${left} to go`};
-  };
-}
-// The 5-match bar is one bylaw covering all three postseason events, so all three read the
-// same. Kept as separate rows anyway: the league can split them, and a captain scanning the
-// table wants to see the answer under the event he is actually about to play.
-const PLAY5='Play at least 5 matches with the team during the session. '+
-  'Bylaws §4: "Players must have played at least 5 times with the team during the session '+
-  'to be eligible to play in the Session Playoffs, Tri-Annuals and World Qualifier."';
-const RACES=[
-  {key:'playoffs', label:'Playoffs', rule:PLAY5, check:minMatches(5)},
-  {key:'mvp', label:'MVP race',
-   rule:'Play at least 8 matches in the session to be eligible. (Not in the bylaws — league practice, per Casey.)',
-   check:minMatches(8)},
-  {key:'tricup',   label:'Tri-Cup',  rule:PLAY5+' Tri-Annual is the league\'s name for the Tri-Cup.', check:minMatches(5)},
-  {key:'goldcup',  label:'Gold Cup', rule:PLAY5+' Gold Cup is the World Qualifier. '+
-   'Team-level: a qualified team\'s roster locks at week 4 of the Spring season, and qualified teams '+
-   'must finish in the top half of their division every session until the tournament or risk losing the spot.',
-   check:minMatches(5)},
-];
-const raceState={fmt:null};
-function sessionStatsFor(mid,fmt){return (D.sessionStats||{})[`${mid}:${fmt}`]||null;}
-function nameOf(mid,fmt){
-  const p=(D.players||{})[`${mid}:${fmt}`];
-  return p?p.name:null;
-}
-function rosterWithSessionPlay(fmt){
-  const tm=activeRosterForFormat(fmt).slice();
-  const have=new Set(tm.map(p=>String(p.mid)));
-  const src=(D.sessionSource||{})[fmt];
-  const from=src?(D.teams[src.teamId]||{}).roster||[]:[];
-  Object.keys(D.sessionStats||{}).forEach(k=>{
-    const[mid,f]=k.split(':');
-    if(f!==fmt||have.has(mid))return;
-    const p=from.find(x=>String(x.mid)===mid);
-    tm.push({mid:mid, name:p?p.name:(nameOf(mid,fmt)||'Member '+mid), sl:p?p.sl:(((D.players||{})[mid+':'+fmt]||{}).currentSL||0), offRoster:true});
-    have.add(mid);
-  });
-  return tm;
-}
-const racesTab={view:'races'};
-function renderRacesTab(){
-  const out=$('#rulesOut'); out.innerHTML='';
-  const bar=el('div','ftabs');
-  [['races','Races'],['bylaws','Bylaws'],['log',"Captain's log"]].forEach(([v,lab])=>{
-    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',racesTab.view===v);
-    b.onclick=()=>{racesTab.view=v;renderRacesTab();};bar.appendChild(b);});
-  out.appendChild(bar);
-  if(racesTab.view==='bylaws'){renderBylaws();return;}
-  if(racesTab.view==='log'){
-    const banner=el('div','card');
-    banner.style.borderColor='var(--warn)';
-    banner.innerHTML='<div class="eyebrow" style="color:var(--warn)">Hand-recorded</div>'+
-      '<p class="sub" style="margin-top:4px">Playoffs and tournaments are scored on paper, so none of this comes from APA. '+
-      'It is kept separate on purpose and never counts toward records, streaks, race qualification or the matchup engine.</p>';
-    out.appendChild(banner);
-    renderLog();return;
-  }
-  renderRaces();
-}
-function renderRaces(){
-  const out=$('#rulesOut');
-  const fmts=teamFormats();
-  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
-  raceState.fmt=fmts.includes(raceState.fmt)?raceState.fmt:fmts[0];
-  const fmt=raceState.fmt;
-  const tm=rosterWithSessionPlay(fmt);
-  renderNextEvent(out, fmt, tm);
-  const team=(D.myActiveTeams||[]).map(t=>D.teams[t]).find(t=>t&&t.fmt===fmt);
-
-  const card=el('div','card');
-  card.appendChild(el('h2',null,'<span class="eyebrow">Where everyone stands</span>'));
-  // Say which session is being counted. At a session boundary the app is rostered on two
-  // team records at once, and a counter that doesn't name its session is just a number.
-  const src=(D.sessionSource||{})[fmt];
-  card.appendChild(el('p','sub',
-    src?`${esc(src.name||'')} · ${fmtDate(src.first)} – ${fmtDate(src.last)} (${src.matchNights} match nights). `+
-        `Races reset each session, so these count that session only.`
-       :`${team?esc(team.name):''} — this session only. Races reset each session, so these counters start at zero and build as we play.`));
-  if(fmts.length>1){const ft=el('div','ftabs');
-    fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
-      b.onclick=()=>{raceState.fmt=f;renderRaces();};ft.appendChild(b);});card.appendChild(ft);}
-
-  const wrap=el('div','qt-wrap'), table=el('table','qt');
-  table.appendChild(el('thead',null,'<tr><th class="who">Player</th><th>Matches</th><th>W-L</th><th>Points</th>'+
-    RACES.map(r=>`<th>${esc(r.label)}</th>`).join('')+'</tr>'));
-  const tb=el('tbody');
-  const ctx={fmt,roster:tm,sessionStats:D.sessionStats||{}};
-  tm.slice().sort((a,b)=>(b.sl-a.sl)||a.name.localeCompare(b.name)).forEach(p=>{
-    const st=sessionStatsFor(p.mid,fmt);
-    const tr=el('tr');
-    const who=el('td','who');who.innerHTML=`<span class="nm">${sl(p.sl)}${esc(p.name)}</span>`;
-    who.style.cursor='pointer';
-    who.onclick=()=>{setMode('me');const s=$('#meSel');if(s){s.value=p.mid;try{localStorage.setItem('rs-me',p.mid)}catch(e){}meView.render(p.mid);}};
-    tr.appendChild(who);
-    tr.appendChild(el('td',null,st?String(st.games):'<span class="muted">0</span>'));
-    tr.appendChild(el('td',null,st?`${st.wins}-${st.games-st.wins}`:'<span class="muted">—</span>'));
-    tr.appendChild(el('td',null,st?String(st.points):'<span class="muted">0</span>'));
-    RACES.forEach(r=>{
-      const td=el('td');
-      let res=null;
-      if(typeof r.check==='function'){try{res=r.check(st,ctx);}catch(e){res=null;}}
-      if(!res)td.innerHTML='<span class="qchip unknown">Rules TBD</span>';
-      else td.innerHTML=`<span class="qchip ${res.status==='yes'?'yes':res.status==='close'?'close':'no'}">`+
-        `${res.status==='yes'?'Qualified':res.status==='close'?'Close':'Not yet'}</span>`+
-        (res.detail?`<span class="qt-sub">${esc(res.detail)}</span>`:'');
-      tr.appendChild(td);
-    });
-    tb.appendChild(tr);
-  });
-  table.appendChild(tb);wrap.appendChild(table);card.appendChild(wrap);
-  out.appendChild(card);
-
-  // the rules themselves
-  const rc=el('div','card');
-  rc.appendChild(el('h2',null,'<span class="eyebrow">The rules</span>'));
-  const pending=RACES.filter(r=>!r.rule);
-  if(pending.length===RACES.length)
-    rc.appendChild(el('p','sub','Not filled in yet — send me the criteria for each race and the table above starts calling them automatically.'));
-  RACES.forEach(r=>{
-    const b=el('div','rulebox');
-    b.innerHTML=`<h3>${esc(r.label)}</h3><p>${r.rule?esc(r.rule):'Rules not provided yet.'}</p>`;
-    rc.appendChild(b);
-  });
-  out.appendChild(rc);
-}
-
-// The next scheduled postseason event, if there is one. This is the deadline the 5-match
-// bar is actually racing — a player who is short with two league nights left is a lineup
-// problem now, not in October — so it sits above the table rather than in a rules footnote.
-function renderNextEvent(out,fmt,roster){
-  const evs=((D.league||{}).events||[])
-    .filter(e=>(!e.fmt||e.fmt===fmt)&&e.date>=new Date().toISOString().slice(0,10))
-    .sort((a,b)=>a.date.localeCompare(b.date));
-  if(!evs.length)return;
-  const e=evs[0];
-  const days=Math.round((new Date(e.date+'T12:00:00')-new Date())/864e5);
-  const short=roster.filter(p=>{const st=sessionStatsFor(p.mid,fmt);return (st?st.games:0)<5;});
-  const c=el('div','card');
-  c.style.borderColor='var(--acc)';
-  c.innerHTML='<div class="eyebrow" style="color:var(--acc)">Next up</div>'+
-    `<h2 style="margin:2px 0 4px">${esc(e.label)}</h2>`+
-    `<p class="sub">${fmtDate(e.date)}${e.start?' · '+esc(hhmm(e.start))+(e.end?'–'+esc(hhmm(e.end)):''):''}`+
-    `${days>=0?' · '+(days===0?'today':days+' day'+(days===1?'':'s')+' out'):''}</p>`+
-    (e.venue?`<p class="sub">${esc(e.venue)}${e.teams?' · '+e.teams+' teams':''}</p>`:'')+
-    (short.length
-      ? `<p class="sub" style="margin-top:8px;color:var(--warn)"><strong>${short.length} not eligible yet</strong> — `+
-        `${short.map(p=>esc(p.name.split(' ')[0])+' ('+(sessionStatsFor(p.mid,fmt)?sessionStatsFor(p.mid,fmt).games:0)+'/5)').join(', ')}`+
-        `. Five session matches to play in this one.</p>`
-      : '<p class="sub" style="margin-top:8px;color:var(--good)">Everyone on the roster is past the 5-match bar.</p>');
-  out.appendChild(c);
-}
-function hhmm(t){const[h,m]=t.split(':').map(Number);const ap=h>=12?'pm':'am';return ((h%12)||12)+(m?':'+String(m).padStart(2,'0'):'')+ap;}
-
-/* ---------- Bylaws ----------
-   The league's own text, transcribed from the Hudson County bylaws PDF and shipped with the
-   app so a rules argument at the table is settled by reading the rule, not by remembering it.
-   The per-race checks above cite these sections; this is where the citation goes to read. */
-const blState={q:''};
+/* ---------- Rules reader ----------
+   Two bodies of rules, nested: the official APA Team Manual governs play everywhere; the
+   Hudson County local bylaws supplement (and in places override) it for this league. Both
+   are searchable so a rules argument at the table is settled by reading, not remembering. */
+const blState={q:'',view:'bylaws'};
 function blHighlight(t,q){
   const h=esc(t);
   if(!q)return h;
   return h.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');
 }
-function renderBylaws(){
-  const out=$('#rulesOut');
-  const lg=D.league||{}, by=lg.bylaws||{};
-  const secs=by.sections||[];
-  if(!secs.length){
-    out.appendChild(el('div','card','<p class="sub">Bylaws not loaded.</p>'));return;
-  }
+// Render a searchable accordion of {title, body[]} sections into `host`, sharing one search box.
+function ruleSections(host, secs, opts){
+  opts=opts||{};
   const head=el('div','card');
-  head.appendChild(el('h2',null,'<span class="eyebrow">League bylaws</span>'));
-  head.appendChild(el('p','sub',`${esc(by.source||'Local bylaws')} — the league's own text, carried in the app so a rules question gets an answer at the table. Eligibility rules in the Races tab cite these sections.`));
+  if(opts.eyebrow)head.appendChild(el('h2',null,`<span class="eyebrow">${esc(opts.eyebrow)}</span>`));
+  if(opts.sub)head.appendChild(el('p','sub',opts.sub));
   const box=el('div');box.style.marginTop='10px';
-  const q=el('input');q.type='search';q.placeholder='Search the bylaws — forfeit, patch, reschedule…';q.value=blState.q;
+  const q=el('input');q.type='search';q.placeholder=opts.placeholder||'Search…';q.value=blState.q;
   box.appendChild(q);head.appendChild(box);
-  out.appendChild(head);
+  host.appendChild(head);
 
   const list=el('div','card');
   const draw=()=>{
@@ -1084,14 +953,22 @@ function renderBylaws(){
       d.appendChild(b);
       list.appendChild(d);
     });
-    if(!shown)list.appendChild(el('p','sub','Nothing in the bylaws matches that.'));
+    if(!shown)list.appendChild(el('p','sub','Nothing here matches that.'));
   };
   q.oninput=()=>{blState.q=q.value;draw();};
   draw();
-  out.appendChild(list);
+  host.appendChild(list);
+}
+function renderBylawsInto(host){
+  const by=(D.league||{}).bylaws||{};
+  const secs=by.sections||[];
+  if(!secs.length){host.appendChild(el('div','card','<p class="sub">Bylaws not loaded.</p>'));return;}
+  ruleSections(host, secs, {
+    sub:`${esc(by.source||'Local bylaws')} — the league's own text. These supplement the official APA manual and, where they differ, the local bylaw wins.`,
+    placeholder:'Search the bylaws — forfeit, patch, reschedule…'});
 
   // The playoff bracket is a grid in the PDF that no text extractor survives, so it is
-  // transcribed by hand rather than parsed — kept apart from the parsed sections above.
+  // hand-transcribed rather than parsed — kept apart from the parsed sections above.
   const ps=by.playoffStructure;
   if(ps&&ps.rows&&ps.rows.length){
     const c=el('div','card');
@@ -1108,8 +985,32 @@ function renderBylaws(){
       tr.appendChild(a);tr.appendChild(b);tr.appendChild(cc);tb.appendChild(tr);
     });
     t.appendChild(tb);wrap.appendChild(t);c.appendChild(wrap);
-    out.appendChild(c);
+    host.appendChild(c);
   }
+}
+function renderOfficialInto(host){
+  const off=(D.league||{}).official;
+  if(off&&off.sections&&off.sections.length){
+    ruleSections(host, off.sections, {
+      sub:`${esc(off.source||'APA Official Team Manual')} — the rules of play for every APA league.`,
+      placeholder:'Search the official rules — break, coaching, timeout…'});
+    return;
+  }
+  const c=el('div','card');
+  c.appendChild(el('h2',null,'<span class="eyebrow">Official APA rules</span>'));
+  c.appendChild(el('p','sub','Not loaded yet. Drop the official 2026 APA Team Manual PDF into the project and it will appear here, searchable, with the Hudson County bylaws nested under it.'));
+  host.appendChild(c);
+}
+function renderRulesTab(){
+  const out=$('#rulesOut'); out.innerHTML='';
+  if(blState.view!=='official'&&blState.view!=='bylaws')blState.view='bylaws';
+  const bar=el('div','ftabs');
+  [['official','APA rules'],['bylaws','Hudson County']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',blState.view===v);
+    b.onclick=()=>{blState.view=v;renderRulesTab();};bar.appendChild(b);});
+  out.appendChild(bar);
+  if(blState.view==='official')renderOfficialInto(out);
+  else renderBylawsInto(out);
 }
 
 /* ---------- Captain's log ----------
@@ -1117,16 +1018,22 @@ function renderBylaws(){
    APA's API and can be checked; this is paper scoring and recollection, so it lives on its
    own screen, says where it came from, and never feeds records, the matchup engine, streaks
    or race qualification. Mixing the two would quietly launder a guess into a statistic. */
-function renderLog(){
-  const out=$('#rulesOut');
+function renderLog(host){
+  const out=host||$('#teamOut');
   const ps=D.postseason;
   if(!ps||!ps.events||!ps.events.length){
     out.appendChild(el('div','card','<p class="sub">No captain log entries yet.</p>'));return;
   }
+  const banner=el('div','card');
+  banner.style.borderColor='var(--warn)';
+  banner.innerHTML='<div class="eyebrow" style="color:var(--warn)">Hand-recorded</div>'+
+    '<p class="sub" style="margin-top:4px">Playoffs and tournaments are scored on paper, so none of this comes from APA. '+
+    'It is kept separate on purpose and never counts toward records, streaks or the matchup engine.</p>';
+  out.appendChild(banner);
+
   const pc=el('div','card');
   pc.appendChild(el('h2',null,'<span class="eyebrow">Postseason record</span>'));
   pc.appendChild(el('p','sub','Every Tri-Cup, Gold Cup, playoff and Vegas match on record. Scores are match points, our player first — <b>2-1</b> won but the opponent reached the hill, <b>0-3</b> a shutout loss.'));
-  // per-player tallies
   const tally={};
   ps.events.forEach(ev=>ev.matches.forEach(mm=>mm.results.forEach(r=>{
     if(!r.p)return; const t=tally[r.p]=tally[r.p]||{w:0,l:0};
@@ -1149,7 +1056,6 @@ function renderLog(){
   });
   tt.appendChild(tbody);tw.appendChild(tt);pc.appendChild(tw);
 
-  // event log
   const log=el('div');log.style.marginTop='14px';
   log.appendChild(el('div','eyebrow','Events'));
   ps.events.slice().reverse().forEach(ev=>{
@@ -1181,7 +1087,7 @@ function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute(
   $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');
   $('#m-rules').classList.toggle('hide',m!=='rules');
   if(m==='team')renderTeamOverview();
-  if(m==='rules')renderRacesTab();}
+  if(m==='rules')renderRulesTab();}
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
