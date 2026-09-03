@@ -43,8 +43,11 @@ header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1p
 .mark{width:24px;height:24px;transform:rotate(45deg);border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-ink));flex:0 0 auto}
 .brand b{font-family:Oswald;font-size:19px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1}
 .brand span{color:var(--ink-soft);font-size:11px;letter-spacing:.13em;text-transform:uppercase;display:block;margin-top:1px}
-.tabs{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px}
-.tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;border:0;background:transparent;color:var(--ink-soft);padding:7px 13px;border-radius:7px;cursor:pointer}
+.tabs{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px;
+  overflow-x:auto;flex:0 1 auto;min-width:0;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;border:0;background:transparent;
+  color:var(--ink-soft);padding:7px 13px;border-radius:7px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
 .tab[aria-selected="true"]{background:var(--accent);color:#fff}
 .theme-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:16px 0 6px}
@@ -77,6 +80,9 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
 .win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-soft)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .dot{margin-left:0}
 .d-high{background:var(--good)}.d-med{background:var(--warn)}.d-low{background:var(--bad);opacity:.6}
 
 /* player header */
@@ -99,8 +105,13 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .cell .v{font-family:Oswald;font-weight:600;font-size:18px;margin:1px 0}
 .cell .n{font-size:11px}
 .cell.thin{opacity:.6;border-style:dashed}
-.barm{height:4px;border-radius:3px;background:var(--line);margin-top:5px;overflow:hidden}
+/* Every bar carries a tick at 50% — in a handicapped APA race that IS the expectation,
+   so "past the tick" reads instantly as beating the spot, short of it as under. */
+.barm{height:4px;border-radius:3px;background:var(--line);margin-top:5px;position:relative;overflow:hidden}
 .barm i{display:block;height:100%}
+.barm::after{content:"";position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--ink-soft);opacity:.55}
+.barw{position:relative}
+.barw::after{content:"";position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--ink-soft);opacity:.5;z-index:1}
 
 /* H2H table */
 .h2h-tools{display:flex;gap:8px;align-items:center;margin:6px 0 8px}
@@ -134,7 +145,16 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .muted{color:var(--ink-soft)}
 .foot{color:var(--ink-soft);font-size:12px;text-align:center;margin-top:24px;line-height:1.6}
 .hide{display:none!important}
-@media(max-width:520px){.brand span{display:none}.rk .pv{font-size:16px}.phd .nm{font-size:19px}}
+@media(max-width:560px){
+  /* On a phone the four tabs + wordmark + theme button overflowed the header and clipped
+     the last tab entirely (it was unreachable). Drop the wordmark to the diamond mark and
+     tighten the tabs so all four fit; .tabs can still scroll if a label grows. */
+  .brand span,.brand b{display:none}
+  .head-in{gap:8px;padding:10px 12px}
+  .tab{padding:7px 9px;font-size:12px;letter-spacing:.02em}
+  .theme-btn{width:30px;height:30px;flex:0 0 auto}
+  .rk .pv{font-size:16px}.phd .nm{font-size:19px}
+}
 </style>
 
 <header>
@@ -201,7 +221,14 @@ function fillSchedule(){
   const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
   s.innerHTML=sched.map((m,i)=>`<option value="${i}">${m.date} · ${esc(m.ourTeam)} vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
   s.onchange=()=>renderMatch(sched[s.value]);
-  sched.length?renderMatch(sched[0]):($('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>');
+  if(!sched.length){$('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>';return;}
+  // Default to the NEXT match, not the oldest one on the list — the schedule still contains
+  // recently-played dates, and this tab's whole job is "who do we put up this week".
+  const today=new Date().toISOString().slice(0,10);
+  let idx=sched.findIndex(m=>m.date>=today);
+  if(idx<0)idx=sched.length-1;
+  s.value=idx;
+  renderMatch(sched[idx]);
 }
 function rankRow(pos,A,s){
   const pct=Math.round(s.p*100);
@@ -217,10 +244,14 @@ function rankRow(pos,A,s){
 function renderMatch(m){
   const out=$('#matchOut');out.innerHTML='';
   const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
+  // Compact header: the dropdown directly above already names the date/teams/format, so
+  // repeating it full-size just pushed the actual picks below the fold on a phone.
   const head=el('div','card');
-  head.innerHTML=`<div class="eyebrow">${m.date} · ${m.fmt}-ball</div>
-    <h2 style="font-size:20px;margin-top:2px">${esc(m.ourTeam)} <span class="muted" style="font-weight:400">vs</span> ${esc(m.oppTeam)}</h2>
-    <p class="sub">Every one of our players, stack-ranked against each of theirs. Green = we're favored. The dot shows how much history backs it.</p>`;
+  head.innerHTML=`<p class="sub" style="margin:0">Each of their players, with our whole roster ranked
+      best-to-worst underneath. The tick on each bar is 50% — past it, we're favored.</p>
+    <div class="legend"><span><i class="dot d-high"></i>lots of history</span>
+      <span><i class="dot d-med"></i>some</span>
+      <span><i class="dot d-low"></i>thin — treat as a guess</span></div>`;
   out.appendChild(head);
   if(!theirs.length){out.appendChild(el('div','card','<p class="sub">No roster posted for this opponent yet.</p>'));return;}
   const c=el('div','card');
@@ -338,10 +369,13 @@ function mergeEras(byEra,ownSL){
 }
 function vsGrid(rows){
   if(!rows.length)return '<p class="muted" style="font-size:13px">No games in this filter.</p>';
+  const anyThin=rows.some(c=>c.games<5);
   return '<div class="grid">'+rows.map(c=>{const thin=c.games<5,col=c.winPct>=55?'good':c.winPct<=45?'bad':'even';
-    return `<div class="cell${thin?' thin':''}"><div class="k">vs SL${c.vsSL}</div>
+    return `<div class="cell${thin?' thin':''}" title="${c.wins} wins, ${c.games-c.wins} losses in ${c.games} games">
+      <div class="k">vs SL${c.vsSL}</div>
       <div class="v ${c.winPct>=55?'win':c.winPct<=45?'lose':'evn'}">${c.wins}-${c.games-c.wins}</div>
-      <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>';
+      <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>'+
+    `<p class="muted" style="font-size:11.5px;margin:8px 0 0">Win–loss, then win rate. The tick marks 50%.${anyThin?' Faded = under 5 games, small sample.':''}</p>`;
 }
 /* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
    bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
@@ -370,9 +404,9 @@ function makePlayerView(outSel){
         b.onclick=()=>{st.fmt=f;st.ownSL='all';draw();};ft.appendChild(b);});c.appendChild(ft);}
     const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
     const chips=el('div');
-    chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">My record vs each skill level — when I was:</div>`;
+    chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">Record vs each skill level</div>`;
     const row=el('div','chips');
-    [['all','All SLs']].concat(eras.map(e=>[String(e),'SL'+e])).forEach(([v,lab])=>{
+    [['all','All time']].concat(eras.map(e=>[String(e),'As SL'+e])).forEach(([v,lab])=>{
       const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
       b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
     chips.appendChild(row);c.appendChild(chips);
@@ -389,7 +423,7 @@ function drawH2H(out,pr,fmt){
   const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
   const q=tools.querySelector('input');
   hc.appendChild(tools);
-  const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Last SL</th><th class="right">Record</th></tr></thead>`;
+  const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Their SL</th><th class="right">Record</th></tr></thead>`;
   const tb=el('tbody');tbl.appendChild(tb);hc.appendChild(tbl);out.appendChild(hc);
   function paint(q){
     tb.innerHTML='';
