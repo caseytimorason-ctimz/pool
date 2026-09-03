@@ -430,15 +430,21 @@ function drawH2H(out,pr,fmt){
     h.filter(o=>!q||(o.oppName||'').toLowerCase().includes(q))
      .sort((a,b)=>b.meetings-a.meetings)
      .forEach(o=>{
-       const lastSL=o.games[o.games.length-1].oppSL,p=o.wins/o.meetings;
-       const tr=el('tr','op');
-       tr.innerHTML=`<td>${esc(o.oppName||'Unknown')}</td><td>${sl(lastSL)}</td>
+       // Per-meeting logs are only carried for players we'd actually scout (roster +
+       // everyone they've faced); league-wide players keep totals only, so guard on games.
+       const games=o.games||[],p=o.wins/o.meetings;
+       const lastSL=games.length?games[games.length-1].oppSL:null;
+       const tr=el('tr',games.length?'op':'');
+       tr.innerHTML=`<td>${esc(o.oppName||'Unknown')}</td><td>${lastSL!=null?sl(lastSL):'<span class="muted">—</span>'}</td>
          <td class="rec ${cls(p)}">${o.wins}-${o.meetings-o.wins}</td>`;
-       const det=el('tr');det.className='hide';
-       det.innerHTML=`<td colspan="3" class="log">`+o.games.slice().reverse().map(g=>
-         `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b></div>`).join('')+`</td>`;
-       tr.onclick=()=>det.classList.toggle('hide');
-       tb.appendChild(tr);tb.appendChild(det);
+       tb.appendChild(tr);
+       if(games.length){
+         const det=el('tr');det.className='hide';
+         det.innerHTML=`<td colspan="3" class="log">`+games.slice().reverse().map(g=>
+           `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b></div>`).join('')+`</td>`;
+         tr.onclick=()=>det.classList.toggle('hide');
+         tb.appendChild(det);
+       }
      });
     if(!tb.children.length)tb.innerHTML='<tr><td colspan="3" class="muted">No opponents match.</td></tr>';
   }

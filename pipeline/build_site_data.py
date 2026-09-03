@@ -134,9 +134,22 @@ def main():
     print("site/data.json (artifact, scoped): %d/%d player profiles, %.2f MB" % (
         len(players), len(analysis["players"]), (SITE / "data.json").stat().st_size / 1024 / 1024))
 
-    # site/data.full.json: the COMPLETE league-wide dataset, for Netlify (fetched as a plain
-    # static file — no embed-size constraint there, so no scoping needed).
-    full = dict(base, players=analysis["players"])
+    # site/data.full.json: EVERY player in the league, but tiered by depth. Head-to-head is
+    # 85% of the payload and its per-meeting game logs alone are ~11MB. Those logs only matter
+    # for people we'd actually scout, so keep them for the relevant set and drop them for the
+    # rest — everyone still keeps their vs-SL records, trajectory and H2H win/loss totals, so
+    # you can still look up any player in the league. Keeps the file inside GitHub's ~25MB
+    # web-upload ceiling with real headroom.
+    full_players = {}
+    for k, v in analysis["players"].items():
+        if k.split(":")[0] in relevant_mids:
+            full_players[k] = v
+        else:
+            trimmed = dict(v)
+            trimmed["headToHead"] = [{kk: o[kk] for kk in ("oppMid", "oppName", "meetings", "wins") if kk in o}
+                                     for o in v.get("headToHead", [])]
+            full_players[k] = trimmed
+    full = dict(base, players=full_players)
     (SITE / "data.full.json").write_text(json.dumps(full, separators=(",", ":")))
     print("site/data.full.json (deploy, full): %d player profiles, %.2f MB" % (
         len(analysis["players"]), (SITE / "data.full.json").stat().st_size / 1024 / 1024))
