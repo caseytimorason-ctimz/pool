@@ -124,7 +124,8 @@ table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space
   <div class="head-in">
     <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-mode="matchup">Matchup</button>
+      <button class="tab" role="tab" aria-selected="true" data-mode="me">My Record</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="matchup">Matchup</button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
@@ -132,7 +133,11 @@ table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space
 </header>
 
 <div class="wrap">
-  <section id="m-matchup">
+  <section id="m-me">
+    <div class="bar"><label class="fld">Your name — pick once, we'll remember<select id="meSel"></select></label></div>
+    <div id="meOut"></div>
+  </section>
+  <section id="m-matchup" class="hide">
     <div class="bar"><label class="fld">Upcoming match<select id="schedSel"></select></label></div>
     <div id="matchOut"></div>
   </section>
@@ -220,9 +225,25 @@ function fillPlayers(f){
   const s=$('#pSel');f=(f||'').toLowerCase();
   const list=(f?PL.filter(p=>p.name.toLowerCase().includes(f)):PL).slice(0,400);
   s.innerHTML=list.map(p=>`<option value="${p.mid}">${esc(p.name)} · ${p.games} games</option>`).join('');
-  list.length?renderPlayer(list[0].mid):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
+  list.length?renderPlayer(list[0].mid,'#playerOut'):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
 }
-const stateP={mid:null,fmt:null,ownSL:'all'};
+/* our teammates = players on our active teams, for the "My Record" picker */
+function teammates(){
+  const seen={},list=[];
+  (D.myActiveTeams||[]).forEach(tid=>roster(tid).forEach(p=>{if(p.mid&&!seen[p.mid]){seen[p.mid]=1;list.push(p);}}));
+  return list.sort((a,b)=>a.name.localeCompare(b.name));
+}
+function fillMe(){
+  const s=$('#meSel'),tm=teammates();
+  if(!tm.length){$('#meOut').innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  s.innerHTML=tm.map(p=>`<option value="${p.mid}">${esc(p.name)}</option>`).join('');
+  let me=null;try{me=localStorage.getItem('rs-me')}catch(e){}
+  if(!me&&D.memberId&&tm.some(p=>String(p.mid)===String(D.memberId)))me=String(D.memberId); // owner default
+  if(me&&tm.some(p=>String(p.mid)===String(me)))s.value=me;
+  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}renderPlayer(s.value,'#meOut');};
+  renderPlayer(s.value,'#meOut');
+}
+const stateP={mid:null,fmt:null,ownSL:'all',out:'#playerOut'};
 function mergeEras(byEra,ownSL){
   const acc={};
   Object.entries(byEra).forEach(([era,rows])=>{
@@ -238,15 +259,15 @@ function vsGrid(rows){
       <div class="v ${c.winPct>=55?'win':c.winPct<=45?'lose':'evn'}">${c.wins}-${c.games-c.wins}</div>
       <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>';
 }
-function renderPlayer(mid){
-  stateP.mid=mid;
+function renderPlayer(mid,out){
+  stateP.mid=mid; if(out)stateP.out=out;
   const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
   stateP.fmt=fmts.includes(stateP.fmt)?stateP.fmt:fmts[0];
   stateP.ownSL='all';
   drawPlayer();
 }
 function drawPlayer(){
-  const out=$('#playerOut');out.innerHTML='';
+  const out=$(stateP.out||'#playerOut');out.innerHTML='';
   const mid=stateP.mid,fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
   if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
   const pr=P[`${mid}:${stateP.fmt}`];
@@ -303,18 +324,19 @@ function drawPlayer(){
 
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
+  $('#m-me').classList.toggle('hide',m!=='me');
   $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');}
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
-  $('#pSel').onchange=e=>renderPlayer(e.target.value);
+  $('#pSel').onchange=e=>renderPlayer(e.target.value,'#playerOut');
   (function(){const r=document.documentElement;let cur=null;try{cur=localStorage.getItem('rs-theme')}catch(e){}
     if(cur)r.setAttribute('data-theme',cur);
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
   $('#foot').innerHTML=`Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
-  fillSchedule();fillPlayers('');
+  fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
   function go(data){D=data;P=D.players;B=D.baselines;PL=playerList();init();}
