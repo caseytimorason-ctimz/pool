@@ -149,6 +149,10 @@ table.h2h td{padding:8px 6px;border-bottom:1px solid var(--line-2);vertical-alig
 table.h2h tr.op{cursor:pointer}
 table.h2h tr.op:hover{background:var(--panel-2)}
 table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space:nowrap}
+table.h2h th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+table.h2h th.sortable:hover{color:var(--ink)}
+table.h2h th.sorted{color:var(--accent-ink)}
+table.h2h th .arrow{font-size:9px}
 
 /* team overview grid */
 .tt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
@@ -525,17 +529,55 @@ function makePlayerView(outSel,opts){
 function drawH2H(out,pr,fmt){
   const h=(pr.headToHead||[]).filter(x=>x.meetings>=1);
   const hc=el('div','card');
-  hc.innerHTML=`<div class="eyebrow">Head-to-head — ${h.length} opponents faced (${fmt}-ball)</div>`;
+  const eyebrow=el('div','eyebrow',`Head-to-head — ${h.length} opponents faced (${fmt}-ball)`);
+  hc.appendChild(eyebrow);
   const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
   const q=tools.querySelector('input');
   hc.appendChild(tools);
-  const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Their SL</th><th class="right">Record</th></tr></thead>`;
+  // Sortable columns. Default is most-played first (not any single column), so no arrow
+  // shows until you actually pick one — and the caption says what you're looking at.
+  const COLS=[
+    {key:'name', label:'Opponent', cls:'', get:o=>(o.oppName||'').toLowerCase(), dir:1},
+    {key:'sl',   label:'Their SL', cls:'', get:o=>{const g=o.games||[];return g.length?g[g.length-1].oppSL:null;}, dir:-1},
+    {key:'rec',  label:'Record',   cls:'right', get:o=>o.wins/o.meetings, dir:-1},
+  ];
+  const sort={key:null,dir:-1};
+  const tbl=el('table','h2h');
+  const thead=el('thead');const htr=el('tr');
+  COLS.forEach(c=>{
+    const th=el('th',('sortable '+c.cls).trim(),`${c.label}<span class="arrow"></span>`);
+    th.onclick=()=>{
+      if(sort.key===c.key)sort.dir=-sort.dir; else{sort.key=c.key;sort.dir=c.dir;}
+      paint(q.value.toLowerCase());
+    };
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr);tbl.appendChild(thead);
   const tb=el('tbody');tbl.appendChild(tb);hc.appendChild(tbl);out.appendChild(hc);
-  function paint(q){
+  function paint(query){
     tb.innerHTML='';
-    h.filter(o=>!q||(o.oppName||'').toLowerCase().includes(q))
-     .sort((a,b)=>b.meetings-a.meetings)
-     .forEach(o=>{
+    // header state
+    [...htr.children].forEach((th,i)=>{
+      const c=COLS[i], active=sort.key===c.key;
+      th.setAttribute('aria-sort', active ? (sort.dir===1?'ascending':'descending') : 'none');
+      th.classList.toggle('sorted',active);
+      th.querySelector('.arrow').textContent = active ? (sort.dir===1?' ▲':' ▼') : '';
+    });
+    const col=COLS.find(c=>c.key===sort.key);
+    eyebrow.textContent=`Head-to-head — ${h.length} opponents faced (${fmt}-ball) · `+
+      (col?`by ${col.label.toLowerCase()}`:'most played first');
+    const rows=h.filter(o=>!query||(o.oppName||'').toLowerCase().includes(query));
+    rows.sort((a,b)=>{
+      if(!col)return b.meetings-a.meetings;
+      const av=col.get(a), bv=col.get(b);
+      if(av==null&&bv==null)return b.meetings-a.meetings;   // unknown SLs sink, stable by usage
+      if(av==null)return 1;
+      if(bv==null)return -1;
+      if(av<bv)return -sort.dir;
+      if(av>bv)return sort.dir;
+      return b.meetings-a.meetings;                          // tiebreak: who you've played most
+    });
+    rows.forEach(o=>{
        // Per-meeting logs are only carried for players we'd actually scout (roster +
        // everyone they've faced); league-wide players keep totals only, so guard on games.
        const games=o.games||[],p=o.wins/o.meetings;
