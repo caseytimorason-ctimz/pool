@@ -266,19 +266,25 @@ function fillMe(){
 }
 
 /* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
+/* Scoped to each active team's ACTUAL current roster, per format — not "anyone who has
+   ever played this format," which is what pooling teammates() across both active teams
+   incorrectly did (showed people on the wrong team's format, e.g. a 9-ball-only teammate
+   appearing under 8-ball just because they had old 8-ball history). */
 const teamState={fmt:null};
 function teamFormats(){
-  const fmts=new Set();
-  teammates().forEach(p=>['8','9'].forEach(f=>{if(P[`${p.mid}:${f}`])fmts.add(f);}));
-  return [...fmts].sort();
+  return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
+}
+function activeRosterForFormat(fmt){
+  const tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
+  return tid!=null ? roster(tid) : [];
 }
 function renderTeamOverview(){
   const out=$('#teamOut'); out.innerHTML='';
-  const tm=teammates();
-  if(!tm.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
   const fmts=teamFormats();
+  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
   teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
   const fmt=teamState.fmt;
+  const tm=activeRosterForFormat(fmt);
 
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Whole roster vs each skill level</span>'));
@@ -287,8 +293,9 @@ function renderTeamOverview(){
     fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
       b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ft.appendChild(b);});card.appendChild(ft);}
 
+  if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}
   const rows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(r=>r.pr);
-  if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball data for this roster yet.'));out.appendChild(card);return;}
+  if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball history yet for this roster.'));out.appendChild(card);return;}
 
   const slCols=[...new Set(rows.flatMap(r=>(r.pr.predictiveVsSL||[]).map(c=>c.vsSL)))].sort((a,b)=>a-b);
   rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
