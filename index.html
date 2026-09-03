@@ -81,6 +81,20 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
 .win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+/* Identity control. A plain <select> read as a passive form field and teammates didn't
+   realise the name was theirs to change, so the native select is kept (for the OS picker)
+   but made invisible over a loud, obviously-tappable face showing SL badge + name. */
+.mepick{position:relative;width:100%}
+.mepick select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.mepick-face{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;
+  background:var(--accent-wash);border:1.5px solid var(--accent);box-shadow:var(--shadow);pointer-events:none}
+.mepick-who{display:flex;align-items:center;gap:9px;font-family:Oswald;font-size:19px;font-weight:600;
+  color:var(--ink);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mepick-cta{margin-left:auto;display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);
+  border:1px solid var(--accent);border-radius:999px;padding:4px 9px;background:var(--panel)}
+.mepick-cta .chev{font-size:11px;line-height:1}
+.mepick select:focus-visible + .mepick-face,.mepick:focus-within .mepick-face{outline:2px solid var(--accent);outline-offset:2px}
 /* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
 .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
 .whobtn{display:flex;align-items:center;gap:9px;text-align:left;padding:12px 13px;cursor:pointer;
@@ -184,7 +198,12 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 
 <div class="wrap">
   <section id="m-me">
-    <div class="bar" id="mePicker"><label class="fld">Showing<select id="meSel"></select></label></div>
+    <div class="bar" id="mePicker">
+      <div class="mepick">
+        <div class="mepick-face"><span class="mepick-who" id="meFace"></span><span class="mepick-cta">Change<span class="chev">▾</span></span></div>
+        <select id="meSel" aria-label="Choose which player to view"></select>
+      </div>
+    </div>
     <div id="meOut"></div>
   </section>
   <section id="m-team" class="hide">
@@ -300,6 +319,9 @@ function teammates(){
 function pickMe(mid){
   try{localStorage.setItem('rs-me',mid)}catch(e){}
   const s=$('#meSel'); if(s)s.value=mid;
+  const me=teammates().find(p=>String(p.mid)===String(mid));
+  const face=$('#meFace');
+  if(face&&me)face.innerHTML=`${sl(me.sl)}${esc(me.name)}`;
   $('#mePicker').classList.remove('hide');
   meView.render(mid);
 }
@@ -427,8 +449,9 @@ function vsGrid(rows){
 }
 /* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
    bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
-function makePlayerView(outSel){
+function makePlayerView(outSel,opts){
   const st={mid:null,fmt:null,ownSL:'all'};
+  opts=opts||{};
   function render(mid){
     st.mid=mid;
     const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
@@ -444,8 +467,10 @@ function makePlayerView(outSel){
     const c=el('div','card');
     const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
     const hd=el('div','phd');
-    hd.innerHTML=`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>
-      <span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
+    // In the "Me" view the identity pill directly above already shows badge + name, so
+    // repeating it here is pure duplication; the Players tab has no pill and keeps it.
+    hd.innerHTML=(opts.hideName?'':`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>`)+
+      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
     c.appendChild(hd);
     if(fmts.length>1){const ft=el('div','ftabs');
       fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
@@ -498,7 +523,7 @@ function drawH2H(out,pr,fmt){
   }
   paint('');q.oninput=e=>paint(e.target.value.toLowerCase());
 }
-const meView=makePlayerView('#meOut'), playersView=makePlayerView('#playerOut');
+const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerView('#playerOut');
 
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
