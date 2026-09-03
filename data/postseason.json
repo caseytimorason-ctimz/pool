@@ -6,142 +6,425 @@
     "",
     "Source: Casey's recollection + notes from the previous captain (2026-09-03).",
     "",
-    "SCORE ORDERING IS NOT NORMALISED. The notes mix conventions — 'Amin lost 3-0' reads",
-    "opponent-first while 'Mo lost 0-2' reads self-first — so rack scores are stored verbatim",
-    "in scoreRaw and NOT parsed into numbers. Only win/loss is treated as reliable.",
-    "Anything Casey flagged as uncertain carries \"uncertain\": true and is shown as such."
+    "SCORE CONVENTION (confirmed by Casey 2026-09-03): scoreRaw is MATCH POINTS, not racks,",
+    "and it is always OUR PLAYER FIRST. Casey's readings:",
+    "  3-0  won, opponent shut out",
+    "  2-1  won, but the opponent got to the hill",
+    "  0-3  lost, shut out",
+    "  0-2  lost, without reaching the hill",
+    "Only the win/loss half is treated as certain; the app shows the raw string alongside its",
+    "reading rather than converting scores into any derived stat.",
+    "",
+    "OPEN: 0-2 and 0-3 are both described as losses short of the hill, so the two do not",
+    "separate cleanly. Left as written rather than reconciled by guesswork."
   ],
   "players": {
-    "casey":    {"mid": "3041011",  "name": "Casey Timorason"},
-    "patrick":  {"mid": "3088065",  "name": "Patrick Conlon"},
-    "stefano":  {"mid": "2991455",  "name": "Stefano Cabrini"},
-    "mauricio": {"mid": "3310773",  "name": "Mauricio Alvarez"},
-    "jorge":    {"mid": "3194878",  "name": "Jorge Suaso"},
-    "amin":     {"mid": "3391253",  "name": "Amin Rahmani-Bouzina"},
-    "keelan":   {"mid": "3250584",  "name": "Keelan von Homan"},
-    "christian":{"mid": "2990699",  "name": "Christian Sosa"},
-    "paulo":    {"mid": "3129169",  "name": "Paulo Alves"},
-    "phil":     {"mid": "3175831",  "name": "Philip Mierswa"},
-    "charlie":  {"mid": "3291864",  "name": "Charlie Mierswa"},
-    "bobby":    {"mid": "3180456",  "name": "Bobby Buoncuore"},
-    "tom":      {"mid": "3112613",  "name": "Thomas Snyder"},
-    "jt":       {"mid": "3086725",  "name": "Maximum Power Timorason", "aka": "JT"}
+    "casey": {
+      "mid": "3041011",
+      "name": "Casey Timorason"
+    },
+    "patrick": {
+      "mid": "3088065",
+      "name": "Patrick Conlon"
+    },
+    "stefano": {
+      "mid": "2991455",
+      "name": "Stefano Cabrini"
+    },
+    "mauricio": {
+      "mid": "3310773",
+      "name": "Mauricio Alvarez"
+    },
+    "jorge": {
+      "mid": "3194878",
+      "name": "Jorge Suaso"
+    },
+    "amin": {
+      "mid": "3391253",
+      "name": "Amin Rahmani-Bouzina"
+    },
+    "keelan": {
+      "mid": "3250584",
+      "name": "Keelan von Homan"
+    },
+    "christian": {
+      "mid": "2990699",
+      "name": "Christian Sosa"
+    },
+    "paulo": {
+      "mid": "3129169",
+      "name": "Paulo Alves"
+    },
+    "phil": {
+      "mid": "3175831",
+      "name": "Philip Mierswa"
+    },
+    "charlie": {
+      "mid": "3291864",
+      "name": "Charlie Mierswa"
+    },
+    "bobby": {
+      "mid": "3180456",
+      "name": "Bobby Buoncuore"
+    },
+    "tom": {
+      "mid": "3112613",
+      "name": "Thomas Snyder"
+    },
+    "jt": {
+      "mid": "3086725",
+      "name": "Maximum Power Timorason",
+      "aka": "JT"
+    }
   },
   "events": [
     {
-      "id": "tricup-2023-09", "type": "tricup", "label": "Tri-Cup",
-      "date": "2023-09", "datePrecision": "month", "outcome": "lost",
+      "id": "tricup-2023-09",
+      "type": "tricup",
+      "label": "Tri-Cup",
+      "date": "2023-09",
+      "datePrecision": "month",
+      "outcome": "lost",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "paulo",   "result": "W"},
-          {"p": "casey",   "result": "L"},
-          {"p": "patrick", "result": "W"},
-          {"p": "phil",    "result": "L"},
-          {"p": "bobby",   "result": "L"}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "paulo",
+              "result": "W"
+            },
+            {
+              "p": "casey",
+              "result": "L"
+            },
+            {
+              "p": "patrick",
+              "result": "W"
+            },
+            {
+              "p": "phil",
+              "result": "L"
+            },
+            {
+              "p": "bobby",
+              "result": "L"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "championship-2024-04", "type": "championship", "label": "Championship decider",
-      "date": "2024-04", "datePrecision": "month", "outcome": "lost",
+      "id": "championship-2024-04",
+      "type": "championship",
+      "label": "Championship decider",
+      "date": "2024-04",
+      "datePrecision": "month",
+      "outcome": "lost",
       "note": "Stefano and Keelan did not play — both deserved to.",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "phil",    "result": "W"},
-          {"p": "tom",     "result": "L"},
-          {"p": "casey",   "result": "W"},
-          {"p": "charlie", "result": "L"},
-          {"p": "patrick", "result": "L"}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "phil",
+              "result": "W"
+            },
+            {
+              "p": "tom",
+              "result": "L"
+            },
+            {
+              "p": "casey",
+              "result": "W"
+            },
+            {
+              "p": "charlie",
+              "result": "L"
+            },
+            {
+              "p": "patrick",
+              "result": "L"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "tricup-2024-05", "type": "tricup", "label": "Tri-Cup",
-      "date": "2024-05", "datePrecision": "month", "outcome": "lost",
+      "id": "tricup-2024-05",
+      "type": "tricup",
+      "label": "Tri-Cup",
+      "date": "2024-05",
+      "datePrecision": "month",
+      "outcome": "lost",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "phil",    "result": "L"},
-          {"p": "stefano", "result": "L"},
-          {"p": "casey",   "result": "W"},
-          {"p": "patrick", "result": "W"},
-          {"p": null,      "result": "F", "note": "last game forfeit"}
-        ]},
-        {"n": 2, "results": [
-          {"p": "tom",     "result": "W"},
-          {"p": "keelan",  "result": "L"},
-          {"p": "casey",   "result": "L"},
-          {"p": "phil",    "result": "L", "note": "lost on the hill"}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "phil",
+              "result": "L"
+            },
+            {
+              "p": "stefano",
+              "result": "L"
+            },
+            {
+              "p": "casey",
+              "result": "W"
+            },
+            {
+              "p": "patrick",
+              "result": "W"
+            },
+            {
+              "p": null,
+              "result": "F",
+              "note": "last game forfeit"
+            }
+          ]
+        },
+        {
+          "n": 2,
+          "results": [
+            {
+              "p": "tom",
+              "result": "W"
+            },
+            {
+              "p": "keelan",
+              "result": "L"
+            },
+            {
+              "p": "casey",
+              "result": "L"
+            },
+            {
+              "p": "phil",
+              "result": "L",
+              "note": "lost on the hill"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "tricup-2026-01", "type": "tricup", "label": "Tri-Cup",
-      "date": "2026-01", "datePrecision": "month", "outcome": "won",
+      "id": "tricup-2026-01",
+      "type": "tricup",
+      "label": "Tri-Cup",
+      "date": "2026-01",
+      "datePrecision": "month",
+      "outcome": "won",
       "note": "Scratchers advance to Gold Cup.",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "patrick",  "result": "L"},
-          {"p": "casey",    "result": "W"},
-          {"p": "stefano",  "result": "W"},
-          {"p": "mauricio", "result": "L"},
-          {"p": "jorge",    "result": "W", "note": "sudden death"}
-        ]},
-        {"n": 2, "results": [
-          {"p": "jt",       "result": "W"},
-          {"p": "patrick",  "result": "L"},
-          {"p": "stefano",  "result": "W"},
-          {"p": "mauricio", "result": "L"},
-          {"p": "casey",    "result": "W"}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "patrick",
+              "result": "L"
+            },
+            {
+              "p": "casey",
+              "result": "W"
+            },
+            {
+              "p": "stefano",
+              "result": "W"
+            },
+            {
+              "p": "mauricio",
+              "result": "L"
+            },
+            {
+              "p": "jorge",
+              "result": "W",
+              "note": "sudden death"
+            }
+          ]
+        },
+        {
+          "n": 2,
+          "results": [
+            {
+              "p": "jt",
+              "result": "W"
+            },
+            {
+              "p": "patrick",
+              "result": "L"
+            },
+            {
+              "p": "stefano",
+              "result": "W"
+            },
+            {
+              "p": "mauricio",
+              "result": "L"
+            },
+            {
+              "p": "casey",
+              "result": "W"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "goldcup-2026-06", "type": "goldcup", "label": "Gold Cup",
-      "date": "2026-06", "datePrecision": "month", "outcome": "won",
+      "id": "goldcup-2026-06",
+      "type": "goldcup",
+      "label": "Gold Cup",
+      "date": "2026-06",
+      "datePrecision": "month",
+      "outcome": "won",
       "note": "Scratchers advance to Vegas.",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "patrick",  "result": "W", "sl": 4, "opp": "Rich Zanetti", "oppSl": 4,
-           "oppMid": "2818636", "oppMatchConfidence": "likely", "scoreRaw": "2-0"},
-          {"p": "christian","result": "L", "sl": 3, "opp": "Ricki Repetti", "oppSl": 4,
-           "oppMid": "1017093", "scoreRaw": "swept"},
-          {"p": "mauricio", "result": "W", "sl": 6, "opp": "Krishna", "oppSl": 5,
-           "oppMid": "3140236", "scoreRaw": "5-1"},
-          {"p": "stefano",  "result": "W", "sl": 3, "opp": "Nikhil", "oppSl": 3,
-           "oppMid": "3411485", "scoreRaw": "2-1"},
-          {"p": "casey",    "result": "W", "sl": 6, "opp": "Felix", "oppSl": 6,
-           "oppMid": "1412664", "note": "needed one rack, won first — championship bound"}
-        ]},
-        {"n": 2, "results": [
-          {"p": "patrick",  "result": "W", "sl": 4, "oppSl": 5, "scoreRaw": "sweep"},
-          {"p": "casey",    "result": "W", "sl": 6, "oppSl": 5, "scoreRaw": "2-1"},
-          {"p": "mauricio", "result": "W", "sl": 6, "oppSl": 5, "scoreRaw": "2-1"}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "patrick",
+              "result": "W",
+              "sl": 4,
+              "opp": "Rich Zanetti",
+              "oppSl": 4,
+              "oppMid": "2818636",
+              "oppMatchConfidence": "likely",
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "christian",
+              "result": "L",
+              "sl": 3,
+              "opp": "Ricki Repetti",
+              "oppSl": 4,
+              "oppMid": "1017093",
+              "scoreRaw": "swept"
+            },
+            {
+              "p": "mauricio",
+              "result": "W",
+              "sl": 6,
+              "opp": "Krishna",
+              "oppSl": 5,
+              "oppMid": "3140236",
+              "scoreRaw": "5-1"
+            },
+            {
+              "p": "stefano",
+              "result": "W",
+              "sl": 3,
+              "opp": "Nikhil",
+              "oppSl": 3,
+              "oppMid": "3411485",
+              "scoreRaw": "2-1"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "sl": 6,
+              "opp": "Felix",
+              "oppSl": 6,
+              "oppMid": "1412664",
+              "note": "needed one rack, won first — championship bound"
+            }
+          ]
+        },
+        {
+          "n": 2,
+          "results": [
+            {
+              "p": "patrick",
+              "result": "W",
+              "sl": 4,
+              "oppSl": 5,
+              "scoreRaw": "sweep"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "sl": 6,
+              "oppSl": 5,
+              "scoreRaw": "2-1"
+            },
+            {
+              "p": "mauricio",
+              "result": "W",
+              "sl": 6,
+              "oppSl": 5,
+              "scoreRaw": "2-1"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "vegas-2026", "type": "vegas", "label": "Vegas",
-      "date": "2026", "datePrecision": "year",
+      "id": "vegas-2026",
+      "type": "vegas",
+      "label": "Vegas",
+      "date": "2026",
+      "datePrecision": "year",
       "note": "Earned by winning Gold Cup June 2026. Exact dates not recorded.",
       "matches": [
-        {"n": 1, "results": [
-          {"p": "amin",     "result": "L", "scoreRaw": "3-0"},
-          {"p": "jorge",    "result": "L", "scoreRaw": "2-1"},
-          {"p": "mauricio", "result": "L", "scoreRaw": "0-2"}
-        ]},
-        {"n": 2, "results": [
-          {"p": "christian","result": "W", "scoreRaw": "3-0"},
-          {"p": "patrick",  "result": "W", "scoreRaw": "3-0"},
-          {"p": "stefano",  "result": "L", "scoreRaw": "0-3"},
-          {"p": "casey",    "result": "W", "scoreRaw": "2-1"}
-        ]},
-        {"n": 3, "uncertain": true,
-         "note": "Casey: 'or maybe it was Jorge / Casey' — the second and third entries are not confirmed.",
-         "results": [
-          {"p": "patrick",  "result": "L", "scoreRaw": "0-3"},
-          {"p": "mauricio", "result": "L", "scoreRaw": "0-2", "uncertain": true,
-           "alt": ["jorge", "casey"]}
-        ]}
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "amin",
+              "result": "L",
+              "scoreRaw": "3-0"
+            },
+            {
+              "p": "jorge",
+              "result": "L",
+              "scoreRaw": "2-1"
+            },
+            {
+              "p": "mauricio",
+              "result": "L",
+              "scoreRaw": "0-2"
+            }
+          ]
+        },
+        {
+          "n": 2,
+          "results": [
+            {
+              "p": "christian",
+              "result": "W",
+              "scoreRaw": "3-0"
+            },
+            {
+              "p": "patrick",
+              "result": "W",
+              "scoreRaw": "3-0"
+            },
+            {
+              "p": "stefano",
+              "result": "L",
+              "scoreRaw": "0-3"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "scoreRaw": "2-1"
+            }
+          ]
+        },
+        {
+          "n": 3,
+          "results": [
+            {
+              "p": "patrick",
+              "result": "L",
+              "scoreRaw": "0-3"
+            },
+            {
+              "p": "christian",
+              "result": "L",
+              "scoreRaw": "0-3"
+            }
+          ]
+        }
       ]
     }
   ]
