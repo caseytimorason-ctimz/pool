@@ -172,7 +172,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 
 <div class="wrap">
   <section id="m-me">
-    <div class="bar"><label class="fld">Your name — pick once, we'll remember<select id="meSel"></select></label></div>
+    <div class="bar"><label class="fld">Your name<select id="meSel"></select></label></div>
     <div id="meOut"></div>
   </section>
   <section id="m-team" class="hide">
@@ -301,7 +301,11 @@ function fillMe(){
    ever played this format," which is what pooling teammates() across both active teams
    incorrectly did (showed people on the wrong team's format, e.g. a 9-ball-only teammate
    appearing under 8-ball just because they had old 8-ball history). */
-const teamState={fmt:null};
+/* scope: 'all' = every game in their career (what people expect from a roster overview);
+   'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
+   Showing only 'current' by default read as missing data — whole columns disappear when a
+   player has never faced that SL *at their present level*. Default to the complete picture. */
+const teamState={fmt:null,scope:'all'};
 function teamFormats(){
   return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
 }
@@ -317,18 +321,34 @@ function renderTeamOverview(){
   const fmt=teamState.fmt;
   const tm=activeRosterForFormat(fmt);
 
+  const allTime=teamState.scope==='all';
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Whole roster vs each skill level</span>'));
-  card.appendChild(el('p','sub','Current-SL performance — the same numbers the Matchup engine uses. Tap a name to jump to their full record.'));
-  if(fmts.length>1){const ft=el('div','ftabs');
+  card.appendChild(el('p','sub', allTime
+    ? 'Every game of their career. Tap a name for their full record.'
+    : 'Only games played at their current skill level — what the Matchup engine uses to pick lineups. Tap a name for their full record.'));
+  const ctl=el('div','ftabs');
+  if(fmts.length>1){
     fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
-      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ft.appendChild(b);});card.appendChild(ft);}
+      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ctl.appendChild(b);});
+    ctl.appendChild(el('span',null,'&nbsp;')).style.flex='0 0 10px';
+  }
+  [['all','All time'],['current','At current SL']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.scope===v);
+    b.onclick=()=>{teamState.scope=v;renderTeamOverview();};ctl.appendChild(b);});
+  card.appendChild(ctl);
 
   if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}
-  const rows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(r=>r.pr);
+  // Pick the row set per scope: merged career totals, or current-SL-only.
+  const rows=tm.map(p=>{
+    const pr=P[`${p.mid}:${fmt}`];
+    if(!pr)return null;
+    const cells=allTime?mergeEras(pr.descriptiveByEra||{},'all'):(pr.predictiveVsSL||[]);
+    return {p,pr,cells};
+  }).filter(Boolean);
   if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball history yet for this roster.'));out.appendChild(card);return;}
 
-  const slCols=[...new Set(rows.flatMap(r=>(r.pr.predictiveVsSL||[]).map(c=>c.vsSL)))].sort((a,b)=>a-b);
+  const slCols=[...new Set(rows.flatMap(r=>r.cells.map(c=>c.vsSL)))].sort((a,b)=>a-b);
   rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
 
   const wrap=el('div','tt-wrap');
@@ -336,13 +356,13 @@ function renderTeamOverview(){
   table.appendChild(el('thead',null,
     '<tr><th class="who">Player</th>'+slCols.map(sl=>`<th>vs SL${sl}</th>`).join('')+'</tr>'));
   const tb=el('tbody');
-  rows.forEach(({p,pr})=>{
+  rows.forEach(({p,pr,cells})=>{
     const tr=el('tr');
     const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}${esc(p.name)}</span>`;
     who.style.cursor='pointer';
     who.onclick=()=>{ setMode('me'); const s=$('#meSel'); if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); } };
     tr.appendChild(who);
-    const byVs={}; (pr.predictiveVsSL||[]).forEach(c=>byVs[c.vsSL]=c);
+    const byVs={}; cells.forEach(c=>byVs[c.vsSL]=c);
     slCols.forEach(sl0=>{
       const c=byVs[sl0];
       const td=el('td','cell');
