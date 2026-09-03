@@ -140,6 +140,7 @@ table.qt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
 .streaks{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .strk{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
   padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--panel-2)}
+.opp-hd .tag.new{margin-left:8px;background:var(--warn);color:#fff;padding:1px 7px;border-radius:999px;font-weight:700}
 .strk.heat{border-color:#d81f6a;background:linear-gradient(90deg,rgba(216,31,106,.22),rgba(255,180,60,.06))}
 .strk.fire{border-color:#e2622a;background:linear-gradient(90deg,rgba(226,98,42,.18),rgba(226,98,42,.04))}
 .strk.warm{border-color:var(--warn);background:linear-gradient(90deg,rgba(184,121,31,.14),transparent)}
@@ -406,7 +407,8 @@ function renderMatch(m){
   const c=el('div','card');
   theirs.slice().sort((a,b)=>b.sl-a.sl).forEach(Q=>{
     const blk=el('div','opp');
-    blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span><span class="tag">best picks ↓</span>`));
+    const newTag=Q.new?'<span class="tag new">new · unrated</span>':'';
+    blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span>${newTag}<span class="tag">best picks ↓</span>`));
     ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)
       .forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
     c.appendChild(blk);
@@ -883,8 +885,14 @@ function renderLive(m,host){
       c.appendChild(mark);
     }
   }else{
-    c.appendChild(el('p','sub','Assumes they counter with their best answer — because they will. Ranked by total expected wins for the whole night, so a deliberate sacrifice can outrank a better single matchup.'));
+    c.appendChild(el('p','sub','Whoever you throw gets countered, and good handicapping means throw order barely moves the total — so lead with your lowest skill level and keep your matchup-proof players to answer with. A higher player only leads if they are clearly better to throw.'));
     const memo={};
+    // SL_HOLD is a penalty per skill level on the throw: you only expose a higher-SL player
+    // when their whole-night value beats a lower one by more than this. Because throw order
+    // hardly changes expected wins, this makes the app "throw low, hold your strong players to
+    // counter" — which is how the game is actually played — while still yielding to a genuinely
+    // large edge. cv (mean win odds vs their pool) is only used to name who to keep back.
+    const SL_HOLD=0.15;
     const ranked=ours.map(A=>{
       let worst=null;
       theirs.forEach(Q=>{
@@ -894,8 +902,18 @@ function renderLive(m,host){
         const tot=now+rest;
         if(worst===null||tot<worst.total)worst={Q,now,rest,total:tot};
       });
-      return {A,...worst};
-    }).sort((a,b)=>b.total-a.total);
+      const cv=theirs.reduce((s,Q)=>s+pWin(A,Q,fmt),0)/theirs.length;
+      return {A,...worst,cv,adj:worst.total-SL_HOLD*A.sl};
+    }).sort((a,b)=>b.adj-a.adj);
+    // who you'd most want to keep in reserve = flattest, highest win-odds vs their pool
+    const hold=ranked.slice().sort((a,b)=>b.cv-a.cv)[0];
+    const spread=Math.max(...ranked.map(r=>r.total))-Math.min(...ranked.map(r=>r.total));
+    if(hold && ranked[0].A.mid!==hold.A.mid){
+      c.appendChild(el('p','sub',
+        `Expected wins run within ${spread.toFixed(2)} across every choice, so throw ${esc(ranked[0].A.name)} `+
+        `(SL ${ranked[0].A.sl}) and keep ${esc(hold.A.name)} (SL ${hold.A.sl}) back — they are even-or-better against `+
+        `their whole lineup, your best answer to whatever they put up.`));
+    }
     ranked.forEach((r,i)=>{
       const row=el('div','rk'+(i===0?' best':''));
       // Headline the number we actually rank on (night value); the single-match odds sit

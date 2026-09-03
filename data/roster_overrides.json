@@ -1,0 +1,21 @@
+{
+  "_README": [
+    "HAND-MAINTAINED roster additions. New players don't exist in the APA API until they've",
+    "played and been entered, so a captain who knows a new name is coming can't see them in the",
+    "matchup until then. This file injects known players into a team's roster during the build.",
+    "",
+    "New APA players start as Skill Level 3. They have no match history, so the matchup engine",
+    "scores them purely on the SL3-vs-SL baseline (low confidence) — which is exactly right for",
+    "an unrated player. Once they show up in a real API pull, drop them from here so their real",
+    "record takes over. `new:true` just flags them in the UI as unrated.",
+    "",
+    "Keyed by APA team id. mid is a synthetic 'new-…' string so nothing collides with a real",
+    "member id; if you later learn their real mid, delete the entry (the pull will carry them)."
+  ],
+  "add": {
+    "13139505": [
+      {"mid": "new-sam-rozano", "name": "Sam Rozano", "sl": 3, "new": true},
+      {"mid": "new-matt-menzel", "name": "Matt Menzel", "sl": 3, "new": true}
+    ]
+  }
+}
