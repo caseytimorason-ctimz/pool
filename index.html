@@ -914,7 +914,7 @@ function renderLive(m,host){
    Two bodies of rules, nested: the official APA Team Manual governs play everywhere; the
    Hudson County local bylaws supplement (and in places override) it for this league. Both
    are searchable so a rules argument at the table is settled by reading, not remembering. */
-const blState={q:'',view:'bylaws'};
+const blState={q:'',view:'bylaws',doc:'game'};
 function blHighlight(t,q){
   const h=esc(t);
   if(!q)return h;
@@ -964,7 +964,7 @@ function renderBylawsInto(host){
   const secs=by.sections||[];
   if(!secs.length){host.appendChild(el('div','card','<p class="sub">Bylaws not loaded.</p>'));return;}
   ruleSections(host, secs, {
-    sub:`${esc(by.source||'Local bylaws')} — the league's own text. These supplement the official APA manual and, where they differ, the local bylaw wins.`,
+    sub:`${esc(by.source||'Local bylaws')} — Hudson County's local text. These supplement the official APA rules on the other tab and, where they differ, the local bylaw wins.`,
     placeholder:'Search the bylaws — forfeit, patch, reschedule…'});
 
   // The playoff bracket is a grid in the PDF that no text extractor survives, so it is
@@ -990,16 +990,27 @@ function renderBylawsInto(host){
 }
 function renderOfficialInto(host){
   const off=(D.league||{}).official;
-  if(off&&off.sections&&off.sections.length){
-    ruleSections(host, off.sections, {
-      sub:`${esc(off.source||'APA Official Team Manual')} — the rules of play for every APA league.`,
-      placeholder:'Search the official rules — break, coaching, timeout…'});
-    return;
+  const docs=(off&&off.docs)||[];
+  if(!docs.length){
+    const c=el('div','card');
+    c.appendChild(el('h2',null,'<span class="eyebrow">Official APA rules</span>'));
+    c.appendChild(el('p','sub','Not loaded yet. Drop the official 2026 APA PDFs into the project and they appear here, searchable.'));
+    host.appendChild(c);return;
   }
-  const c=el('div','card');
-  c.appendChild(el('h2',null,'<span class="eyebrow">Official APA rules</span>'));
-  c.appendChild(el('p','sub','Not loaded yet. Drop the official 2026 APA Team Manual PDF into the project and it will appear here, searchable, with the Hudson County bylaws nested under it.'));
-  host.appendChild(c);
+  if(!docs.some(d=>d.key===blState.doc))blState.doc=docs[0].key;
+  // segmented control to pick between the two official documents (Game Rules / Team Manual)
+  const seg=el('div','ftabs');seg.style.marginBottom='2px';
+  docs.forEach(d=>{const b=el('button','ftab',d.label);b.setAttribute('aria-pressed',blState.doc===d.key);
+    b.onclick=()=>{blState.doc=d.key;renderRulesTab();};seg.appendChild(b);});
+  host.appendChild(seg);
+  const doc=docs.find(d=>d.key===blState.doc);
+  ruleSections(host, doc.sections, {
+    sub:`${esc(doc.source)} — official APA text (© American Poolplayers Association). `+
+        (blState.doc==='game'?'The rules of play, straight from the booklet.'
+                             :'League operation, the Equalizer handicap system, scoring and tournaments.'),
+    placeholder: blState.doc==='game'
+      ? 'Search the game rules — break, foul, safety…'
+      : 'Search the manual — coaching, timeout, handicap…'});
 }
 function renderRulesTab(){
   const out=$('#rulesOut'); out.innerHTML='';
