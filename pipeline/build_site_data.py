@@ -76,6 +76,11 @@ def main():
     tok = token()
     mem = post("query($id:Int!){ member(id:$id){ teams{ id name } } }", {"id": MEMBER_ID}, tok)["data"]["member"]
     my_team_ids = [t["id"] for t in (mem.get("teams") or [])]
+    # Every team the member currently sits on, INCLUDING the just-finished session. A new
+    # session's team record appears (with a schedule but no results) before the old one stops
+    # mattering, and postseason eligibility is earned in the session that just ended — so the
+    # counters must not follow the empty new team.
+    my_current_ids = {str(t) for t in my_team_ids}
 
     teams = {}          # tid -> {name, fmt, roster}
     schedule = []       # {date, ourTeam, ourTeamId, oppTeam, oppTeamId, fmt, matchId}
@@ -125,18 +130,21 @@ def main():
                 relevant_mids.add(str(p["mid"]))
     players = {k: v for k, v in analysis["players"].items() if k.split(":")[0] in relevant_mids}
 
-    # Current-session stats, scoped to the ACTIVE teams only — playoff/MVP-style races are
-    # per-session, not lifetime, so the qualification tracker needs its own counters.
-    active_ids = {str(t) for t in my_active}
-    sess = {}
+    # Session stats. Which team's session to count is not obvious: at a session boundary the
+    # member is rostered on both the new team (schedule, no results) and the old one (a full
+    # session of results, and the one a Tri-Cup at the end of it pays off). So tally EVERY
+    # team the member is currently on, then per format keep the one with actual play. Counting
+    # the new empty team instead reports the whole roster at zero matches and nobody eligible.
+    per_team = {}
     with open(DATA / "games.csv") as f:
         for r in _csv0.DictReader(f):
-            if r.get("team") not in active_ids:
+            if r.get("team") not in my_current_ids or not r.get("mid"):
                 continue
-            k = "%s:%s" % (r["mid"], r["fmt"])
-            e = sess.setdefault(k, {"mid": r["mid"], "fmt": r["fmt"], "team": r["team"],
-                                    "games": 0, "wins": 0, "points": 0, "nights": [],
-                                    "first": None, "last": None})
+            t = per_team.setdefault(r["team"], {"fmt": r["fmt"], "players": {}, "last": ""})
+            t["last"] = max(t["last"], r.get("date") or "")
+            e = t["players"].setdefault(r["mid"], {"mid": r["mid"], "fmt": r["fmt"], "team": r["team"],
+                                                  "games": 0, "wins": 0, "points": 0, "nights": [],
+                                                  "first": None, "last": None})
             e["games"] += 1
             if r["win"] == "True":
                 e["wins"] += 1
@@ -149,12 +157,61 @@ def main():
             d = r.get("date") or ""
             if d:
                 e["first"] = min(e["first"] or d, d); e["last"] = max(e["last"] or d, d)
-    for e in sess.values():
-        e["matchNights"] = len(e.pop("nights"))
+
+    chosen, sess = {}, {}
+    for tid, t in per_team.items():
+        cur = chosen.get(t["fmt"])
+        if cur is None or (t["last"], len(t["players"])) > (per_team[cur]["last"], len(per_team[cur]["players"])):
+            chosen[t["fmt"]] = tid
+    # The team whose session we counted may not be in `teams` (it has no upcoming matches, so
+    # the active-team loop skipped it). Add it so the UI can name the session, and use its
+    # roster for that format when the new session's roster isn't set yet.
+    for fmt, tid in chosen.items():
+        ft = fetched.get(int(tid))
+        if ft and int(tid) not in teams:
+            teams[int(tid)] = {"name": ft["name"], "fmt": fmt_of(ft), "roster": norm_roster(ft)}
+        for at in my_active:
+            if teams[at]["fmt"] == fmt and not teams[at]["roster"] and ft:
+                teams[at]["roster"] = norm_roster(ft)
+
+    session_source = {}
+    for fmt, tid in chosen.items():
+        t = per_team[tid]
+        dates = [p["first"] for p in t["players"].values() if p["first"]] + \
+                [p["last"] for p in t["players"].values() if p["last"]]
+        session_source[fmt] = {"teamId": tid, "name": (teams.get(int(tid)) or {}).get("name"),
+                               "first": min(dates) if dates else None,
+                               "last": max(dates) if dates else None,
+                               "matchNights": len({n for p in t["players"].values() for n in p["nights"]})}
+        for mid, e in t["players"].items():
+            e["matchNights"] = len(e.pop("nights"))
+            sess["%s:%s" % (mid, fmt)] = e
+
+    # Hand-maintained postseason results (playoffs/tournaments are scored on paper and do
+    # not exist in the API). Optional — the app renders without it.
+    postseason = None
+    pf = DATA / "postseason.json"
+    if pf.exists():
+        try:
+            postseason = json.loads(pf.read_text())
+            postseason.pop("_README", None)
+        except Exception as e:
+            print("WARNING: postseason.json unreadable (%s) — skipping" % e)
+
+    # Hand-maintained league rules + scheduled events (bylaws transcription, tournament dates).
+    league = None
+    lf = DATA / "league.json"
+    if lf.exists():
+        try:
+            league = json.loads(lf.read_text())
+            league.pop("_README", None)
+        except Exception as e:
+            print("WARNING: league.json unreadable (%s) — skipping" % e)
 
     base = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
             "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
-            "sessionStats": sess, "baselines": baselines()}
+            "sessionStats": sess, "sessionSource": session_source,
+            "postseason": postseason, "league": league, "baselines": baselines()}
 
     # site/data.json: SCOPED, for the artifact (hard single-file size ceiling).
     scoped = dict(base, players=players)

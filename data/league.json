@@ -1,0 +1,371 @@
+{
+  "_README": [
+    "HAND-MAINTAINED league facts, transcribed from the Hudson County APA bylaws PDF",
+    "(reference/hudson-county-bylaws-2025.pdf, 2025 edition) and from event listings in",
+    "the APA app. Unlike postseason.json these are RULES and SCHEDULE, not results — they",
+    "decide what the app checks, but they never invent a match or a win.",
+    "",
+    "Every rule below carries the bylaw text it came from so it can be re-checked when the",
+    "league reissues the bylaws. If a rule has no cite, it came from Casey verbally."
+  ],
+  "bylaws": {
+    "source": "Hudson County APA Bylaws, 2025",
+    "file": "reference/hudson-county-bylaws-2025.pdf",
+    "asOf": "2026-09-03",
+    "sections": [
+      {
+        "title": "League office",
+        "body": [
+          "Chris Blumberg Chris: 585-354-6998 Email: cblumberg@apaleagues.com Website: hudson.apaleagues.com Facebook: https://www.facebook.com/hudsoncountyapa https://www.facebook.com/groups/688340577972480"
+        ]
+      },
+      {
+        "title": "Introduction",
+        "body": [
+          "We would like to welcome you and your team to the American Poolplayers Association! This document explains the structure of the League at a Local Level and should be used in conjunction with the Official Team Manual on the APA Member Services App and poolplayers.com. These Local Bylaws have been created for the smooth and efficient operation of the League. After all, the APA’s motto is: Have Fun. Meet People. Play Pool.® Please read these Local Bylaws carefully and keep them with the APA Official Team Manual for your reference. All Local Bylaws with dates prior to the revision date of this document are null and void."
+        ]
+      },
+      {
+        "title": "Age Requirements",
+        "body": [
+          "You must be 18 years of age or older to compete in APA Hudson County."
+        ]
+      },
+      {
+        "title": "Office Hours",
+        "body": [
+          "League Office hours are Monday through Sunday, 10 AM to 8 PM. If no one is available to take your call, please leave a message, including your phone number and your call will be returned as soon as possible. You may also email: cblumberg@apaleagues.com"
+        ]
+      },
+      {
+        "title": "Website",
+        "body": [
+          "We are part of the American Poolplayers Association https://poolplayers.com/ where hundreds of thousands of players compete for trips around the country. To signup https://join.poolplayers.com/ and we can help you find a team in Hudson County. Our website address is hudson.apaleagues.com. This website allows you to get access through our APA poolplayers app:",
+          "a) Get the latest up to date information on Playoffs, tournaments or any other APA Hudson County events",
+          "b) Set up your Member Services Account to:",
+          "● View schedules, team rosters, standings and individual records for your division; and",
+          "● View your lifetime APA statistics, including win percentage, tournament history, On the Breaks, Break and Runs, etc. In addition, we also have a Facebook page at https://www.facebook.com/groups/688340577972480 where you can view and share pictures of tournaments, get updates about the League and chat with fellow APA members. If you have not already done so, please join our online community by signing up for a Member Services Account and following us on Facebook today. Even if you don’t sign up for your Member Services Account, please make sure we have your email address on file. All announcements are made first online and through our email mailing list. Having an email address on file can keep you from missing out on valuable information! The website and email are the Local League Office’s most efficient communication tools. They help to ensure that you get the most out of your experience and keep you up to speed on what is happening at all times, be it upcoming Playoff match locations, wild card picks, tournaments or any other information you and your team need to know about the League."
+        ]
+      },
+      {
+        "title": "TEAM FEES",
+        "body": [
+          "Team Fees are $45 per week ($90 for Double Jeopardy) regardless of the number of matches played. Full Team Fees must be paid for Playoff matches and forfeit. If you are paying by check, please make your check payable to Hudson County APA. There will be a $25 charge for any returned checks, plus a loss of bonus points."
+        ]
+      },
+      {
+        "title": "TEAM ENVELOPES",
+        "body": [
+          "There are no team envelopes currently, all scoring is done on the scorekeeper app, and payments can be made through multiple online methods. The preferred method is the APA players app."
+        ]
+      },
+      {
+        "title": "BONUS POINTS",
+        "body": [
+          "Your team will receive bonus points if all of the following occur:",
+          "● Match start/end time are complete",
+          "● Innings are filled in for every game",
+          "● The winner and loser of every game is marked with the number of racks won",
+          "● Final match score is filled in Score sheet is signed by both teams",
+          "● Team cannot be past due by more than $90 including membership fees for players",
+          "● The score sheet is neat, clean, and complete",
+          "● No abusive comments are written The bonus points awarded will be as follows:",
+          "● 8-Ball: 2 Possible Bonus Points o Team does not exceed $90 past due at time of scoring",
+          "● 9-Ball: 10 Possible Bonus Points o Team does not exceed $90 past due at time of scoring Remember these are bonus points that are awarded at the sole discretion of the Local League Office. Keeping current with your weekly fees is important. If you fall behind in payments, you may risk more than your bonus points. You may lose your place in the Playoffs and/or the opportunity to compete in tournaments."
+        ]
+      },
+      {
+        "title": "BONUS POINTS FOR BYE WEEKS",
+        "body": [
+          "Whenever a division has an odd number of teams one team each week will not have a match. In this instance, the team with the bye shall be given the following points for the week (including the bonus points a team would have received if all the paperwork was correct):",
+          "● Bonus Points for Bye Week: o 8-Ball – 8 Bye Points + 2 Bonus Points o 9-Ball – 60 Bye Points + 10 Bonus Points Note: Teams do not need to submit paperwork or fees for bye weeks."
+        ]
+      },
+      {
+        "title": "TEAMS JOINING LATE IN SEASON",
+        "body": [
+          "Joining before week 2: bye points to team Joining after week 2 played: will receive points equal to last place in the division"
+        ]
+      },
+      {
+        "title": "PAST DUES",
+        "body": [
+          "Players who owe past League fees will be ineligible to compete in any Playoff match, Tri-Annual, or World Qualifier (Gold Cup) or other Inter-league events"
+        ]
+      },
+      {
+        "title": "PAST DUE PROCEDURES",
+        "body": [
+          " Second Week Past Due: Captain and co-captain is contacted and warned. Bonus points lost from then on.  Third Week Past Due: Loss of bonus points  Fourth and Final Week Past Due: Team name will be changed to “Team unpaid” on the score sheet. Loss of bonus points and all points for the week if full payment is not received by Friday of this playing week. Team will be dropped and past dues split between Captain and Co-captain unless otherwise agreed to."
+        ]
+      },
+      {
+        "title": "FALSIFYING SCORESHEETS",
+        "body": [
+          "Any team caught falsifying any part of a score sheet may have any or all of its players subject to one or more of the following penalties:",
+          "a. Forfeit the falsified match",
+          "b. No points for that week",
+          "c. Written warning",
+          "d. Suspension from the League"
+        ]
+      },
+      {
+        "title": "PATCHES",
+        "body": [
+          "Patches are available for the following accomplishments:",
+          "● 8-on-the-Break: You make the 8-ball on the break.",
+          "● 8-Ball Break-and-Run: You make at least one ball on the break and then run the rack.",
+          "● 9-on-the-Snap: You make the 9-ball on the break.",
+          "● 9-Ball Break-and-Run: You make at least one ball on the break and then run the rack for ten points.",
+          "● Rackless: You win the lag and each following match, thus never touching the rack.",
+          "● Skunk: 9-Ball – you win your match 20-0.",
+          "● Grand Slam: In one season, you get an 8-on-the-Break, an 8-Ball Break-and-Run, a 9-on-the- Snap, and a 9-Ball Break-and-run.",
+          "● Mini Slam: Break-and-Run and 8-on-the-Break or 9-on-the-Snap in one match.",
+          "● Clean Sweep: Your team must win all of your matches in one night. There are no limits on the number of patches you can earn in a session. If you wish to receive a patch for an accomplishment, make sure it is marked in the appropriate section on your score-sheet and fill out the Patch Request form. Patches will be awarded each time the player meets the criteria for earning a patch as long as the Patch Request form is completed and sent in to the Local League Office. Patches are awarded at Tri-Annual at end of season by default. Anyone who wants a specific patch earlier or for missing patches, please contact the league office."
+        ]
+      },
+      {
+        "title": "RESCHEDULING MATCHES",
+        "body": [
+          "On occasion, a match may need to be rescheduled due to inclement weather, conflicts with other qualified League obligations, or other reasons. You are required to reschedule a match if your match conflicts with your opponent’s other qualified League obligations AND the opponent requests rescheduling. If you plan to reschedule a match, due to inclement weather, or for other reasons, you must notify the Local League Office. Please use the following procedure:",
+          "1. Contact the Team Captain of the team you are scheduled to play in the match and notify them of your intent to reschedule.",
+          "2. Work with your opponent’s Team Captain to select a date and time to play the rescheduled match. Rescheduled matches must be played within two weeks of the original scheduled match date. No make- up matches will be allowed in the last two weeks of the session, unless the Local League Office grants an exception, which will only occur as a result of special circumstances.",
+          "3. Requests for rescheduling a match must happen must happen at minimum 4 hours before the match start time. For teams that request a reschedule less then 4 hours ahead of match start time forfeit 1 player match."
+        ]
+      },
+      {
+        "title": "DROPPING TEAMS LATE IN SEASON",
+        "body": [
+          "Any teams wanting to drop after week 10 of the season must pay the full remaining amount of past dues and future weeks of play. This will be assigned to the Captain and Co-Captain by default, or based on a team agreement."
+        ]
+      },
+      {
+        "title": "NIGHT OF PLAY SKILL",
+        "body": [
+          "During the season players may have their CLA (Championship Lowest Attainable) Skill level set higher then their current skill on the score-sheet. This happens when a player attended a higher level tournament recently and the system has been updated. The day and time of this data upload process is unknown, and as such the score-sheet that is currently released will be the correct skill to be used. Should any team force players to play at a different skill then they are listed on the score-sheet they will lose that match by forfeit instead."
+        ]
+      },
+      {
+        "title": "ROSTER CHANGES",
+        "body": [
+          "Roster changes for teams can happen by captains and co-captains through scorekeeper app up until week 4. After week 4 all changes must be done by the league office staff. Teams may request roster changes up until week 10. All World Qualifier (Gold Cup) qualified Teams must have their roster set by week 4 of Spring season. After this the team roster is locked and no roster changes are allowed by APA national rules. Due to scheduling sometimes Fall season Tri-Annuals happen after week 4, these teams can edit rosters up until the Tri-Annual date. You are responsible for notifying the other team of any last minute changes to your roster. Failure to notify of last minute changes can result in a forfeit match or loss of bonus points."
+        ]
+      },
+      {
+        "title": "MATCH START TIMES AND PENALTIES",
+        "body": [
+          "15 min – 29 min late, 1 forfeits 30 min – 44 min late, 2 forfeits 45 min – 59 min late 3 forfeits 60 min – 74 min late 4 forfeits 75 min+ 5 forfeits The opposing team can choose to give you more time/less forfeits if they want. Please consider inclement weather events can lead to traffic issues."
+        ]
+      },
+      {
+        "title": "INCLEMENT WEATHER",
+        "body": [
+          "The Local League Office will use school closings and state warnings to determine whether matches will be canceled and rescheduled due to inclement weather. If you feel that weather conditions may result in League play being canceled or postponed, check our Local League Website for the most up-to-date information. Contact the Local League Office if you have additional questions or concerns, but only after you have checked the website. Most important, please be safe and do not risk injury if you feel the travel conditions are unsafe."
+        ]
+      },
+      {
+        "title": "TEAMS IN DEFAULT",
+        "body": [
+          "Any team that does not show up for its match for two consecutive weeks will be deemed to be in default and will be dropped from the division. Additionally, any team that has not paid their League fees for two consecutive weeks can be dropped from the Division. Teams who have failed to pay their League fees for two consecutive weeks will be notified of the past due status. If their account is not made current in a timely manner, the team will be deemed in default and may be dropped from the division. Teams that are in default are still responsible for paying their team fees for the remainder of the session. Each member of the defaulting team will be responsible for paying their share of the team fees owed. The defaulting team’s players will be suspended from the League until their portion of the fees is paid. The Local League Office has the right to assign different portions of the outstanding fees to individual players as it deems appropriate. If your team has a player that is past due on your roster, you will receive no points for that person’s match (even if they win) and no bonus points for any week they play while their fees are past due."
+        ]
+      },
+      {
+        "title": "DIVISION REPS",
+        "body": [
+          "Division Reps are appointed by the League Operators. They are a person of integrity and are consistently active in the League. They make sure that notices and League information and materials are distributed to and understood by the Team Captains in their division. They may be called upon to help run tournaments and to distribute trophies. They may be consulted during League play to help settle disputes. Division Rep program responsibilities:",
+          "1. Know the rules: The division representative is the “go to” person in the bar. Division Representatives should be knowledgeable of APA rules and By-Laws. However, if the Division Representative is unsure, APA staff is just a phone call away.",
+          "2. You must play in the division you are division rep for.",
+          "3. You must qualify 1 person to singles per season per team you want credit for. If you want credit for 3 teams you must qualify 3 people per season.",
+          "4. Help deliver Trophies/Plaques/Patches to players",
+          "5. Assist the bar/teams/APA in recruiting new players.",
+          "6. Report/Watch players for skill level management."
+        ]
+      },
+      {
+        "title": "AWARDS FOR STARTING TEAMS",
+        "body": [
+          "Incentives are available to individuals who help recruit players for teams or setup new teams. This is available as a team credit or paid to the person doing the recruiting directly.",
+          "1. Help fill a bye in your a division you play in for $90",
+          "2. Starting a brand new team:",
+          "● 8 new or returning members $500",
+          "● 7 new or returning members $300",
+          "● 6 new or returning members $225",
+          "● 5 new or returning members $180",
+          "● 4 new or returning members $135",
+          "● 3 new or returning members $90",
+          "● 2 new or returning members $45 A new player is defined as a person who has 10 lifetime matches or less in that specific format of play such as 8 or 9 ball. A returning player is defined as a person who has not played in that specific format of play for more than 2 years. This is easy to determine by looking in the APA app for that player, there is a section that says “games played in last 2 years” it should be 0. NOTE: This Award will be paid after the 6th week of the session."
+        ]
+      },
+      {
+        "title": "OTHER AWARDS",
+        "body": [
+          "Due to the number of fraternal organizations and private membership clubs in this area we are offering an incentive to help expand pool into them. Due to the rather hostile environment pool faces in many of these organizations we are offering an incentive for any APA member that is a member of that organization and also in a position of power an incentive for helping expand pool. You must be on an active member of a team in a division that this organization Is a part of to receive any awards. Current position equal to Exalted Ruler, Commander, Grand Knight or the equivalent of CEO in an organization. $100 per year Current position equal to Trustee, Board of Governor, Board of Director, or the equivalent of a position in overseeing the place and its finances and making decisions on how to spend that money. Treasurers do not have decision making power here and are not eligible. $250 per year"
+        ]
+      },
+      {
+        "title": "GHOSTING RULES",
+        "body": [
+          "Ghosting is when your team has to play a player multiple times during the night to complete the 5 matches.",
+          "1. The team that doesn't have enough players showing up tonight must let the other team know before the start of the second player match.",
+          "2. The team that does have enough players gets to decide the player they want to play, and also gets to pick their own player to play. If both teams do not have a 5th player they can both ghost.",
+          "3. You cannot force a team to go past the 23 SL limit when picking a player.",
+          "4. Teams can ghost a maximum of 2 times per night, the same player can play both ghost matches if needed.",
+          "5. Using a Ghost is allowed in the entire league area Week 1-4 of the session.",
+          "6. In Bayonne and Jersey City ghosting is not allowed in the last 4 weeks of the session.."
+        ]
+      },
+      {
+        "title": "COMMENTS ON SCORESHEETS",
+        "body": [
+          "All concerns should be written on the scorekeeper comment section when submitting the match, . This will guarantee that your concern is considered, documented and addressed. Abusive language directed at the League or the League Operator will not be tolerated in the comments. Abusive comments or complaints are considered unsportsmanlike and will be treated appropriately."
+        ]
+      },
+      {
+        "title": "FORFEITS",
+        "body": [
+          "Any team qualifying for Division Playoffs or Tri-Annual Tournaments will forfeit their spot if they have any outstanding fees. Any team ending the session with an outstanding debt will not be eligible for the wild card draw:",
+          "a. Teams not showing up for the last week of play will be required to pay their weekly dues plus the weekly dues of the opposing team and are not eligible for wild card draw.",
+          "b. In all cases, teams forfeiting an entire match during any week will receive zero (0) points. Bonus points will not be awarded for teams that forfeit or don't show up."
+        ]
+      },
+      {
+        "title": "BANNED PLAYERS",
+        "body": [
+          "If a Host Location has banned a player from entering their establishment, the team must play without them when playing at that location. The League does not have the right to require a Host Location to permit access to a banned person for a League match."
+        ]
+      },
+      {
+        "title": "SUSPENDED PLAYERS",
+        "body": [
+          "APA Hudson County will honor any suspensions from all APA areas."
+        ]
+      },
+      {
+        "title": "SESSION PLAYOFFS",
+        "body": [
+          "During each session, playoffs will be scheduled on the same day of the week as your regular League play. In accordance with Official Team Manual, the Session Playoff Site will be chosen by the team with higher points. It is possible a Playoff match will be held at a neutral location or at the home location of one or both of the teams involved. Player Eligibility: Players must have played at least 5 times with the team during the session to be eligible to play in the Session Playoffs, Tri-Annuals and World Qualifier. Number Of Teams In The Division World Qualifier (WQ) Qualification Session Award Structure (last week of regular Playoff Structure play) 1st Place vs Wildcard 4-5 Winner Advances To Tri-Annual Awards: One Team Qualifies In a 4-team division, eligibility will not be passed Top Point Finisher will receive the For Tri-Annual to teams finishing directly behind an already 1st Place Session trophies qualified team in the Playoffs 6-7 Division Point Leader advances directly to Tri- Awards: Annual Two Teams Qualify 2nd Place vs Wildcard Top Point Finisher will receive the For Tri-Annual Winner advances to Tri-Annual 1st Place Session trophies Division Point Leader advances directly to Tri- 8-11 Annual Awards: nd 2 Place vs Wildcard Three Teams Qualify 3rd Place vs 4th Place Top Point Finisher will receive the For Tri-Annual Both winners advance to Tri-Annual 1st Place Session trophies Division Point Leader advances directly to Tri- 12-14 Annual Awards: 2nd Place vs Wildcard Four Teams Qualify 3rd Place vs 6th Place Top Point Finisher will receive the For Tri-Annual 4th Place vs 5th Place 1st Place Session trophies All winners advance to Tri-Annuals Division Point Leader advances directly to Tri- Annual 15-16 Awards: 2nd Place vs Wildcard 3rd Place vs 8th Place Five Teams Qualify Top Point Finisher will receive the 4th Place vs 7th Place For Tri-Annual 1st Place Session trophies 5th Place vs 6th Place All winners advance to Tri-Annuals"
+        ]
+      },
+      {
+        "title": "TRI-ANNUAL",
+        "body": [
+          "At the end of every season there are Tri-Annuals where the best teams compete against each other for the World Qualifier (Gold cup) tournament. Teams that are qualified for World Qualifier (Gold cup) are eligible for Tri-Annual every season after. If they win Tri-Annual in a subsequent tournament they will be eligible for the bye if there are byes in the World Qualifier (Gold cup)."
+        ]
+      },
+      {
+        "title": "World Qualifier",
+        "body": [
+          "The World Qualifier (Gold cup) is an annual tournament that takes place at the end of the League year. Tournament prizes per World Qualifier Event:",
+          "1st place: $899 per player travel assistance to Las Vegas to represent Hudson County in the World Pool Championship. See Travel Assistance Below",
+          "2nd place: Full team entry to a tournament outside Vegas.",
+          "3rd + 4th place: $800 Cash",
+          "*A maximum of 14 teams will participate in the 8-Ball World Qualifier:",
+          "*Summer - 4-5 teams from the Tri-Annual",
+          "*Fall – 4-5 teams from the Tri-Annual",
+          "*Spring – 4-5 teams from the Tri-Annual",
+          "*A maximum of 7 teams will participate in the 9-Ball World Qualifier:",
+          "*Summer – 2 teams from the Tri-Annual",
+          "*Fall - 2 teams from the Tri-Annual",
+          "*Spring - 2 teams from the Tri-Annual",
+          "*The above reference team counts are based on the prior years Spring team count. Current counts are subject to change based on current teams playing.",
+          "● Teams that qualify for a World Qualifier slot more than once during a League year will be the first teams eligible for a random draw into any bye slots, if available, that occur on the World Qualifier boards.",
+          "● Teams that qualify for the World Qualifier (Gold cup) and World Pool Championships must remain active in the Hudson County APA to retain their qualified status.",
+          "● All qualified teams must finish in the top half of their division in all sessions following qualification prior to the World Qualifier or risk the loss of their qualified status."
+        ]
+      },
+      {
+        "title": "WILD CARD",
+        "body": [
+          "To be eligible for the wild card draw, teams must be current with all APA fees and cannot have more than ten (10) match forfeits."
+        ]
+      },
+      {
+        "title": "TROPHIES",
+        "body": [
+          "End of session awards will be given at Tri-Annual. Each member of the first place team will receive an award. In addition, each team will also receive a team plaque that can be put on display at their Host Location to show off their accomplishment!"
+        ]
+      },
+      {
+        "title": "Travel Assistance for the World Pool Championships",
+        "body": [
+          "The Travel Assistance Fund will be used to pay travel expenses actually incurred by the members of those teams advancing to the APA World Pool Championships. If a team chooses not to go to this event, the slot and the Travel Assistance will be given to the last team eliminated by the non-attending team on their World Qualifier board. Teams advancing to Las Vegas will receive $599 in travel assistance per player on the roster. Players will be required to book their own travel and submit their flight itinerary and receipt in order to receive travel assistance. Players not going on the trip will be required to return any travel assistance money. Additionally upon arrival in Vegas, players will be provided an additional $300 in cash. Total is $899 per player. Any teams that are scheduled to attend the Northeast Challenge and do not attend without unforeseen disasters or major weather events will be suspended and charged the full tournament entry fee."
+        ]
+      },
+      {
+        "title": "INTER-LEAGUE EVENTS",
+        "body": [
+          "Any teams that are scheduled to attend an APA tournament outside Hudson County are required to attend. Any teams that do not attend, will be assigned the tournament entry fee and suspended. You must keep the League Office informed of any potential player issues leading up to the tournament start date. For some events we can change players out with more than 48 hour notice. Teams not showing up leads to frustration among both Hudson County players and the areas they were scheduled to play against in these events. You will be charged the tournament fees and suspended if you fail to give notice or don't show up."
+        ]
+      }
+    ],
+    "playoffStructure": {
+      "note": "Session award structure is the same at every division size: the top point finisher receives the 1st Place Session trophies.",
+      "rows": [
+        {
+          "teams": "4–5",
+          "qualify": "One team qualifies for Tri-Annual",
+          "structure": [
+            "1st Place vs Wildcard — winner advances to Tri-Annual",
+            "In a 4-team division, eligibility is not passed to teams finishing directly behind an already-qualified team in the Playoffs"
+          ]
+        },
+        {
+          "teams": "6–7",
+          "qualify": "Two teams qualify for Tri-Annual",
+          "structure": [
+            "Division Point Leader advances directly to Tri-Annual",
+            "2nd Place vs Wildcard — winner advances to Tri-Annual"
+          ]
+        },
+        {
+          "teams": "8–11",
+          "qualify": "Three teams qualify for Tri-Annual",
+          "structure": [
+            "Division Point Leader advances directly to Tri-Annual",
+            "2nd Place vs Wildcard",
+            "3rd Place vs 4th Place",
+            "Both winners advance to Tri-Annual"
+          ]
+        },
+        {
+          "teams": "12–14",
+          "qualify": "Four teams qualify for Tri-Annual",
+          "structure": [
+            "Division Point Leader advances directly to Tri-Annual",
+            "2nd Place vs Wildcard",
+            "3rd Place vs 6th Place",
+            "4th Place vs 5th Place",
+            "All winners advance to Tri-Annual"
+          ]
+        },
+        {
+          "teams": "15–16",
+          "qualify": "Five teams qualify for Tri-Annual",
+          "structure": [
+            "Division Point Leader advances directly to Tri-Annual",
+            "2nd Place vs Wildcard",
+            "3rd Place vs 8th Place",
+            "4th Place vs 7th Place",
+            "5th Place vs 6th Place",
+            "All winners advance to Tri-Annual"
+          ]
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "id": "tricup-2026-09",
+      "type": "tricup",
+      "label": "8-Ball Tri-Cup #2",
+      "date": "2026-09-26",
+      "start": "13:00",
+      "end": "21:00",
+      "fmt": "8",
+      "venue": "Hoboken Elks, 1005 Washington St, Hoboken NJ 07030",
+      "teams": 8,
+      "organizer": "Chris Blumberg",
+      "source": "APA app event listing, screenshotted 2026-09-02"
+    }
+  ]
+}
