@@ -79,8 +79,8 @@ def analyze_player(mid, fmt, games, cur):
             cell["widened"] = {"games": w["games"], "wins": w["wins"], "winPct": w["winPct"]}
 
     return {"mid": mid, "name": name, "format": fmt, "currentSL": csl,
-            "firstSeen": traj[0]["date"] if traj else None,
-            "lastSeen": traj[-1]["date"] if traj else None,
+            "firstSeen": min(g["date"] for g in games) if games else None,
+            "lastSeen": max(g["date"] for g in games) if games else None,
             "totalGames": len(games), "wins": sum(1 for g in games if g["win"]),
             "gamesAtCurrentSL": len(at_current),
             "trajectory": traj, "predictiveVsSL": predictive, "descriptiveByEra": descriptive}
