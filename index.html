@@ -111,6 +111,23 @@ table.h2h td{padding:8px 6px;border-bottom:1px solid var(--line-2);vertical-alig
 table.h2h tr.op{cursor:pointer}
 table.h2h tr.op:hover{background:var(--panel-2)}
 table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space:nowrap}
+
+/* team overview grid */
+.tt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+table.tt{border-collapse:collapse;font-size:13px;min-width:100%}
+table.tt th,table.tt td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
+table.tt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);
+  font-weight:600;background:var(--panel-2);position:sticky;top:0}
+table.tt td.who,table.tt th.who{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;
+  box-shadow:1px 0 0 var(--line)}
+table.tt th.who{background:var(--panel-2);z-index:2}
+table.tt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
+table.tt td.cell{font-family:Oswald;font-weight:600}
+table.tt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
+table.tt td.cell.thin{opacity:.55}
+table.tt td.empty{color:var(--line);font-weight:400}
+table.tt tr:hover td{background:var(--panel-2)}
+table.tt tr:hover td.who{background:var(--panel-2)}
 .log{font-size:12.5px;color:var(--ink-soft)}
 .log div{padding:2px 0}
 .right{text-align:right}
@@ -125,6 +142,7 @@ table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space
     <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-mode="me">My Record</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
       <button class="tab" role="tab" aria-selected="false" data-mode="matchup">Matchup</button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
     </div>
@@ -136,6 +154,9 @@ table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space
   <section id="m-me">
     <div class="bar"><label class="fld">Your name — pick once, we'll remember<select id="meSel"></select></label></div>
     <div id="meOut"></div>
+  </section>
+  <section id="m-team" class="hide">
+    <div id="teamOut"></div>
   </section>
   <section id="m-matchup" class="hide">
     <div class="bar"><label class="fld">Upcoming match<select id="schedSel"></select></label></div>
@@ -243,6 +264,63 @@ function fillMe(){
   s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}meView.render(s.value);};
   meView.render(s.value);
 }
+
+/* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
+const teamState={fmt:null};
+function teamFormats(){
+  const fmts=new Set();
+  teammates().forEach(p=>['8','9'].forEach(f=>{if(P[`${p.mid}:${f}`])fmts.add(f);}));
+  return [...fmts].sort();
+}
+function renderTeamOverview(){
+  const out=$('#teamOut'); out.innerHTML='';
+  const tm=teammates();
+  if(!tm.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  const fmts=teamFormats();
+  teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
+  const fmt=teamState.fmt;
+
+  const card=el('div','card');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Whole roster vs each skill level</span>'));
+  card.appendChild(el('p','sub','Current-SL performance — the same numbers the Matchup engine uses. Tap a name to jump to their full record.'));
+  if(fmts.length>1){const ft=el('div','ftabs');
+    fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
+      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ft.appendChild(b);});card.appendChild(ft);}
+
+  const rows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(r=>r.pr);
+  if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball data for this roster yet.'));out.appendChild(card);return;}
+
+  const slCols=[...new Set(rows.flatMap(r=>(r.pr.predictiveVsSL||[]).map(c=>c.vsSL)))].sort((a,b)=>a-b);
+  rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
+
+  const wrap=el('div','tt-wrap');
+  const table=el('table','tt');
+  table.appendChild(el('thead',null,
+    '<tr><th class="who">Player</th>'+slCols.map(sl=>`<th>vs SL${sl}</th>`).join('')+'</tr>'));
+  const tb=el('tbody');
+  rows.forEach(({p,pr})=>{
+    const tr=el('tr');
+    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}${esc(p.name)}</span>`;
+    who.style.cursor='pointer';
+    who.onclick=()=>{ setMode('me'); const s=$('#meSel'); if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); } };
+    tr.appendChild(who);
+    const byVs={}; (pr.predictiveVsSL||[]).forEach(c=>byVs[c.vsSL]=c);
+    slCols.forEach(sl0=>{
+      const c=byVs[sl0];
+      const td=el('td','cell');
+      if(!c){ td.className='empty'; td.textContent='—'; }
+      else{
+        const thin=c.games<5;
+        td.className='cell'+(thin?' thin':'')+' '+(c.winPct>=55?'win':c.winPct<=45?'lose':'evn');
+        td.innerHTML=`${c.winPct}%<span class="n">${c.wins}-${c.games-c.wins}</span>`;
+      }
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb); wrap.appendChild(table); card.appendChild(wrap);
+  out.appendChild(card);
+}
 function mergeEras(byEra,ownSL){
   const acc={};
   Object.entries(byEra).forEach(([era,rows])=>{
@@ -330,7 +408,9 @@ const meView=makePlayerView('#meOut'), playersView=makePlayerView('#playerOut');
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
   $('#m-me').classList.toggle('hide',m!=='me');
-  $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');}
+  $('#m-team').classList.toggle('hide',m!=='team');
+  $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');
+  if(m==='team')renderTeamOverview();}
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
