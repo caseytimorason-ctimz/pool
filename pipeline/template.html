@@ -225,7 +225,7 @@ function fillPlayers(f){
   const s=$('#pSel');f=(f||'').toLowerCase();
   const list=(f?PL.filter(p=>p.name.toLowerCase().includes(f)):PL).slice(0,400);
   s.innerHTML=list.map(p=>`<option value="${p.mid}">${esc(p.name)} · ${p.games} games</option>`).join('');
-  list.length?renderPlayer(list[0].mid,'#playerOut'):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
+  list.length?playersView.render(list[0].mid):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
 }
 /* our teammates = players on our active teams, for the "My Record" picker */
 function teammates(){
@@ -240,10 +240,9 @@ function fillMe(){
   let me=null;try{me=localStorage.getItem('rs-me')}catch(e){}
   if(!me&&D.memberId&&tm.some(p=>String(p.mid)===String(D.memberId)))me=String(D.memberId); // owner default
   if(me&&tm.some(p=>String(p.mid)===String(me)))s.value=me;
-  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}renderPlayer(s.value,'#meOut');};
-  renderPlayer(s.value,'#meOut');
+  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}meView.render(s.value);};
+  meView.render(s.value);
 }
-const stateP={mid:null,fmt:null,ownSL:'all',out:'#playerOut'};
 function mergeEras(byEra,ownSL){
   const acc={};
   Object.entries(byEra).forEach(([era,rows])=>{
@@ -259,46 +258,51 @@ function vsGrid(rows){
       <div class="v ${c.winPct>=55?'win':c.winPct<=45?'lose':'evn'}">${c.wins}-${c.games-c.wins}</div>
       <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>';
 }
-function renderPlayer(mid,out){
-  stateP.mid=mid; if(out)stateP.out=out;
-  const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
-  stateP.fmt=fmts.includes(stateP.fmt)?stateP.fmt:fmts[0];
-  stateP.ownSL='all';
-  drawPlayer();
+/* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
+   bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
+function makePlayerView(outSel){
+  const st={mid:null,fmt:null,ownSL:'all'};
+  function render(mid){
+    st.mid=mid;
+    const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
+    st.fmt=fmts.includes(st.fmt)?st.fmt:fmts[0];
+    st.ownSL='all';
+    draw();
+  }
+  function draw(){
+    const out=$(outSel);out.innerHTML='';
+    const mid=st.mid,fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
+    if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
+    const pr=P[`${mid}:${st.fmt}`];
+    const c=el('div','card');
+    const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
+    const hd=el('div','phd');
+    hd.innerHTML=`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>
+      <span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
+    c.appendChild(hd);
+    if(fmts.length>1){const ft=el('div','ftabs');
+      fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
+        b.onclick=()=>{st.fmt=f;st.ownSL='all';draw();};ft.appendChild(b);});c.appendChild(ft);}
+    const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
+    const chips=el('div');
+    chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">My record vs each skill level — when I was:</div>`;
+    const row=el('div','chips');
+    [['all','All SLs']].concat(eras.map(e=>[String(e),'SL'+e])).forEach(([v,lab])=>{
+      const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
+      b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
+    chips.appendChild(row);c.appendChild(chips);
+    c.appendChild(el('div',null,vsGrid(mergeEras(pr.descriptiveByEra||{},st.ownSL))));
+    out.appendChild(c);
+    drawH2H(out,pr,st.fmt);
+  }
+  return {render};
 }
-function drawPlayer(){
-  const out=$(stateP.out||'#playerOut');out.innerHTML='';
-  const mid=stateP.mid,fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
-  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
-  const pr=P[`${mid}:${stateP.fmt}`];
-  const c=el('div','card');
-  // header (decluttered)
-  const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
-  const hd=el('div','phd');
-  hd.innerHTML=`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>
-    <span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
-  c.appendChild(hd);
-  // format tabs
-  if(fmts.length>1){const ft=el('div','ftabs');
-    fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===stateP.fmt);
-      b.onclick=()=>{stateP.fmt=f;stateP.ownSL='all';drawPlayer();};ft.appendChild(b);});c.appendChild(ft);}
-  // own-SL filter
-  const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
-  const chips=el('div');
-  chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">My record vs each skill level — when I was:</div>`;
-  const row=el('div','chips');
-  [['all','All SLs']].concat(eras.map(e=>[String(e),'SL'+e])).forEach(([v,lab])=>{
-    const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(stateP.ownSL)===v);
-    b.onclick=()=>{stateP.ownSL=v;drawPlayer();};row.appendChild(b);});
-  chips.appendChild(row);c.appendChild(chips);
-  // grid
-  c.appendChild(el('div',null,vsGrid(mergeEras(pr.descriptiveByEra||{},stateP.ownSL))));
-  out.appendChild(c);
-  // H2H — complete, searchable table
+function drawH2H(out,pr,fmt){
   const h=(pr.headToHead||[]).filter(x=>x.meetings>=1);
   const hc=el('div','card');
-  hc.innerHTML=`<div class="eyebrow">Head-to-head — ${h.length} opponents faced (${stateP.fmt}-ball)</div>`;
-  const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" id="h2hq" placeholder="Filter opponents…">`;
+  hc.innerHTML=`<div class="eyebrow">Head-to-head — ${h.length} opponents faced (${fmt}-ball)</div>`;
+  const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
+  const q=tools.querySelector('input');
   hc.appendChild(tools);
   const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Last SL</th><th class="right">Record</th></tr></thead>`;
   const tb=el('tbody');tbl.appendChild(tb);hc.appendChild(tbl);out.appendChild(hc);
@@ -319,8 +323,9 @@ function drawPlayer(){
      });
     if(!tb.children.length)tb.innerHTML='<tr><td colspan="3" class="muted">No opponents match.</td></tr>';
   }
-  paint('');$('#h2hq').oninput=e=>paint(e.target.value.toLowerCase());
+  paint('');q.oninput=e=>paint(e.target.value.toLowerCase());
 }
+const meView=makePlayerView('#meOut'), playersView=makePlayerView('#playerOut');
 
 /* ---------- shell ---------- */
 function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
@@ -329,7 +334,7 @@ function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute(
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
-  $('#pSel').onchange=e=>renderPlayer(e.target.value,'#playerOut');
+  $('#pSel').onchange=e=>playersView.render(e.target.value);
   (function(){const r=document.documentElement;let cur=null;try{cur=localStorage.getItem('rs-theme')}catch(e){}
     if(cur)r.setAttribute('data-theme',cur);
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
