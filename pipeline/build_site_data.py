@@ -104,12 +104,32 @@ def main():
                     teams[opp["id"]] = {"name": ot["name"], "fmt": fmt_of(ot), "roster": norm_roster(ot)}
 
     analysis = json.load(open(DATA / "analysis.json"))
+
+    # Scope what's EMBEDDED in the artifact to who's actually relevant: our roster, plus
+    # everyone our players have ever faced, plus the rosters of scheduled opponents (even if
+    # not yet played). The full league-wide corpus (analysis.json on disk) stays complete —
+    # this trims only what ships in the single-file mobile dashboard, which has a hard size
+    # ceiling. Without this, embedding all 3,800+ league-wide profiles (most of them people
+    # our team has never played and never will) blows well past that ceiling for zero benefit.
+    our_mids = {str(p["mid"]) for tid in my_active for p in teams[tid]["roster"]}
+    relevant_mids = set(our_mids)
+    import csv as _csv
+    with open(DATA / "games.csv") as f:
+        for r in _csv.DictReader(f):
+            if r.get("mid") in our_mids and r.get("oppMid"):
+                relevant_mids.add(r["oppMid"])
+    for tid, t in teams.items():
+        for p in t.get("roster", []):
+            if p.get("mid"):
+                relevant_mids.add(str(p["mid"]))
+    players = {k: v for k, v in analysis["players"].items() if k.split(":")[0] in relevant_mids}
+
     bundle = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
               "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
-              "baselines": baselines(), "players": analysis["players"]}
+              "baselines": baselines(), "players": players}
     (SITE / "data.json").write_text(json.dumps(bundle, separators=(",", ":")))
-    print("site/data.json: %d teams, %d scheduled matches, %d player profiles, %.2f MB" % (
-        len(teams), len(schedule), len(bundle["players"]),
+    print("site/data.json: %d teams, %d scheduled matches, %d/%d player profiles embedded, %.2f MB" % (
+        len(teams), len(schedule), len(players), len(analysis["players"]),
         (SITE / "data.json").stat().st_size / 1024 / 1024))
     print("active teams:", [(teams[t]["name"], teams[t]["fmt"]) for t in my_active])
 
