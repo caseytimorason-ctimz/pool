@@ -1,0 +1,438 @@
+<meta charset="utf-8">
+<title>Rack Sheet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@0,400;0,500;0,600;0,700&display=swap">
+<style>
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --ink:#1b2430; --ink-soft:#5a6b7b;
+  --line:#dae1e8; --line-2:#e9eef2;
+  --accent:#1f7a8c; --accent-ink:#0e4d5a;
+  --good:#2f8f5b; --good-wash:#e4f3ea; --bad:#c0483b; --bad-wash:#f7e5e2;
+  --even:#7c8b99; --even-wash:#eef1f4; --warn:#b8791f;
+  --diamond:#243447;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 6px 18px rgba(20,30,40,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
+  --line:#26333f; --line-2:#1f2b35;
+  --accent:#4bb6c9; --accent-ink:#a7e0e9;
+  --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
+  --even:#8296a6; --even-wash:#1b2732; --warn:#d8a24a;
+  --diamond:#9db4c9;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
+  --line:#26333f; --line-2:#1f2b35;
+  --accent:#4bb6c9; --accent-ink:#a7e0e9;
+  --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
+  --even:#8296a6; --even-wash:#1b2732; --warn:#d8a24a;
+  --diamond:#9db4c9;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Oswald,system-ui,sans-serif;font-weight:600;letter-spacing:.01em;margin:0}
+.tnum{font-variant-numeric:tabular-nums}
+.wrap{max-width:820px;margin:0 auto;padding:0 14px 72px}
+header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.head-in{max-width:820px;margin:0 auto;padding:11px 14px;display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:9px;margin-right:auto}
+.mark{width:24px;height:24px;transform:rotate(45deg);border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-ink));flex:0 0 auto}
+.brand b{font-family:Oswald;font-size:19px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.brand span{color:var(--ink-soft);font-size:11px;letter-spacing:.13em;text-transform:uppercase;display:block;margin-top:1px}
+.tabs{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;border:0;background:transparent;color:var(--ink-soft);padding:7px 13px;border-radius:7px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:#fff}
+.theme-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:16px 0 6px}
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-soft);flex:1 1 auto;min-width:180px}
+select,input[type=search]{font-family:Barlow;font-size:15px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%}
+select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 15px;margin:12px 0}
+.eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.sub{color:var(--ink-soft);font-size:13px;margin:3px 0 0}
+
+/* SL diamond */
+.sl{display:inline-grid;place-items:center;width:21px;height:21px;flex:0 0 auto;background:var(--diamond);color:var(--panel);border-radius:4px;transform:rotate(45deg)}
+.sl i{transform:rotate(-45deg);font-style:normal;font-family:Oswald;font-weight:600;font-size:11px}
+
+/* opponent block (matchup) */
+.opp{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+.opp:first-child{border-top:0;margin-top:4px;padding-top:0}
+.opp-hd{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.opp-hd .nm{font-family:Oswald;font-size:18px;font-weight:600}
+.opp-hd .tag{margin-left:auto;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+
+/* ranked row */
+.rk{display:grid;grid-template-columns:20px 22px 1fr 52px;align-items:center;gap:9px;padding:6px 8px;border-radius:9px}
+.rk+.rk{margin-top:2px}
+.rk .pos{font-family:Oswald;font-size:12px;color:var(--ink-soft);text-align:right}
+.rk .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px}
+.rk .pv{font-family:Oswald;font-weight:700;font-size:18px;text-align:right}
+.rk.best{background:var(--good-wash)}
+.rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
+.win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.d-high{background:var(--good)}.d-med{background:var(--warn)}.d-low{background:var(--bad);opacity:.6}
+
+/* player header */
+.phd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.phd .nm{font-family:Oswald;font-size:22px;font-weight:600}
+.phd .stat{font-size:14px;color:var(--ink-soft)}
+.ftabs{display:flex;gap:4px;margin:10px 0 2px}
+.ftab{font-family:Oswald;text-transform:uppercase;font-size:12px;letter-spacing:.05em;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);padding:5px 12px;border-radius:7px;cursor:pointer}
+.ftab[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* own-SL filter chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{font-family:Oswald;font-size:13px;letter-spacing:.03em;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);padding:5px 11px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--diamond);color:var(--panel);border-color:var(--diamond)}
+
+/* vs-SL grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-top:4px}
+.cell{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+.cell .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.cell .v{font-family:Oswald;font-weight:600;font-size:18px;margin:1px 0}
+.cell .n{font-size:11px}
+.cell.thin{opacity:.6;border-style:dashed}
+.barm{height:4px;border-radius:3px;background:var(--line);margin-top:5px;overflow:hidden}
+.barm i{display:block;height:100%}
+
+/* H2H table */
+.h2h-tools{display:flex;gap:8px;align-items:center;margin:6px 0 8px}
+.h2h-tools input{max-width:220px;padding:8px 10px}
+table.h2h{width:100%;border-collapse:collapse;font-size:14px}
+table.h2h th{text-align:left;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.h2h td{padding:8px 6px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+table.h2h tr.op{cursor:pointer}
+table.h2h tr.op:hover{background:var(--panel-2)}
+table.h2h td.rec{font-family:Oswald;font-weight:600;text-align:right;white-space:nowrap}
+
+/* team overview grid */
+.tt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+table.tt{border-collapse:collapse;font-size:13px;min-width:100%}
+table.tt th,table.tt td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
+table.tt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);
+  font-weight:600;background:var(--panel-2);position:sticky;top:0}
+table.tt td.who,table.tt th.who{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;
+  box-shadow:1px 0 0 var(--line)}
+table.tt th.who{background:var(--panel-2);z-index:2}
+table.tt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
+table.tt td.cell{font-family:Oswald;font-weight:600}
+table.tt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
+table.tt td.cell.thin{opacity:.55}
+table.tt td.empty{color:var(--line);font-weight:400}
+table.tt tr:hover td{background:var(--panel-2)}
+table.tt tr:hover td.who{background:var(--panel-2)}
+.log{font-size:12.5px;color:var(--ink-soft)}
+.log div{padding:2px 0}
+.right{text-align:right}
+.muted{color:var(--ink-soft)}
+.foot{color:var(--ink-soft);font-size:12px;text-align:center;margin-top:24px;line-height:1.6}
+.hide{display:none!important}
+@media(max-width:520px){.brand span{display:none}.rk .pv{font-size:16px}.phd .nm{font-size:19px}}
+</style>
+
+<header>
+  <div class="head-in">
+    <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-mode="me">My Record</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="matchup">Matchup</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
+    </div>
+    <button class="theme-btn" id="theme" title="Theme">◐</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section id="m-me">
+    <div class="bar"><label class="fld">Your name — pick once, we'll remember<select id="meSel"></select></label></div>
+    <div id="meOut"></div>
+  </section>
+  <section id="m-team" class="hide">
+    <div id="teamOut"></div>
+  </section>
+  <section id="m-matchup" class="hide">
+    <div class="bar"><label class="fld">Upcoming match<select id="schedSel"></select></label></div>
+    <div id="matchOut"></div>
+  </section>
+  <section id="m-players" class="hide">
+    <div class="bar"><label class="fld">Find a player<input type="search" id="pSearch" placeholder="Type a name…" autocomplete="off"></label>
+      <label class="fld" style="max-width:260px">&nbsp;<select id="pSel"></select></label></div>
+    <div id="playerOut"></div>
+  </section>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>window.APA_DATA=null;</script>
+<script>
+let D,P,B,PL;
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const sl=n=>`<span class="sl"><i>${n}</i></span>`;
+const K_SL=8,K_H2H=3;
+const cls=p=>p>=.55?'win':p<=.45?'lose':'evn';
+
+/* engine: P(A beats Q) + evidence for confidence + direct H2H tag */
+function score(A,Q,fmt){
+  const base=(B[fmt]||{})[`${A.sl}-${Q.sl}`]||[0.5,0];
+  let p=base[0],ev=0,h2h=null;
+  const prof=P[`${A.mid}:${fmt}`];
+  if(prof){
+    const cell=(prof.predictiveVsSL||[]).find(c=>c.vsSL===Q.sl);
+    if(cell&&cell.games){const w=cell.wins/cell.games,wt=cell.games/(cell.games+K_SL);p=(1-wt)*p+wt*w;ev+=cell.games;}
+    const h=(prof.headToHead||[]).find(x=>x.oppMid===Q.mid);
+    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(.6,h.meetings/(h.meetings+K_H2H));p=(1-wt)*p+wt*w;ev+=h.meetings*2;h2h=h;}
+  }
+  return {p,conf:ev>=12?'high':ev>=5?'med':'low',h2h};
+}
+
+/* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
+function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
+function fillSchedule(){
+  const s=$('#schedSel');
+  const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${m.date} · ${esc(m.ourTeam)} vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
+  s.onchange=()=>renderMatch(sched[s.value]);
+  sched.length?renderMatch(sched[0]):($('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>');
+}
+function rankRow(pos,A,s){
+  const pct=Math.round(s.p*100);
+  const r=el('div','rk'+(pos===1?' best':''));
+  r.innerHTML=`<div class="pos">${pos}</div>${sl(A.sl)}`+
+    `<div class="nm">${esc(A.name)}`+
+      (s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} H2H</span>`:'')+
+      `<span class="dot d-${s.conf}" title="${s.conf} confidence"></span></div>`+
+    `<div class="pv ${cls(s.p)}">${pct}%</div>`+
+    `<div class="barw" style="grid-column:2/5"><i style="display:block;height:100%;width:${pct}%;background:var(--${s.p>=.55?'good':s.p<=.45?'bad':'even'})"></i></div>`;
+  return r;
+}
+function renderMatch(m){
+  const out=$('#matchOut');out.innerHTML='';
+  const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
+  const head=el('div','card');
+  head.innerHTML=`<div class="eyebrow">${m.date} · ${m.fmt}-ball</div>
+    <h2 style="font-size:20px;margin-top:2px">${esc(m.ourTeam)} <span class="muted" style="font-weight:400">vs</span> ${esc(m.oppTeam)}</h2>
+    <p class="sub">Every one of our players, stack-ranked against each of theirs. Green = we're favored. The dot shows how much history backs it.</p>`;
+  out.appendChild(head);
+  if(!theirs.length){out.appendChild(el('div','card','<p class="sub">No roster posted for this opponent yet.</p>'));return;}
+  const c=el('div','card');
+  theirs.slice().sort((a,b)=>b.sl-a.sl).forEach(Q=>{
+    const blk=el('div','opp');
+    blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span><span class="tag">SL${Q.sl} · our best picks ↓</span>`));
+    ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)
+      .forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
+    c.appendChild(blk);
+  });
+  out.appendChild(c);
+}
+
+/* ---------- PLAYERS ---------- */
+function playerList(){
+  const by={};
+  Object.entries(P).forEach(([k,v])=>{const mid=k.split(':')[0];
+    (by[mid]=by[mid]||{mid,name:v.name,games:0,fmts:{}});by[mid].games+=v.totalGames;by[mid].fmts[v.format]=1;
+    if(v.name&&v.name.length>(by[mid].name||'').length)by[mid].name=v.name;});
+  return Object.values(by).filter(p=>p.name&&p.name!=='undefined').sort((a,b)=>b.games-a.games);
+}
+function fillPlayers(f){
+  const s=$('#pSel');f=(f||'').toLowerCase();
+  const list=(f?PL.filter(p=>p.name.toLowerCase().includes(f)):PL).slice(0,400);
+  s.innerHTML=list.map(p=>`<option value="${p.mid}">${esc(p.name)} · ${p.games} games</option>`).join('');
+  list.length?playersView.render(list[0].mid):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
+}
+/* our teammates = players on our active teams, for the "My Record" picker */
+function teammates(){
+  const seen={},list=[];
+  (D.myActiveTeams||[]).forEach(tid=>roster(tid).forEach(p=>{if(p.mid&&!seen[p.mid]){seen[p.mid]=1;list.push(p);}}));
+  return list.sort((a,b)=>a.name.localeCompare(b.name));
+}
+function fillMe(){
+  const s=$('#meSel'),tm=teammates();
+  if(!tm.length){$('#meOut').innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  s.innerHTML=tm.map(p=>`<option value="${p.mid}">${esc(p.name)}</option>`).join('');
+  let me=null;try{me=localStorage.getItem('rs-me')}catch(e){}
+  if(!me&&D.memberId&&tm.some(p=>String(p.mid)===String(D.memberId)))me=String(D.memberId); // owner default
+  if(me&&tm.some(p=>String(p.mid)===String(me)))s.value=me;
+  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}meView.render(s.value);};
+  meView.render(s.value);
+}
+
+/* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
+/* Scoped to each active team's ACTUAL current roster, per format — not "anyone who has
+   ever played this format," which is what pooling teammates() across both active teams
+   incorrectly did (showed people on the wrong team's format, e.g. a 9-ball-only teammate
+   appearing under 8-ball just because they had old 8-ball history). */
+const teamState={fmt:null};
+function teamFormats(){
+  return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
+}
+function activeRosterForFormat(fmt){
+  const tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
+  return tid!=null ? roster(tid) : [];
+}
+function renderTeamOverview(){
+  const out=$('#teamOut'); out.innerHTML='';
+  const fmts=teamFormats();
+  if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
+  teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
+  const fmt=teamState.fmt;
+  const tm=activeRosterForFormat(fmt);
+
+  const card=el('div','card');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Whole roster vs each skill level</span>'));
+  card.appendChild(el('p','sub','Current-SL performance — the same numbers the Matchup engine uses. Tap a name to jump to their full record.'));
+  if(fmts.length>1){const ft=el('div','ftabs');
+    fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
+      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ft.appendChild(b);});card.appendChild(ft);}
+
+  if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}
+  const rows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(r=>r.pr);
+  if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball history yet for this roster.'));out.appendChild(card);return;}
+
+  const slCols=[...new Set(rows.flatMap(r=>(r.pr.predictiveVsSL||[]).map(c=>c.vsSL)))].sort((a,b)=>a-b);
+  rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
+
+  const wrap=el('div','tt-wrap');
+  const table=el('table','tt');
+  table.appendChild(el('thead',null,
+    '<tr><th class="who">Player</th>'+slCols.map(sl=>`<th>vs SL${sl}</th>`).join('')+'</tr>'));
+  const tb=el('tbody');
+  rows.forEach(({p,pr})=>{
+    const tr=el('tr');
+    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}${esc(p.name)}</span>`;
+    who.style.cursor='pointer';
+    who.onclick=()=>{ setMode('me'); const s=$('#meSel'); if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); } };
+    tr.appendChild(who);
+    const byVs={}; (pr.predictiveVsSL||[]).forEach(c=>byVs[c.vsSL]=c);
+    slCols.forEach(sl0=>{
+      const c=byVs[sl0];
+      const td=el('td','cell');
+      if(!c){ td.className='empty'; td.textContent='—'; }
+      else{
+        const thin=c.games<5;
+        td.className='cell'+(thin?' thin':'')+' '+(c.winPct>=55?'win':c.winPct<=45?'lose':'evn');
+        td.innerHTML=`${c.winPct}%<span class="n">${c.wins}-${c.games-c.wins}</span>`;
+      }
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb); wrap.appendChild(table); card.appendChild(wrap);
+  out.appendChild(card);
+}
+function mergeEras(byEra,ownSL){
+  const acc={};
+  Object.entries(byEra).forEach(([era,rows])=>{
+    if(ownSL!=='all'&&String(ownSL)!==String(era))return;
+    rows.forEach(r=>{const a=acc[r.vsSL]=acc[r.vsSL]||{vsSL:r.vsSL,games:0,wins:0};a.games+=r.games;a.wins+=r.wins;});
+  });
+  return Object.values(acc).sort((a,b)=>a.vsSL-b.vsSL).map(r=>({...r,winPct:r.games?Math.round(r.wins/r.games*100):0}));
+}
+function vsGrid(rows){
+  if(!rows.length)return '<p class="muted" style="font-size:13px">No games in this filter.</p>';
+  return '<div class="grid">'+rows.map(c=>{const thin=c.games<5,col=c.winPct>=55?'good':c.winPct<=45?'bad':'even';
+    return `<div class="cell${thin?' thin':''}"><div class="k">vs SL${c.vsSL}</div>
+      <div class="v ${c.winPct>=55?'win':c.winPct<=45?'lose':'evn'}">${c.wins}-${c.games-c.wins}</div>
+      <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>';
+}
+/* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
+   bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
+function makePlayerView(outSel){
+  const st={mid:null,fmt:null,ownSL:'all'};
+  function render(mid){
+    st.mid=mid;
+    const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
+    st.fmt=fmts.includes(st.fmt)?st.fmt:fmts[0];
+    st.ownSL='all';
+    draw();
+  }
+  function draw(){
+    const out=$(outSel);out.innerHTML='';
+    const mid=st.mid,fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
+    if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
+    const pr=P[`${mid}:${st.fmt}`];
+    const c=el('div','card');
+    const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
+    const hd=el('div','phd');
+    hd.innerHTML=`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>
+      <span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
+    c.appendChild(hd);
+    if(fmts.length>1){const ft=el('div','ftabs');
+      fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
+        b.onclick=()=>{st.fmt=f;st.ownSL='all';draw();};ft.appendChild(b);});c.appendChild(ft);}
+    const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
+    const chips=el('div');
+    chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">My record vs each skill level — when I was:</div>`;
+    const row=el('div','chips');
+    [['all','All SLs']].concat(eras.map(e=>[String(e),'SL'+e])).forEach(([v,lab])=>{
+      const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
+      b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
+    chips.appendChild(row);c.appendChild(chips);
+    c.appendChild(el('div',null,vsGrid(mergeEras(pr.descriptiveByEra||{},st.ownSL))));
+    out.appendChild(c);
+    drawH2H(out,pr,st.fmt);
+  }
+  return {render};
+}
+function drawH2H(out,pr,fmt){
+  const h=(pr.headToHead||[]).filter(x=>x.meetings>=1);
+  const hc=el('div','card');
+  hc.innerHTML=`<div class="eyebrow">Head-to-head — ${h.length} opponents faced (${fmt}-ball)</div>`;
+  const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
+  const q=tools.querySelector('input');
+  hc.appendChild(tools);
+  const tbl=el('table','h2h');tbl.innerHTML=`<thead><tr><th>Opponent</th><th>Last SL</th><th class="right">Record</th></tr></thead>`;
+  const tb=el('tbody');tbl.appendChild(tb);hc.appendChild(tbl);out.appendChild(hc);
+  function paint(q){
+    tb.innerHTML='';
+    h.filter(o=>!q||(o.oppName||'').toLowerCase().includes(q))
+     .sort((a,b)=>b.meetings-a.meetings)
+     .forEach(o=>{
+       const lastSL=o.games[o.games.length-1].oppSL,p=o.wins/o.meetings;
+       const tr=el('tr','op');
+       tr.innerHTML=`<td>${esc(o.oppName||'Unknown')}</td><td>${sl(lastSL)}</td>
+         <td class="rec ${cls(p)}">${o.wins}-${o.meetings-o.wins}</td>`;
+       const det=el('tr');det.className='hide';
+       det.innerHTML=`<td colspan="3" class="log">`+o.games.slice().reverse().map(g=>
+         `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b></div>`).join('')+`</td>`;
+       tr.onclick=()=>det.classList.toggle('hide');
+       tb.appendChild(tr);tb.appendChild(det);
+     });
+    if(!tb.children.length)tb.innerHTML='<tr><td colspan="3" class="muted">No opponents match.</td></tr>';
+  }
+  paint('');q.oninput=e=>paint(e.target.value.toLowerCase());
+}
+const meView=makePlayerView('#meOut'), playersView=makePlayerView('#playerOut');
+
+/* ---------- shell ---------- */
+function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.mode===m));
+  $('#m-me').classList.toggle('hide',m!=='me');
+  $('#m-team').classList.toggle('hide',m!=='team');
+  $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');
+  if(m==='team')renderTeamOverview();}
+function init(){
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+  $('#pSearch').oninput=e=>fillPlayers(e.target.value);
+  $('#pSel').onchange=e=>playersView.render(e.target.value);
+  (function(){const r=document.documentElement;let cur=null;try{cur=localStorage.getItem('rs-theme')}catch(e){}
+    if(cur)r.setAttribute('data-theme',cur);
+    $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
+      const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
+      r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
+  $('#foot').innerHTML=`Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  fillMe();fillSchedule();fillPlayers('');
+}
+(function start(){
+  function go(data){D=data;P=D.players;B=D.baselines;PL=playerList();init();}
+  if(window.APA_DATA){go(window.APA_DATA);}
+  else{fetch('./data.json').then(r=>r.json()).then(go).catch(()=>{document.body.innerHTML='<p style="padding:24px">Could not load data.json.</p>';});}
+})();
+</script>
