@@ -48,6 +48,7 @@ header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1p
 .tabs::-webkit-scrollbar{display:none}
 .tab{font-family:Oswald;text-transform:uppercase;letter-spacing:.04em;font-size:13px;border:0;background:transparent;
   color:var(--ink-soft);padding:7px 13px;border-radius:7px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.tab .sm{display:none}
 .tab[aria-selected="true"]{background:var(--accent);color:#fff}
 .theme-btn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:16px 0 6px}
@@ -80,6 +81,13 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .barw{grid-column:2/4;height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
 .win{color:var(--good)}.lose{color:var(--bad)}.evn{color:var(--even)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+/* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
+.whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.whobtn{display:flex;align-items:center;gap:9px;text-align:left;padding:12px 13px;cursor:pointer;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:11px;color:var(--ink);
+  font-family:Barlow;font-size:15px;font-weight:500}
+.whobtn:hover{border-color:var(--accent);background:var(--accent-wash)}
+.whobtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-soft)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .dot{margin-left:0}
@@ -149,9 +157,13 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   /* On a phone the four tabs + wordmark + theme button overflowed the header and clipped
      the last tab entirely (it was unreachable). Drop the wordmark to the diamond mark and
      tighten the tabs so all four fit; .tabs can still scroll if a label grows. */
+  /* All four tabs must be visible without horizontal scrolling — a tab you can only reach
+     by swiping the strip is a tab nobody finds. Shorten the two longest labels instead. */
   .brand span,.brand b{display:none}
   .head-in{gap:8px;padding:10px 12px}
-  .tab{padding:7px 9px;font-size:12px;letter-spacing:.02em}
+  .tab{padding:7px 8px;font-size:12px;letter-spacing:.01em}
+  .tab .lg{display:none}
+  .tab .sm{display:inline}
   .theme-btn{width:30px;height:30px;flex:0 0 auto}
   .rk .pv{font-size:16px}.phd .nm{font-size:19px}
 }
@@ -161,9 +173,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   <div class="head-in">
     <div class="brand"><div class="mark"></div><div><b>Rack Sheet</b><span>Matchup Console</span></div></div>
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-mode="me">My Record</button>
+      <button class="tab" role="tab" aria-selected="true" data-mode="me"><span class="lg">My Record</span><span class="sm">Me</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="team">Team</button>
-      <button class="tab" role="tab" aria-selected="false" data-mode="matchup">Matchup</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="matchup"><span class="lg">Matchup</span><span class="sm">Match</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players">Players</button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
@@ -172,7 +184,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 
 <div class="wrap">
   <section id="m-me">
-    <div class="bar"><label class="fld">Your name<select id="meSel"></select></label></div>
+    <div class="bar" id="mePicker"><label class="fld">Showing<select id="meSel"></select></label></div>
     <div id="meOut"></div>
   </section>
   <section id="m-team" class="hide">
@@ -285,15 +297,31 @@ function teammates(){
   (D.myActiveTeams||[]).forEach(tid=>roster(tid).forEach(p=>{if(p.mid&&!seen[p.mid]){seen[p.mid]=1;list.push(p);}}));
   return list.sort((a,b)=>a.name.localeCompare(b.name));
 }
+function pickMe(mid){
+  try{localStorage.setItem('rs-me',mid)}catch(e){}
+  const s=$('#meSel'); if(s)s.value=mid;
+  $('#mePicker').classList.remove('hide');
+  meView.render(mid);
+}
 function fillMe(){
   const s=$('#meSel'),tm=teammates();
   if(!tm.length){$('#meOut').innerHTML='<div class="card"><p class="sub">No roster loaded.</p></div>';return;}
   s.innerHTML=tm.map(p=>`<option value="${p.mid}">${esc(p.name)}</option>`).join('');
+  s.onchange=()=>pickMe(s.value);
   let me=null;try{me=localStorage.getItem('rs-me')}catch(e){}
-  if(!me&&D.memberId&&tm.some(p=>String(p.mid)===String(D.memberId)))me=String(D.memberId); // owner default
-  if(me&&tm.some(p=>String(p.mid)===String(me)))s.value=me;
-  s.onchange=()=>{try{localStorage.setItem('rs-me',s.value)}catch(e){}meView.render(s.value);};
-  meView.render(s.value);
+  if(me&&tm.some(p=>String(p.mid)===String(me))){pickMe(me);return;}
+  // First run: never show somebody else's record by default — teammates opened the app,
+  // saw the owner's numbers, and didn't realize the name at the top was theirs to change.
+  // Make identity an explicit, unmissable first step; after that it's remembered silently.
+  $('#mePicker').classList.add('hide');
+  const out=$('#meOut'); out.innerHTML='';
+  const card=el('div','card');
+  card.innerHTML=`<h2 style="font-size:19px">Who are you?</h2>
+    <p class="sub">Tap your name to see your record. We'll remember it on this phone.</p>`;
+  const grid=el('div','whogrid');
+  tm.forEach(p=>{const b=el('button','whobtn',`${sl(p.sl)}<span>${esc(p.name)}</span>`);
+    b.onclick=()=>pickMe(String(p.mid));grid.appendChild(b);});
+  card.appendChild(grid); out.appendChild(card);
 }
 
 /* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
