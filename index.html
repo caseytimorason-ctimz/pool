@@ -481,7 +481,16 @@ function explain(A,Q,fmt){
   }
   if((A.new||games<K_NEW)&&!hadH2H)
     out.push(`No real track record yet (unrated) — this leans on the handicap, so treat it as a guess.`);
-  out.push(`Bottom line: about ${Math.round(score(A,Q,fmt).p*100)}% to win — APA handicapping keeps every match close to a coin-flip, so even a real edge is a few points, not a blowout.`);
+  const ep=expPts(A,Q,fmt), M=PMOM[fmt];
+  if(prof && prof.nPtsWin>=10){
+    const tallWin=prof.avgPtsWin>M.win.m+0.6, tallLoss=prof.avgPtsLoss>M.loss.m+0.6, lowLoss=prof.avgPtsLoss<M.loss.m-0.6;
+    if(tallWin||tallLoss||lowLoss)
+      out.push(`Margins: ${esc(A.name.split(' ')[0])} `+
+        (tallWin?`wins big (${prof.avgPtsWin} pts vs ${M.win.m} avg when winning)`:'')+
+        ((tallWin&&(tallLoss||lowLoss))?', and ':'')+
+        (tallLoss?`stays in it losing (${prof.avgPtsLoss} pts)`:lowLoss?`gets buried when losing (${prof.avgPtsLoss} pts)`:'')+`.`);
+  }
+  out.push(`Bottom line: about ${Math.round(score(A,Q,fmt).p*100)}% to win, ~${Math.round(ep.m)} of ${M.total} match points — APA handicapping keeps matches close to a coin-flip, so even a real edge is a few points.`);
   return out;
 }
 // Make a ranked row expandable to show the reasoning. Toggles a .why panel right after it.
@@ -516,11 +525,18 @@ function normCdf(z){
 }
 // Expected match points (and variance) our player A earns against Q — derived from the calibrated
 // win probability and the win/loss point moments. E[pts]=p*winMean+(1-p)*lossMean.
+const K_MARG=15;  // shrink a player's win/loss point margins toward the league mean by sample
 function expPts(A,Q,fmt){
-  const M=PMOM[fmt], p=score(A,Q,fmt).p;
-  const m=p*M.win.m+(1-p)*M.loss.m;
-  const v=p*(M.win.sd*M.win.sd+M.win.m*M.win.m)+(1-p)*(M.loss.sd*M.loss.sd+M.loss.m*M.loss.m)-m*m;
-  return {m, v:Math.max(v,0.01), p};
+  const M=PMOM[fmt], p=score(A,Q,fmt).p, prof=P[`${A.mid}:${fmt}`];
+  // V2: how many points THIS player banks when winning vs losing (does he win big / lose close?),
+  // shrunk toward the league win/loss means by how much of a record he has. This is the margin
+  // signal — the win probability p already handles win-vs-lose; these set the magnitude.
+  const sh=(obs,n,base)=>(obs==null||!n)?base:base+(obs-base)*(n/(n+K_MARG));
+  const wm=sh(prof&&prof.avgPtsWin, prof&&prof.nPtsWin, M.win.m);
+  const lm=sh(prof&&prof.avgPtsLoss, prof&&prof.nPtsLoss, M.loss.m);
+  const m=p*wm+(1-p)*lm;
+  const v=p*(M.win.sd*M.win.sd+wm*wm)+(1-p)*(M.loss.sd*M.loss.sd+lm*lm)-m*m;
+  return {m, v:Math.max(v,0.01), p, wm, lm};
 }
 // Points banked so far this match (from entered results), our side and theirs.
 function teamScore(m){
