@@ -78,6 +78,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .nm.two{display:flex;flex-direction:column;gap:1px;white-space:normal;overflow:visible;min-width:0}
 .rk .nm.two .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px;flex:0 0 auto;white-space:nowrap}
+.rk .nm .h2h.unrated{color:var(--warn)}
 .rk .pv{font-family:Oswald;font-weight:700;font-size:18px;text-align:right}
 .rk .pv-u{font-family:Barlow;font-size:9px;font-weight:600;color:var(--ink-soft);display:block;margin-top:-2px}
 .rk.best{background:var(--good-wash)}
@@ -253,6 +254,25 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   .theme-btn{width:30px;height:30px;flex:0 0 auto}
   .rk .pv{font-size:16px}.phd .nm{font-size:19px}
 }
+
+.lu-head{display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px 12px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:10px;font-size:15px}
+.lu-head b{font-family:Oswald;font-size:22px;color:var(--accent-ink)}
+.lu-cap{font-family:Oswald;font-weight:700;font-size:13px;color:var(--ink-soft);letter-spacing:.04em}
+.lu-cap.over{color:var(--bad)}
+.lu-pairs{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.lu-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
+  padding:8px 10px;border:1px solid var(--line-2);border-radius:9px}
+.lu-us{display:flex;align-items:center;gap:7px;min-width:0}
+.lu-them{display:flex;align-items:center;gap:7px;min-width:0;justify-content:flex-end;text-align:right;color:var(--ink-soft)}
+.lu-us .who,.lu-them .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu-pct{font-family:Oswald;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.lu-alt{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;font-size:12.5px;
+  padding:9px 8px;border:0;border-bottom:1px solid var(--line-2);background:transparent;color:var(--ink-soft);
+  width:100%;text-align:left;cursor:pointer;font-family:inherit}
+.lu-alt:last-child{border-bottom:0}
+.lu-alt:hover{background:var(--panel-2)}
+.lu-alt b{font-family:Oswald;color:var(--ink);font-size:15px}
 </style>
 
 <header>
@@ -305,7 +325,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 
 <script>window.APA_DATA=null;</script>
 <script>
-let D,P,B,PL;
+let D,P,B,PL,GAP={};
 const $=s=>document.querySelector(s);
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -318,13 +338,45 @@ function fmtDate(d){
   if(parts.length<3)return `${MON[(+parts[1]||1)-1]} ${parts[0]}`;
   return `${niceDate(d)}, ${parts[0]}`;
 }
-const K_SL=8,K_H2H=2;
+const K_SL=8,K_H2H=1.5,K_NEW=10,K_BASE=30,H2H_CAP=0.9;
 const cls=p=>p>=.55?'win':p<=.45?'lose':'evn';
+
+// The SL-vs-SL handicap curve, per format, as a function of skill-level GAP (A.sl - Q.sl),
+// built once from the well-sampled baseline cells. This is what thin/flukey cells regress
+// toward instead of a flat 0.50 — and it captures that 9-ball's handicap nearly equalizes
+// every gap (~0.50) while 8-ball stays skill-dominated (a 4-gap is ~0.76 for the stronger
+// player). Sparse gaps clamp to the nearest well-sampled one.
+function buildGapPriors(bl){
+  const out={};
+  for(const fmt in bl){
+    const agg={};
+    for(const k in bl[fmt]){const [a,q]=k.split('-').map(Number);const [w,n]=bl[fmt][k];
+      if(n<40)continue; const g=a-q; (agg[g]=agg[g]||[0,0]); agg[g][0]+=w*n; agg[g][1]+=n;}
+    const known={}; for(const g in agg)known[g]=agg[g][0]/agg[g][1];
+    const gs=Object.keys(known).map(Number).sort((a,b)=>a-b);
+    const curve={};
+    for(let g=-8;g<=8;g++){
+      if(known[g]!=null){curve[g]=known[g];continue;}
+      if(!gs.length){curve[g]=0.5;continue;}
+      if(g<gs[0])curve[g]=known[gs[0]]; else if(g>gs[gs.length-1])curve[g]=known[gs[gs.length-1]];
+      else curve[g]=known[gs.reduce((b,x)=>Math.abs(x-g)<Math.abs(b-g)?x:b,gs[0])];
+    }
+    out[fmt]=curve;
+  }
+  return out;
+}
+function gapPrior(A,Q,fmt){const c=GAP[fmt]; if(!c)return 0.5; const g=Math.max(-8,Math.min(8,A.sl-Q.sl)); return c[g]!=null?c[g]:0.5;}
 
 /* engine: P(A beats Q) + evidence for confidence + direct H2H tag */
 function score(A,Q,fmt){
   const base=(B[fmt]||{})[`${A.sl}-${Q.sl}`]||[0.5,0];
-  let p=base[0],ev=0,h2h=null;
+  // Shrink the SL-vs-SL baseline toward an even match by its sample size. Some extreme-gap
+  // cells rest on a handful of league games (e.g. a 3 "beats" a 9 80% from just 5 games, while
+  // the well-sampled 3-vs-8 and 4-vs-9 cells show the underdog losing badly) — taking a flukey
+  // rate at face value is what made the engine want to spend a 3 on a 9. Well-sampled cells
+  // (hundreds of games) are essentially unchanged.
+  const nB=base[1]||0, prior=gapPrior(A,Q,fmt);
+  let p=prior+(base[0]-prior)*(nB/(nB+K_BASE)),ev=0,h2h=null;
   const prof=P[`${A.mid}:${fmt}`];
   if(prof){
     const cell=(prof.predictiveVsSL||[]).find(c=>c.vsSL===Q.sl);
@@ -335,9 +387,37 @@ function score(A,Q,fmt){
     // have, so it also carries more weight than a generic SL-vs-SL baseline (which can rest on
     // only a handful of league-wide games): cap raised, and it climbs faster with meetings.
     const h=(prof.headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
-    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(.85,h.meetings/(h.meetings+K_H2H));p=(1-wt)*p+wt*w;ev+=h.meetings*2;h2h=h;}
+    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(H2H_CAP,h.meetings/(h.meetings+K_H2H));p=(1-wt)*p+wt*w;ev+=h.meetings*2;h2h=h;}
   }
-  return {p,conf:ev>=12?'high':ev>=5?'med':'low',h2h};
+  // Unrated players: a brand-new player is entered at SL3 by default, so the SL-vs-SL baseline
+  // (e.g. a 3 is "80% vs a 9" on the handicap) is a fiction — we have no evidence they can
+  // actually run a rack. Pull their number toward a coin flip in proportion to how little we
+  // know, so an unrated 3 doesn't outrank a proven pick on borrowed confidence. A direct
+  // head-to-head record (rare for a new player) is real evidence and is left to stand.
+  const games=prof?(prof.totalGames||0):0;
+  const unrated=!!A.new || games<K_NEW;
+  if(unrated && !(h2h&&h2h.meetings>=3)){
+    const known=Math.min(games,K_NEW)/K_NEW;   // 0 games -> fall back to the SL/handicap prior
+    p=prior+(p-prior)*known;
+  }
+  return {p,conf:ev>=12?'high':ev>=5?'med':'low',h2h,unrated};
+}
+
+// A proven, well-sampled OUTLIER record vs this exact opponent — the case where someone just
+// has another player's game figured out. Returns a strength score (0 = none). It fires only
+// when the record is real (>=3 meetings, winning) AND clearly beats how the field does against
+// that opponent, so a strong 9 who loses to one specific person is caught. This is treated as
+// the recommendation regardless of the handicap EV, because a direct record like that is the
+// strongest signal in the game.
+function provenEdge(A,Q,fmt){
+  const prof=P[`${A.mid}:${fmt}`]; if(!prof)return 0;
+  const h=(prof.headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
+  if(!h||h.meetings<3)return 0;
+  const wr=h.wins/h.meetings; if(wr<0.6)return 0;
+  const qp=P[`${Q.mid}:${fmt}`];
+  const field=(qp&&qp.totalGames)?(1-qp.wins/qp.totalGames):0.5;  // how everyone else does vs Q
+  const edge=wr-field;
+  return edge>=0.2 ? edge*Math.min(h.meetings,10) : 0;
 }
 
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
@@ -383,6 +463,7 @@ function rankRow(pos,A,s){
   r.innerHTML=`<div class="pos">${pos}</div>${sl(A.sl)}`+
     `<div class="nm">${esc(A.name)}`+
       (s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} H2H</span>`:'')+
+      (s.unrated?`<span class="h2h unrated">unrated</span>`:'')+
       `<span class="dot d-${s.conf}" title="${s.conf} confidence"></span></div>`+
     `<div class="pv ${cls(s.p)}">${pct}%</div>`+
     `<div class="barw" style="grid-column:2/5"><i style="display:block;height:100%;width:${pct}%;background:var(--${s.p>=.55?'good':s.p<=.45?'bad':'even'})"></i></div>`;
@@ -393,11 +474,12 @@ function renderMatch(m){
   const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
   // Plan (rank every pairing) vs Live (sequencing companion for during the match).
   const modeBar=el('div','ftabs');modeBar.style.margin='4px 0 0';
-  [['plan','Plan'],['live','Live']].forEach(([v,lab])=>{
+  [['plan','Plan'],['lineup','Lineup'],['live','Live']].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
     b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
   out.appendChild(modeBar);
   if((live.mode0||'plan')==='live'){renderLive(m,out);return;}
+  if(live.mode0==='lineup'){renderLineup(m,out);return;}
 
   // Compact header: the dropdown directly above already names the date/teams/format, so
   // repeating it full-size just pushed the actual picks below the fold on a phone.
@@ -414,8 +496,15 @@ function renderMatch(m){
     const blk=el('div','opp');
     const newTag=Q.new?'<span class="tag new">new · unrated</span>':'';
     blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span>${newTag}<span class="tag">best picks ↓</span>`));
-    ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)
-      .forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
+    const ranked=ours.map(A=>[A,score(A,Q,fmt),provenEdge(A,Q,fmt)])
+      .sort((x,y)=>(y[2]-x[2])||(y[1].p-x[1].p));
+    ranked.forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
+    const pe=ranked[0];
+    if(pe[2]>0 && pe[1].h2h){
+      const alt=ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)[0];
+      if(alt && String(alt[0].mid)!==String(pe[0].mid))
+        blk.appendChild(el('p','sub',`${esc(pe[0].name)} is ${pe[1].h2h.wins}-${pe[1].h2h.meetings-pe[1].h2h.wins} against ${esc(Q.name)} — a proven edge over one opponent beats the handicap that favors ${esc(alt[0].name)} on paper.`));
+    }
     c.appendChild(blk);
   });
   out.appendChild(c);
@@ -763,7 +852,7 @@ const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerVie
                       (they commit Q, we answer with our best)
    Initiative flips every match. Because a state where WE counter pays out max-over-A, the
    solver correctly rewards keeping a strong player in reserve — so it stops throwing the 6. */
-const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null};
+const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null,five:null,theirFive:null};
 function pWin(A,Q,fmt){return score(A,Q,fmt).p;}
 // Memoized minimax over the remaining lineup. weThrow=true means it's our turn to put a
 // player up (and be countered). Returns our total expected match wins over the rest of the
@@ -797,16 +886,38 @@ function gameValue(ours,theirs,fmt,weThrow,memo){
   }
   memo[key]=best;return best;
 }
-function livePools(m){
+// Raw availability: who's here and not yet played (ignores the locked five).
+function livePoolsRaw(m){
   const ours=roster(m.ourTeamId).filter(p=>!live.outOurs.has(String(p.mid))&&!live.played.some(x=>x.our===String(p.mid)));
   const theirs=roster(m.oppTeamId).filter(p=>!live.outTheirs.has(String(p.mid))&&!live.played.some(x=>x.their===String(p.mid)));
   return {ours,theirs};
 }
+// The pools the engine actually reasons over. Once a five is fielded (chosen in Lineup, or the
+// only legal option), both the Lineup optimizer and the Live sequencer work within it — same
+// engine, same 23-cap, so their advice never contradicts.
+function livePools(m){
+  let {ours,theirs}=livePoolsRaw(m);
+  if(live.five)ours=ours.filter(p=>live.five.has(String(p.mid)));
+  if(live.theirFive)theirs=theirs.filter(p=>live.theirFive.has(String(p.mid)));
+  return {ours,theirs};
+}
 function renderLive(m,host){
   const fmt=m.fmt, {ours,theirs}=livePools(m);
+  // If a five has been fielded (from Lineup), show it up top with a way back — one engine.
+  if(live.five){
+    const names=roster(m.ourTeamId).filter(p=>live.five.has(String(p.mid)));
+    const bar=el('div','card');bar.style.borderColor='var(--accent)';
+    bar.innerHTML=`<div class="eyebrow" style="color:var(--accent)">Fielded five · ${names.reduce((s,p)=>s+p.sl,0)}/${SL_CAP} SL</div>`+
+      `<p class="sub" style="margin-top:4px">${names.slice().sort((a,b)=>b.sl-a.sl).map(p=>esc(p.name)+' ('+p.sl+')').join(' · ')}</p>`;
+    const chg=el('button','ftab','Change five');chg.style.marginTop='8px';
+    chg.onclick=()=>{live.mode0='lineup';renderMatch(m);};
+    const clr=el('button','ftab','Free bench');clr.style.marginLeft='6px';
+    clr.onclick=()=>{live.five=null;live.theirFive=null;renderMatch(m);};
+    bar.appendChild(chg);bar.appendChild(clr);host.appendChild(bar);
+  }
   const wrapCard=el('div','card');
   wrapCard.appendChild(el('h2',null,'<span class="eyebrow">Who\'s here</span>'));
-  wrapCard.appendChild(el('p','sub','Tap anyone who is not playing tonight to grey them out.'));
+  wrapCard.appendChild(el('p','sub',live.five?'The fielded five is set above — grey out anyone here who still is not playing.':'Tap anyone who is not playing tonight to grey them out.'));
   [['Ours',roster(m.ourTeamId),live.outOurs],['Theirs',roster(m.oppTeamId),live.outTheirs]].forEach(([lab,list,outSet])=>{
     const h=el('div','eyebrow',lab);h.style.marginTop='10px';wrapCard.appendChild(h);
     const row=el('div','chips');
@@ -866,22 +977,26 @@ function renderLive(m,host){
         const now=pWin(A,Q,fmt);
         // after we answer, the next match alternates to us throwing first
         const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
-        return {A,now,rest,total:now+rest};
-      }).sort((a,b)=>b.total-a.total);
+        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt)};
+      }).sort((a,b)=>(b.edge-a.edge)||(b.total-a.total));   // a proven edge outranks raw EV
       const best=ranked[0];
       ranked.forEach((r,i)=>{
         const row=el('div','rk'+(i===0?' best':''));
         const s=score(r.A,Q,fmt);
-        const h2hTag=s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'';
+        const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
           `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} more wins after, playing it out</span></div>`+
           `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
         c.appendChild(row);
       });
-      // call out when the best overall pick is NOT the best head-to-head
       const bestNow=ranked.slice().sort((a,b)=>b.now-a.now)[0];
-      if(bestNow && bestNow.A.mid!==best.A.mid){
+      const bestH2H=score(best.A,Q,fmt).h2h;
+      if(best.edge>0 && bestH2H){
+        const h=bestH2H;
+        c.appendChild(el('p','sub',
+          `${esc(best.A.name)} is ${h.wins}-${h.meetings-h.wins} against ${esc(Q.name)}, who beats the field otherwise — a record like that against one player is the strongest read there is, so put them up even though the handicap flatters ${esc(bestNow.A.name)}.`));
+      } else if(bestNow && bestNow.A.mid!==best.A.mid){
         c.appendChild(el('p','sub',
           `Note: ${esc(bestNow.A.name)} is the better straight matchup (${Math.round(bestNow.now*100)}%), `+
           `but using ${esc(best.A.name)} keeps a stronger set of answers for the rest of the night.`));
@@ -932,6 +1047,132 @@ function renderLive(m,host){
     });
   }
   host.appendChild(c);
+}
+
+/* ---------- LINEUP: pick the legal 5 that plays best as a whole ----------
+   The Plan tab ranks each matchup in isolation, which is misleading: chasing the single best
+   pick can strand the rest of the night at a disadvantage, and you can't even field everyone —
+   the five who play cannot exceed 23 combined skill level. This picks the legal five and values
+   each candidate by the alternating throw/counter game (both sides play well, initiative
+   averaged), so "who remains" is priced in. Matchups are shown as a target; the actual pairings
+   get decided by throws (that's the Live tab). */
+const SL_CAP=23, TEAM_SIZE=5;
+function combos(arr,k){
+  if(k===0)return [[]]; if(arr.length<k)return [];
+  const [h,...t]=arr;
+  return combos(t,k-1).map(c=>[h,...c]).concat(combos(t,k));
+}
+function sumSL(a){return a.reduce((s,p)=>s+(p.sl||0),0);}
+// their likely five: teams tend to field their strongest legal lineup
+function likelyFive(pool){
+  if(pool.length<=TEAM_SIZE)return pool.slice();
+  const legal=combos(pool,TEAM_SIZE).filter(c=>sumSL(c)<=SL_CAP);
+  const pick=(legal.length?legal:combos(pool,TEAM_SIZE)).sort((a,b)=>sumSL(b)-sumSL(a))[0];
+  return pick;
+}
+// greedy 1-1 pairing for display only (who we'd aim at whom)
+function pairing(O,T,fmt){
+  const cells=[];O.forEach(A=>T.forEach(Q=>cells.push([A,Q,pWin(A,Q,fmt)])));
+  cells.sort((a,b)=>b[2]-a[2]);
+  const uA=new Set(),uQ=new Set(),out=[];
+  cells.forEach(([A,Q,p])=>{if(!uA.has(A.mid)&&!uQ.has(Q.mid)){uA.add(A.mid);uQ.add(Q.mid);out.push({A,Q,p});}});
+  return out;
+}
+function lineupValue(O,T,fmt,memo){
+  // average of both initiatives — over a real match, who throws first alternates
+  return (gameValue(O,T,fmt,true,memo)+gameValue(O,T,fmt,false,memo))/2;
+}
+// The shared optimizer: the best legal five to field and its value. Used by the Lineup view
+// AND offered inside Live, so both run on one engine.
+function bestFive(m,fmt){
+  const {ours,theirs}=livePoolsRaw(m);
+  const their5=likelyFive(theirs);
+  let legal=combos(ours,TEAM_SIZE).filter(c=>sumSL(c)<=SL_CAP);
+  if(ours.length<TEAM_SIZE)legal=[ours];               // fewer than five here — play them all
+  if(!legal.length)return {five:null,their5,ranked:[],ours,theirs};
+  const memo={};
+  const ranked=legal.map(c=>({c,v:lineupValue(c,their5,fmt,memo)})).sort((a,b)=>b.v-a.v);
+  return {five:ranked[0].c,their5,ranked,ours,theirs};
+}
+function fieldFive(m,c,their5){
+  live.five=new Set(c.map(p=>String(p.mid)));
+  live.theirFive=new Set(their5.map(p=>String(p.mid)));
+}
+function renderLineup(m,host){
+  const fmt=m.fmt;
+  const {ours,theirs}=livePools(m);   // respects "who's here" set in Live
+  // availability, shared with Live
+  const avail=el('div','card');
+  avail.appendChild(el('h2',null,'<span class="eyebrow">Who\'s here tonight</span>'));
+  avail.appendChild(el('p','sub','Tap anyone not playing to grey them out. The five who play can total at most '+SL_CAP+' skill level.'));
+  [['Ours',roster(m.ourTeamId),live.outOurs],['Theirs',roster(m.oppTeamId),live.outTheirs]].forEach(([lab,list,outSet])=>{
+    const h=el('div','eyebrow',lab);h.style.marginTop='10px';avail.appendChild(h);
+    const row=el('div','chips');
+    list.forEach(p=>{const gone=outSet.has(String(p.mid));
+      const b=el('button','chip avail'+(gone?'':' on'),`${sl(p.sl)}${esc(p.name)}`);
+      b.setAttribute('aria-pressed',!gone);
+      b.onclick=()=>{const k=String(p.mid);outSet.has(k)?outSet.delete(k):outSet.add(k);renderMatch(m);};
+      row.appendChild(b);});
+    avail.appendChild(row);
+  });
+  host.appendChild(avail);
+
+  if(ours.length<TEAM_SIZE){
+    host.appendChild(el('div','card',`<p class="sub">Mark at least ${TEAM_SIZE} of our players here to build a lineup.</p>`));return;
+  }
+  const bf=bestFive(m,fmt);
+  const their5=bf.their5, ranked=bf.ranked;
+  const card=el('div','card');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Best five to field</span>'));
+  if(!ranked.length){
+    card.appendChild(el('p','sub',`Every five of the players marked here totals over ${SL_CAP} skill level — no legal lineup. Grey out a higher skill level.`));
+    host.appendChild(card);return;
+  }
+  const best=ranked[0];
+  const bench=ours.filter(p=>!best.c.some(x=>x.mid===p.mid));
+  card.appendChild(el('p','sub',
+    `Against their likely five (${their5.map(p=>p.sl).sort((a,b)=>b-a).join('/')}, `+
+    `${sumSL(their5)} SL). Valued by real throw-and-counter play, so the whole night is weighed — not one pick.`));
+  const head=el('div','lu-head');
+  head.innerHTML=`<span><b>${best.v.toFixed(1)}</b> expected wins of 5</span>`+
+    `<span class="lu-cap ${sumSL(best.c)>SL_CAP?'over':''}">${sumSL(best.c)}/${SL_CAP} SL</span>`;
+  card.appendChild(head);
+  // target pairings
+  const pr=pairing(best.c,their5,fmt);
+  const tbl=el('div','lu-pairs');
+  pr.slice().sort((a,b)=>b.A.sl-a.A.sl).forEach(({A,Q,p})=>{
+    const row=el('div','lu-row');
+    row.innerHTML=`<span class="lu-us">${sl(A.sl)}<span class="who">${esc(A.name)}</span></span>`+
+      `<span class="lu-pct ${cls(p)}">${Math.round(p*100)}%</span>`+
+      `<span class="lu-them"><span class="who">${esc(Q.name)}</span>${sl(Q.sl)}</span>`;
+    tbl.appendChild(row);
+  });
+  card.appendChild(tbl);
+  const played=live.five&&[...live.five].sort().join()===best.c.map(p=>String(p.mid)).sort().join();
+  const go=el('button','ftab',played?'✓ Fielded — open Live':'Field these five → Live');
+  go.style.marginTop='10px';go.setAttribute('aria-pressed',!!played);
+  go.onclick=()=>{fieldFive(m,best.c,their5);live.mode0='live';renderMatch(m);};
+  card.appendChild(go);
+  if(bench.length){
+    card.appendChild(el('p','sub',`Sat down: ${bench.map(p=>esc(p.name)+' ('+p.sl+')').join(', ')} — `+
+      `the cap or a weaker fit left them off tonight.`));
+  }
+  host.appendChild(card);
+
+  // a couple of alternatives so the cap trade-offs are visible
+  if(ranked.length>1){
+    const alt=el('div','card');
+    alt.appendChild(el('h2',null,'<span class="eyebrow">Other legal fives</span>'));
+    ranked.slice(1,4).forEach(r=>{
+      const row=el('button','lu-alt');row.type='button';
+      row.innerHTML=`<span>${r.c.slice().sort((a,b)=>b.sl-a.sl).map(p=>esc(p.name.split(' ')[0])+' '+p.sl).join(' · ')}</span>`+
+        `<span class="lu-cap">${sumSL(r.c)}/${SL_CAP}</span><span><b>${r.v.toFixed(1)}</b></span>`;
+      row.title='Field this five';
+      row.onclick=()=>{fieldFive(m,r.c,their5);live.mode0='live';renderMatch(m);};
+      alt.appendChild(row);
+    });
+    host.appendChild(alt);
+  }
 }
 
 /* ---------- Rules reader ----------
@@ -1136,7 +1377,7 @@ function init(){
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
-  function go(data){D=data;P=D.players;B=D.baselines;PL=playerList();init();}
+  function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();init();}
   if(window.APA_DATA){go(window.APA_DATA);}
   else{fetch('./data.json').then(r=>r.json()).then(go).catch(()=>{document.body.innerHTML='<p style="padding:24px">Could not load data.json.</p>';});}
 })();
