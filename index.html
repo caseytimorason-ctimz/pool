@@ -348,7 +348,7 @@ function fmtDate(d){
   if(parts.length<3)return `${MON[(+parts[1]||1)-1]} ${parts[0]}`;
   return `${niceDate(d)}, ${parts[0]}`;
 }
-const K_SL=8,K_H2H=1.5,K_NEW=10,K_BASE=30,H2H_CAP=0.9;
+const K_SL=8,K_H2H=1.5,K_NEW=10,K_BASE=30,H2H_CAP=0.9,CAL_SHRINK=0.30;
 const cls=p=>p>=.55?'win':p<=.45?'lose':'evn';
 
 // The SL-vs-SL handicap curve, per format, as a function of skill-level GAP (A.sl - Q.sl),
@@ -410,6 +410,12 @@ function score(A,Q,fmt){
     const known=Math.min(games,K_NEW)/K_NEW;   // 0 games -> fall back to the SL/handicap prior
     p=prior+(p-prior)*known;
   }
+  // CALIBRATION (from the point-in-time backtest, pipeline/backtest.py): raw model win-odds are
+  // badly over-confident — a raw 78% actually wins ~55%, because APA handicapping makes matches
+  // near coin-flips. Shrink the displayed odds toward 50% so the number means what it says
+  // (Brier 0.262 -> 0.248). This is monotonic, so it never changes WHO ranks above whom — only
+  // how confident the % reads. The pre-shrink signal still drives the ranking and the game tree.
+  p=0.5+(p-0.5)*CAL_SHRINK;
   return {p,conf:ev>=12?'high':ev>=5?'med':'low',h2h,unrated};
 }
 
@@ -461,7 +467,7 @@ function explain(A,Q,fmt){
   }
   if((A.new||games<K_NEW)&&!hadH2H)
     out.push(`No real track record yet (unrated) — this leans on the handicap, so treat it as a guess.`);
-  out.push(`Bottom line: about ${Math.round(score(A,Q,fmt).p*100)}% to win this match.`);
+  out.push(`Bottom line: about ${Math.round(score(A,Q,fmt).p*100)}% to win — APA handicapping keeps every match close to a coin-flip, so even a real edge is a few points, not a blowout.`);
   return out;
 }
 // Make a ranked row expandable to show the reasoning. Toggles a .why panel right after it.

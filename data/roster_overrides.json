@@ -12,28 +12,5 @@
     "Keyed by APA team id. mid is a synthetic 'new-…' string so nothing collides with a real",
     "member id; if you later learn their real mid, delete the entry (the pull will carry them)."
   ],
-  "add": {
-    "13139505": [
-      {
-        "mid": "new-sam-rozano",
-        "name": "Sam Rozano",
-        "sl": 3,
-        "new": true
-      },
-      {
-        "mid": "new-matt-menzel",
-        "name": "Matt Menzel",
-        "sl": 3,
-        "new": true
-      }
-    ],
-    "13139509": [
-      {
-        "mid": "new-taylor",
-        "name": "Taylor",
-        "sl": 3,
-        "new": true
-      }
-    ]
-  }
+  "add": {}
 }
