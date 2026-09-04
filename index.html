@@ -77,7 +77,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .rk .nm.two{display:flex;flex-direction:column;gap:1px;white-space:normal;overflow:visible;min-width:0}
 .rk .nm.two .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px}
+.rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px;flex:0 0 auto;white-space:nowrap}
 .rk .pv{font-family:Oswald;font-weight:700;font-size:18px;text-align:right}
 .rk .pv-u{font-family:Barlow;font-size:9px;font-weight:600;color:var(--ink-soft);display:block;margin-top:-2px}
 .rk.best{background:var(--good-wash)}
@@ -318,7 +318,7 @@ function fmtDate(d){
   if(parts.length<3)return `${MON[(+parts[1]||1)-1]} ${parts[0]}`;
   return `${niceDate(d)}, ${parts[0]}`;
 }
-const K_SL=8,K_H2H=3;
+const K_SL=8,K_H2H=2;
 const cls=p=>p>=.55?'win':p<=.45?'lose':'evn';
 
 /* engine: P(A beats Q) + evidence for confidence + direct H2H tag */
@@ -329,8 +329,13 @@ function score(A,Q,fmt){
   if(prof){
     const cell=(prof.predictiveVsSL||[]).find(c=>c.vsSL===Q.sl);
     if(cell&&cell.games){const w=cell.wins/cell.games,wt=cell.games/(cell.games+K_SL);p=(1-wt)*p+wt*w;ev+=cell.games;}
-    const h=(prof.headToHead||[]).find(x=>x.oppMid===Q.mid);
-    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(.6,h.meetings/(h.meetings+K_H2H));p=(1-wt)*p+wt*w;ev+=h.meetings*2;h2h=h;}
+    // BUGFIX: oppMid is a string (from the CSV pipeline) but roster mid is an integer (from
+    // the API), so `===` silently never matched and head-to-head records applied to NOBODY.
+    // Coerce both sides. A direct record vs this exact opponent is the single best signal we
+    // have, so it also carries more weight than a generic SL-vs-SL baseline (which can rest on
+    // only a handful of league-wide games): cap raised, and it climbs faster with meetings.
+    const h=(prof.headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
+    if(h&&h.meetings){const w=h.wins/h.meetings,wt=Math.min(.85,h.meetings/(h.meetings+K_H2H));p=(1-wt)*p+wt*w;ev+=h.meetings*2;h2h=h;}
   }
   return {p,conf:ev>=12?'high':ev>=5?'med':'low',h2h};
 }
@@ -867,8 +872,9 @@ function renderLive(m,host){
       ranked.forEach((r,i)=>{
         const row=el('div','rk'+(i===0?' best':''));
         const s=score(r.A,Q,fmt);
+        const h2hTag=s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'';
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
-          `<div class="nm two"><span class="who">${esc(r.A.name)}<span class="dot d-${s.conf}"></span></span>`+
+          `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
           `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} more wins after, playing it out</span></div>`+
           `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
         c.appendChild(row);
