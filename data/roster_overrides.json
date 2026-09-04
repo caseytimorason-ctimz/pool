@@ -14,8 +14,26 @@
   ],
   "add": {
     "13139505": [
-      {"mid": "new-sam-rozano", "name": "Sam Rozano", "sl": 3, "new": true},
-      {"mid": "new-matt-menzel", "name": "Matt Menzel", "sl": 3, "new": true}
+      {
+        "mid": "new-sam-rozano",
+        "name": "Sam Rozano",
+        "sl": 3,
+        "new": true
+      },
+      {
+        "mid": "new-matt-menzel",
+        "name": "Matt Menzel",
+        "sl": 3,
+        "new": true
+      }
+    ],
+    "13139509": [
+      {
+        "mid": "new-taylor",
+        "name": "Taylor",
+        "sl": 3,
+        "new": true
+      }
     ]
   }
 }

@@ -273,6 +273,16 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .lu-alt:last-child{border-bottom:0}
 .lu-alt:hover{background:var(--panel-2)}
 .lu-alt b{font-family:Oswald;color:var(--ink);font-size:15px}
+.why{margin:2px 0 8px;padding:10px 12px;border-left:3px solid var(--accent);background:var(--panel-2);
+  border-radius:0 9px 9px 0;font-size:12.5px;line-height:1.5}
+.why p{margin:0 0 5px;color:var(--ink-soft)}.why p:last-child{margin:0}
+.why .why-lead{color:var(--ink)}
+.rk.clickable,.lu-row.clickable{cursor:pointer}
+.rk.clickable:hover,.lu-row.clickable:hover{background:var(--panel-2)}
+.pdf-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;
+  border:1px solid var(--accent);border-radius:9px;color:var(--accent-ink);font-size:13px;font-weight:600;
+  text-decoration:none;background:var(--panel-2)}
+.pdf-link:hover{background:var(--accent);color:#fff}
 </style>
 
 <header>
@@ -420,6 +430,54 @@ function provenEdge(A,Q,fmt){
   return edge>=0.2 ? edge*Math.min(h.meetings,10) : 0;
 }
 
+// Plain-English reasoning for one pairing, built from the same pieces score() uses. Only runs
+// when a cell is expanded, so it can afford to re-derive and narrate.
+function explain(A,Q,fmt){
+  const cell=(B[fmt]||{})[`${A.sl}-${Q.sl}`]||[0.5,0];
+  const prior=gapPrior(A,Q,fmt), nB=cell[1]||0;
+  const shrunk=prior+(cell[0]-prior)*(nB/(nB+K_BASE));
+  const out=[];
+  const gapTxt = fmt==='9'
+    ? 'In 9-ball the handicap nearly evens out skill-level gaps'
+    : (A.sl>Q.sl?'In 8-ball the higher skill level is favored'
+       :A.sl<Q.sl?'In 8-ball the lower skill level is the underdog':'Evenly matched on skill');
+  out.push(`Handicap start: SL ${A.sl} vs SL ${Q.sl}. ${gapTxt}, so begin around ${Math.round(shrunk*100)}%.`);
+  const prof=P[`${A.mid}:${fmt}`];
+  const games=prof?prof.totalGames||0:0;
+  let hadH2H=false;
+  if(prof){
+    const c=(prof.predictiveVsSL||[]).find(x=>x.vsSL===Q.sl);
+    if(c&&c.games)out.push(`Record vs SL ${Q.sl} at their current level: ${c.wins}-${c.games-c.wins} (${Math.round(100*c.wins/c.games)}%).`);
+    const h=(prof.headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
+    if(h&&h.meetings){hadH2H=true;
+      out.push(`Head-to-head vs ${esc(Q.name)}: ${h.wins}-${h.meetings-h.wins}${h.meetings>=3?' — a real sample, weighted heavily':' — small sample so far'}.`);
+    }
+  }
+  const edge=provenEdge(A,Q,fmt);
+  if(edge>0){
+    const qp=P[`${Q.mid}:${fmt}`];
+    const field=(qp&&qp.totalGames)?Math.round(100*qp.wins/qp.totalGames):null;
+    out.push(`${esc(Q.name)}${field?` wins about ${field}% against everyone else`:' usually wins'}, but not against ${esc(A.name)} — a proven edge, so this is the pick even when the raw odds tip elsewhere.`);
+  }
+  if((A.new||games<K_NEW)&&!hadH2H)
+    out.push(`No real track record yet (unrated) — this leans on the handicap, so treat it as a guess.`);
+  out.push(`Bottom line: about ${Math.round(score(A,Q,fmt).p*100)}% to win this match.`);
+  return out;
+}
+// Make a ranked row expandable to show the reasoning. Toggles a .why panel right after it.
+function attachWhy(rowEl,A,Q,fmt){
+  rowEl.classList.add('clickable');
+  rowEl.setAttribute('title','Tap for the reasoning');
+  rowEl.addEventListener('click',ev=>{
+    if(ev.target.closest('button'))return;   // don't hijack buttons inside the row
+    const nx=rowEl.nextSibling;
+    if(nx&&nx.classList&&nx.classList.contains('why')){nx.remove();return;}
+    const w=el('div','why');
+    explain(A,Q,fmt).forEach((t,i)=>{const pr=el('p',i===0?'why-lead':null);pr.innerHTML=t;w.appendChild(pr);});
+    rowEl.after(w);
+  });
+}
+
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
 function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -474,12 +532,11 @@ function renderMatch(m){
   const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
   // Plan (rank every pairing) vs Live (sequencing companion for during the match).
   const modeBar=el('div','ftabs');modeBar.style.margin='4px 0 0';
-  [['plan','Plan'],['lineup','Lineup'],['live','Live']].forEach(([v,lab])=>{
+  [['plan','Plan'],['live','Live']].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
     b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
   out.appendChild(modeBar);
-  if((live.mode0||'plan')==='live'){renderLive(m,out);return;}
-  if(live.mode0==='lineup'){renderLineup(m,out);return;}
+  if(live.mode0==='live'||live.mode0==='lineup'){renderLive(m,out);return;}
 
   // Compact header: the dropdown directly above already names the date/teams/format, so
   // repeating it full-size just pushed the actual picks below the fold on a phone.
@@ -498,7 +555,7 @@ function renderMatch(m){
     blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span>${newTag}<span class="tag">best picks ↓</span>`));
     const ranked=ours.map(A=>[A,score(A,Q,fmt),provenEdge(A,Q,fmt)])
       .sort((x,y)=>(y[2]-x[2])||(y[1].p-x[1].p));
-    ranked.forEach(([A,s],i)=>blk.appendChild(rankRow(i+1,A,s)));
+    ranked.forEach(([A,s],i)=>{const row=rankRow(i+1,A,s);attachWhy(row,A,Q,fmt);blk.appendChild(row);});
     const pe=ranked[0];
     if(pe[2]>0 && pe[1].h2h){
       const alt=ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)[0];
@@ -902,19 +959,7 @@ function livePools(m){
   return {ours,theirs};
 }
 function renderLive(m,host){
-  const fmt=m.fmt, {ours,theirs}=livePools(m);
-  // If a five has been fielded (from Lineup), show it up top with a way back — one engine.
-  if(live.five){
-    const names=roster(m.ourTeamId).filter(p=>live.five.has(String(p.mid)));
-    const bar=el('div','card');bar.style.borderColor='var(--accent)';
-    bar.innerHTML=`<div class="eyebrow" style="color:var(--accent)">Fielded five · ${names.reduce((s,p)=>s+p.sl,0)}/${SL_CAP} SL</div>`+
-      `<p class="sub" style="margin-top:4px">${names.slice().sort((a,b)=>b.sl-a.sl).map(p=>esc(p.name)+' ('+p.sl+')').join(' · ')}</p>`;
-    const chg=el('button','ftab','Change five');chg.style.marginTop='8px';
-    chg.onclick=()=>{live.mode0='lineup';renderMatch(m);};
-    const clr=el('button','ftab','Free bench');clr.style.marginLeft='6px';
-    clr.onclick=()=>{live.five=null;live.theirFive=null;renderMatch(m);};
-    bar.appendChild(chg);bar.appendChild(clr);host.appendChild(bar);
-  }
+  const fmt=m.fmt;
   const wrapCard=el('div','card');
   wrapCard.appendChild(el('h2',null,'<span class="eyebrow">Who\'s here</span>'));
   wrapCard.appendChild(el('p','sub',live.five?'The fielded five is set above — grey out anyone here who still is not playing.':'Tap anyone who is not playing tonight to grey them out.'));
@@ -931,6 +976,10 @@ function renderLive(m,host){
     wrapCard.appendChild(row);
   });
   host.appendChild(wrapCard);
+
+  // The lineup optimizer (recommended five / fielded five) — same view, same engine.
+  renderLineupSection(m,host);
+  const {ours,theirs}=livePools(m);
 
   // played so far
   if(live.played.length){
@@ -950,6 +999,7 @@ function renderLive(m,host){
   }
 
   const c=el('div','card');
+  c.appendChild(el('h2',null,'<span class="eyebrow">During the match — who to put up</span>'));
   const tabs=el('div','ftabs');
   [['counter','They threw first'],['throw','We throw first']].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',live.mode===v);
@@ -988,6 +1038,7 @@ function renderLive(m,host){
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
           `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} more wins after, playing it out</span></div>`+
           `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+        attachWhy(row,r.A,Q,fmt);
         c.appendChild(row);
       });
       const bestNow=ranked.slice().sort((a,b)=>b.now-a.now)[0];
@@ -1043,6 +1094,7 @@ function renderLive(m,host){
         `<div class="nm two"><span class="who">${esc(r.A.name)}</span>`+
         `<span class="strk-sub">worst case they answer ${esc(r.Q.name)} — ${Math.round(r.now*100)}% that match</span></div>`+
         `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+      attachWhy(row,r.A,r.Q,fmt);
       c.appendChild(row);
     });
   }
@@ -1098,30 +1150,26 @@ function fieldFive(m,c,their5){
   live.five=new Set(c.map(p=>String(p.mid)));
   live.theirFive=new Set(their5.map(p=>String(p.mid)));
 }
-function renderLineup(m,host){
+function renderLineupSection(m,host){
   const fmt=m.fmt;
-  const {ours,theirs}=livePools(m);   // respects "who's here" set in Live
-  // availability, shared with Live
-  const avail=el('div','card');
-  avail.appendChild(el('h2',null,'<span class="eyebrow">Who\'s here tonight</span>'));
-  avail.appendChild(el('p','sub','Tap anyone not playing to grey them out. The five who play can total at most '+SL_CAP+' skill level.'));
-  [['Ours',roster(m.ourTeamId),live.outOurs],['Theirs',roster(m.oppTeamId),live.outTheirs]].forEach(([lab,list,outSet])=>{
-    const h=el('div','eyebrow',lab);h.style.marginTop='10px';avail.appendChild(h);
-    const row=el('div','chips');
-    list.forEach(p=>{const gone=outSet.has(String(p.mid));
-      const b=el('button','chip avail'+(gone?'':' on'),`${sl(p.sl)}${esc(p.name)}`);
-      b.setAttribute('aria-pressed',!gone);
-      b.onclick=()=>{const k=String(p.mid);outSet.has(k)?outSet.delete(k):outSet.add(k);renderMatch(m);};
-      row.appendChild(b);});
-    avail.appendChild(row);
-  });
-  host.appendChild(avail);
-
+  // Fielded already? Show it as the locked five with a way to re-open the recommendation.
+  if(live.five){
+    const names=roster(m.ourTeamId).filter(p=>live.five.has(String(p.mid)));
+    const bar=el('div','card');bar.style.borderColor='var(--accent)';
+    bar.innerHTML=`<div class="eyebrow" style="color:var(--accent)">Your five · ${sumSL(names)}/${SL_CAP} SL</div>`+
+      `<p class="sub" style="margin-top:4px">${names.slice().sort((a,b)=>b.sl-a.sl).map(p=>esc(p.name)+' ('+p.sl+')').join(' · ')}</p>`+
+      `<p class="sub" style="margin-top:6px">The picks below sequence just these five. Grey someone out above to reshuffle.</p>`;
+    const chg=el('button','ftab','Change five');chg.style.marginTop='8px';
+    chg.onclick=()=>{live.five=null;live.theirFive=null;renderMatch(m);};
+    bar.appendChild(chg);host.appendChild(bar);
+    return;
+  }
+  const {ours}=livePoolsRaw(m);
   if(ours.length<TEAM_SIZE){
     host.appendChild(el('div','card',`<p class="sub">Mark at least ${TEAM_SIZE} of our players here to build a lineup.</p>`));return;
   }
   const bf=bestFive(m,fmt);
-  const their5=bf.their5, ranked=bf.ranked;
+  const their5=bf.their5, ranked=bf.ranked, pool=bf.ours;
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Best five to field</span>'));
   if(!ranked.length){
@@ -1129,7 +1177,7 @@ function renderLineup(m,host){
     host.appendChild(card);return;
   }
   const best=ranked[0];
-  const bench=ours.filter(p=>!best.c.some(x=>x.mid===p.mid));
+  const bench=pool.filter(p=>!best.c.some(x=>x.mid===p.mid));
   card.appendChild(el('p','sub',
     `Against their likely five (${their5.map(p=>p.sl).sort((a,b)=>b-a).join('/')}, `+
     `${sumSL(their5)} SL). Valued by real throw-and-counter play, so the whole night is weighed — not one pick.`));
@@ -1145,13 +1193,13 @@ function renderLineup(m,host){
     row.innerHTML=`<span class="lu-us">${sl(A.sl)}<span class="who">${esc(A.name)}</span></span>`+
       `<span class="lu-pct ${cls(p)}">${Math.round(p*100)}%</span>`+
       `<span class="lu-them"><span class="who">${esc(Q.name)}</span>${sl(Q.sl)}</span>`;
+    attachWhy(row,A,Q,fmt);
     tbl.appendChild(row);
   });
   card.appendChild(tbl);
-  const played=live.five&&[...live.five].sort().join()===best.c.map(p=>String(p.mid)).sort().join();
-  const go=el('button','ftab',played?'✓ Fielded — open Live':'Field these five → Live');
-  go.style.marginTop='10px';go.setAttribute('aria-pressed',!!played);
-  go.onclick=()=>{fieldFive(m,best.c,their5);live.mode0='live';renderMatch(m);};
+  const go=el('button','ftab','Field these five');
+  go.style.marginTop='10px';
+  go.onclick=()=>{fieldFive(m,best.c,their5);renderMatch(m);};
   card.appendChild(go);
   if(bench.length){
     card.appendChild(el('p','sub',`Sat down: ${bench.map(p=>esc(p.name)+' ('+p.sl+')').join(', ')} — `+
@@ -1168,7 +1216,7 @@ function renderLineup(m,host){
       row.innerHTML=`<span>${r.c.slice().sort((a,b)=>b.sl-a.sl).map(p=>esc(p.name.split(' ')[0])+' '+p.sl).join(' · ')}</span>`+
         `<span class="lu-cap">${sumSL(r.c)}/${SL_CAP}</span><span><b>${r.v.toFixed(1)}</b></span>`;
       row.title='Field this five';
-      row.onclick=()=>{fieldFive(m,r.c,their5);live.mode0='live';renderMatch(m);};
+      row.onclick=()=>{fieldFive(m,r.c,their5);renderMatch(m);};
       alt.appendChild(row);
     });
     host.appendChild(alt);
@@ -1191,6 +1239,10 @@ function ruleSections(host, secs, opts){
   const head=el('div','card');
   if(opts.eyebrow)head.appendChild(el('h2',null,`<span class="eyebrow">${esc(opts.eyebrow)}</span>`));
   if(opts.sub)head.appendChild(el('p','sub',opts.sub));
+  if(opts.pdf){
+    const a=el('a','pdf-link');a.href=opts.pdf;a.target='_blank';a.rel='noopener';
+    a.innerHTML='📄 Open the full PDF';head.appendChild(a);
+  }
   const box=el('div');box.style.marginTop='10px';
   const q=el('input');q.type='search';q.placeholder=opts.placeholder||'Search…';q.value=blState.q;
   box.appendChild(q);head.appendChild(box);
@@ -1230,7 +1282,7 @@ function renderBylawsInto(host){
   if(!secs.length){host.appendChild(el('div','card','<p class="sub">Bylaws not loaded.</p>'));return;}
   ruleSections(host, secs, {
     sub:`${esc(by.source||'Local bylaws')} — Hudson County's local text. These supplement the official APA rules on the other tab and, where they differ, the local bylaw wins.`,
-    placeholder:'Search the bylaws — forfeit, patch, reschedule…'});
+    pdf:by.pdf, placeholder:'Search the bylaws — forfeit, patch, reschedule…'});
 
   // The playoff bracket is a grid in the PDF that no text extractor survives, so it is
   // hand-transcribed rather than parsed — kept apart from the parsed sections above.
@@ -1273,6 +1325,7 @@ function renderOfficialInto(host){
     sub:`${esc(doc.source)} — official APA text (© American Poolplayers Association). `+
         (blState.doc==='game'?'The rules of play, straight from the booklet.'
                              :'League operation, the Equalizer handicap system, scoring and tournaments.'),
+    pdf: doc.pdf,
     placeholder: blState.doc==='game'
       ? 'Search the game rules — break, foul, safety…'
       : 'Search the manual — coaching, timeout, handicap…'});
