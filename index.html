@@ -283,6 +283,20 @@ table.tt tr:hover td.who{background:var(--panel-2)}
   border:1px solid var(--accent);border-radius:9px;color:var(--accent-ink);font-size:13px;font-weight:600;
   text-decoration:none;background:var(--panel-2)}
 .pdf-link:hover{background:var(--accent);color:#fff}
+.ts-row{display:flex;align-items:baseline;gap:12px;font-family:Oswald;font-weight:700;margin:6px 0 2px}
+.ts-us{font-size:34px;color:var(--accent-ink)}.ts-them{font-size:34px;color:var(--ink-soft)}
+.ts-dash{font-size:22px;color:var(--ink-soft)}
+.mrow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 10px;padding:9px 4px;border-bottom:1px solid var(--line-2)}
+.mrow .who{font-size:13.5px;display:flex;align-items:center;gap:6px;min-width:0}
+.mrow .who.them{color:var(--ink-soft);font-size:12.5px}
+.mrow .who .nm,.mrow .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mres{grid-row:1/3;grid-column:2}
+.mres{display:flex;align-items:center;gap:5px}
+.rbtn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);min-width:30px;height:30px;
+  border-radius:8px;cursor:pointer;font-family:Oswald;font-weight:700;font-size:13px;padding:0 8px}
+.rbtn.on.w{background:var(--good);color:#fff;border-color:var(--good)}
+.rbtn.on.l{background:var(--bad);color:#fff;border-color:var(--bad)}
+.psel{font-size:13px;padding:5px 6px;width:auto;min-width:64px}
 </style>
 
 <header>
@@ -482,6 +496,53 @@ function attachWhy(rowEl,A,Q,fmt){
     explain(A,Q,fmt).forEach((t,i)=>{const pr=el('p',i===0?'why-lead':null);pr.innerHTML=t;w.appendChild(pr);});
     rowEl.after(w);
   });
+}
+
+// ---------- POINTS MODEL: the team match is decided on TOTAL match points, not match count ----------
+// 9-ball splits 20 points a match (winner 12-20, loser 0-8); 8-ball splits 3 (winner 2-3, loser 0-1).
+// Five matches, so the pool is 100 / 15 and you win the team match with more than half. Means and
+// spreads below are measured from history (pipeline): what a player banks winning vs losing. This
+// is why margin matters — losing on the hill (8) vs getting swept (0) is a real swing.
+const PMOM={
+  '9':{total:20,matches:5,win:{m:14.4,sd:1.9},loss:{m:5.6,sd:2.6},splits:[20,19,18,17,16,15,14,13,12]},
+  '8':{total:3, matches:5,win:{m:2.4, sd:0.5},loss:{m:0.6, sd:0.5},splits:[3,2]}
+};
+function teamNeed(fmt){const M=PMOM[fmt]; return Math.floor(M.total*M.matches/2)+1;}
+// erf-based normal CDF (Abramowitz-Stegun 7.1.26) for P(total points >= need)
+function normCdf(z){
+  const t=1/(1+0.3275911*Math.abs(z));
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-z*z);
+  return z>=0 ? 0.5*(1+y) : 0.5*(1-y);
+}
+// Expected match points (and variance) our player A earns against Q — derived from the calibrated
+// win probability and the win/loss point moments. E[pts]=p*winMean+(1-p)*lossMean.
+function expPts(A,Q,fmt){
+  const M=PMOM[fmt], p=score(A,Q,fmt).p;
+  const m=p*M.win.m+(1-p)*M.loss.m;
+  const v=p*(M.win.sd*M.win.sd+M.win.m*M.win.m)+(1-p)*(M.loss.sd*M.loss.sd+M.loss.m*M.loss.m)-m*m;
+  return {m, v:Math.max(v,0.01), p};
+}
+// Points banked so far this match (from entered results), our side and theirs.
+function teamScore(m){
+  const M=PMOM[m.fmt]; let us=0, them=0;
+  (live.played||[]).forEach(x=>{ if(x.ourPts!=null){ us+=x.ourPts; them+=(M.total-x.ourPts); }});
+  return {us, them, matchesLeft:M.matches-(live.played||[]).length};
+}
+// P(win the team match) if we play matchup {A,Q} now and the remaining matches land near their
+// expected points. Shifts the advice with the score: behind -> upside/variance helps; ahead ->
+// the steady high-mean pick maxes it out.
+function pTeamWin(m, A, Q, restPool){
+  const fmt=m.fmt, M=PMOM[fmt], need=teamNeed(fmt), sc=teamScore(m);
+  const here=expPts(A,Q,fmt);
+  // remaining matches after this one: pair the leftover pools greedily for their expected points
+  let restM=0, restV=0;
+  const left=Math.max(0, sc.matchesLeft-1);
+  if(restPool && left>0){
+    const pr=pairing(restPool.ours.filter(x=>x.mid!==A.mid), restPool.theirs.filter(x=>x.mid!==Q.mid), fmt).slice(0,left);
+    pr.forEach(({A:a,Q:q})=>{const e=expPts(a,q,fmt);restM+=e.m;restV+=e.v;});
+  }
+  const mean=sc.us+here.m+restM, sd=Math.sqrt(here.v+restV);
+  return {p: 1-normCdf((need-0.5-mean)/(sd||0.5)), projMean:mean, need};
 }
 
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
@@ -987,19 +1048,49 @@ function renderLive(m,host){
   renderLineupSection(m,host);
   const {ours,theirs}=livePools(m);
 
-  // played so far
+  // running team score + what we need (the match is decided on TOTAL match points)
   if(live.played.length){
+    const M=PMOM[fmt], sc=teamScore(m), need=teamNeed(fmt), pool=M.total*M.matches;
+    const scored=live.played.filter(x=>x.ourPts!=null).length;
+    const clinched=sc.us>=need, lost=sc.them>(pool-need);
+    const sard=el('div','card');
+    sard.style.borderColor=clinched?'var(--good)':lost?'var(--bad)':'var(--accent)';
+    const stillNeed=Math.max(0,need-sc.us), theyNeed=Math.max(0,(pool-need+1)-sc.them);
+    sard.innerHTML=`<div class="eyebrow" style="color:${clinched?'var(--good)':lost?'var(--bad)':'var(--accent)'}">Team score`+
+      `${sc.matchesLeft>0?` · ${sc.matchesLeft} match${sc.matchesLeft===1?'':'es'} left`:' · final'}</div>`+
+      `<div class="ts-row"><span class="ts-us">${sc.us}</span><span class="ts-dash">—</span><span class="ts-them">${sc.them}</span></div>`+
+      `<p class="sub" style="margin-top:2px">Us vs ${esc(m.oppTeam)} · first to ${need} of ${pool} wins`+
+      (clinched?' · <b style="color:var(--good)">clinched</b>':lost?' · <b style="color:var(--bad)">out of reach</b>':
+        ` · <b>we need ${stillNeed}</b> more (they need ${theyNeed})`)+`</p>`+
+      (scored<live.played.length?`<p class="sub" style="color:var(--warn);margin-top:4px">Enter each result below to keep the score live.</p>`:'');
+    host.appendChild(sard);
+
     const pc=el('div','card');
-    pc.appendChild(el('h2',null,'<span class="eyebrow">Already played</span>'));
+    pc.appendChild(el('h2',null,'<span class="eyebrow">Matches played — tap the result</span>'));
     live.played.forEach((x,i)=>{
       const A=roster(m.ourTeamId).find(p=>String(p.mid)===x.our),Q=roster(m.oppTeamId).find(p=>String(p.mid)===x.their);
       const r=el('div','mrow');
-      r.innerHTML=`<div class="who">${A?sl(A.sl)+esc(A.name):'—'}</div>`+
-        `<div class="verdict"><span class="pill p-even">match ${i+1}</span></div>`+
-        `<div class="who them">${Q?esc(Q.name)+sl(Q.sl):'—'}</div>`;
-      const u=el('button','ftab','Undo');u.style.marginLeft='auto';
+      r.innerHTML=`<div class="who">${A?sl(A.sl)+'<span>'+esc(A.name)+'</span>':'—'}</div>`+
+        `<div class="who them"><span>vs ${Q?esc(Q.name):'—'}</span>${Q?sl(Q.sl):''}</div>`;
+      const ctr=el('div','mres');
+      // Won / Lost sets a default split; a compact select fine-tunes the exact match points.
+      [['W',true],['L',false]].forEach(([lab,won])=>{
+        const b=el('button','rbtn'+(x.won===won?' on '+(won?'w':'l'):''),lab);
+        b.onclick=()=>{x.won=won;x.ourPts=won?Math.round(M.win.m):Math.round(M.loss.m);renderMatch(m);};
+        ctr.appendChild(b);
+      });
+      if(x.won!=null){
+        const sel=el('select');sel.className='psel';
+        const opts=x.won?M.splits:M.splits.map(v=>M.total-v);   // our points: win 12-20, loss 0-8
+        opts.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=`${v}-${M.total-v}`;if(v===x.ourPts)o.selected=true;sel.appendChild(o);});
+        sel.onchange=()=>{x.ourPts=+sel.value;renderMatch(m);};
+        ctr.appendChild(sel);
+      }
+      r.appendChild(ctr);
+      const u=el('button','rbtn','×');u.title='Remove';
       u.onclick=()=>{live.played.splice(i,1);renderMatch(m);};
-      r.appendChild(u); pc.appendChild(r);
+      ctr.appendChild(u);
+      pc.appendChild(r);
     });
     host.appendChild(pc);
   }
@@ -1029,12 +1120,22 @@ function renderLive(m,host){
     const Q=theirs.find(x=>String(x.mid)===live.theirPick);
     if(Q){
       const memo={};
+      const liveScore=(live.played||[]).some(x=>x.ourPts!=null);
       const ranked=ours.map(A=>{
         const now=pWin(A,Q,fmt);
-        // after we answer, the next match alternates to us throwing first
         const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
-        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt)};
-      }).sort((a,b)=>(b.edge-a.edge)||(b.total-a.total));   // a proven edge outranks raw EV
+        const ep=expPts(A,Q,fmt), ptw=pTeamWin(m,A,Q,{ours,theirs}).p;
+        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt),ep,ptw};
+      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.total-a.total)));
+      // once the score is live, optimize the odds of winning the TEAM match, not raw wins
+      if(liveScore){
+        const sc=teamScore(m), need=teamNeed(fmt);
+        const behind=sc.us<sc.them;
+        c.appendChild(el('p','sub',
+          `Score is live — ranking by odds of winning the team match. `+
+          (behind?`You're behind, so this leans toward the pick that most lifts those odds — often a higher-upside matchup, because a safe coin-flip is not enough when you need points.`
+                 :`You're ahead, so it favors the steady pick that best protects the lead.`)));
+      }
       const best=ranked[0];
       ranked.forEach((r,i)=>{
         const row=el('div','rk'+(i===0?' best':''));
@@ -1042,8 +1143,9 @@ function renderLive(m,host){
         const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
-          `<span class="strk-sub">${Math.round(r.now*100)}% this match · ${r.rest.toFixed(1)} more wins after, playing it out</span></div>`+
-          `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+          `<span class="strk-sub">${Math.round(r.now*100)}% · ~${Math.round(r.ep.m)} pts${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
+          (liveScore?`<div class="pv">${Math.round(r.ptw*100)}<span class="pv-u">win</span></div>`
+                    :`<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`);
         attachWhy(row,r.A,Q,fmt);
         c.appendChild(row);
       });
