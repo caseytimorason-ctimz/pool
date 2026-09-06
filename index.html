@@ -308,8 +308,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .rbtn.on.l{background:var(--bad);color:#fff;border-color:var(--bad)}
 .psel{font-size:13px;padding:5px 6px;width:auto;min-width:64px}
 .qt td.who,.qt th.who{max-width:34vw}
-.qt td.who .nm{min-width:0}
-.qt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qt td.who .nm,.tt td.who .nm{min-width:0}
+.qt td.who .who-nm,.tt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rlist{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .rrow{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:9px;padding:6px 8px;
   border:1px solid var(--line-2);border-radius:9px;font-size:13px}
@@ -991,7 +991,7 @@ function renderTeamOverview(){
   const tb=el('tbody');
   rows.forEach(({p,pr,cells})=>{
     const tr=el('tr');
-    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}${esc(p.name)}</span>`;
+    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
     who.style.cursor='pointer';
     who.onclick=()=>{ setMode('me'); const s=$('#meSel'); if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); } };
     tr.appendChild(who);
@@ -1753,7 +1753,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 1:58pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 2:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
