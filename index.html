@@ -16,24 +16,24 @@
   --shadow:0 1px 2px rgba(20,40,25,.10),0 8px 22px rgba(20,40,25,.14);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --felt:#0f3d2a; --rail:#3d2817;
-  --bg:#08251a; --panel:#0f3d2a; --panel-2:#154a34; --ink:#f0ebdc; --ink-soft:#9fb6a4;
-  --line:#1d5540; --line-2:#123f2c;
-  --accent:#cca24e; --accent-ink:#e8d089; --accent-wash:#183f2b;
-  --good:#57c483; --good-wash:#0f3826; --bad:#e06a52; --bad-wash:#3a1c16;
-  --even:#b3a279; --even-wash:#163e2c; --warn:#e0a53f;
-  --diamond:#ecdfc0;
-  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px rgba(0,0,0,.45);
+  --felt:#134c34; --rail:#3d2817;
+  --bg:#04160e; --panel:#134c34; --panel-2:#1a5b40; --ink:#f6f2e8; --ink-soft:#c3d2b9;
+  --line:#2f7451; --line-2:#1f5a3e;
+  --accent:#d8b05a; --accent-ink:#f3dc97; --accent-wash:#1d523a;
+  --good:#68d492; --good-wash:#123f2b; --bad:#ef7860; --bad-wash:#46221b;
+  --even:#c9b78a; --even-wash:#1b4a34; --warn:#eeb44c;
+  --diamond:#f4ead0;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.55);
 }}
 :root[data-theme="dark"]{
-  --felt:#0f3d2a; --rail:#3d2817;
-  --bg:#08251a; --panel:#0f3d2a; --panel-2:#154a34; --ink:#f0ebdc; --ink-soft:#9fb6a4;
-  --line:#1d5540; --line-2:#123f2c;
-  --accent:#cca24e; --accent-ink:#e8d089; --accent-wash:#183f2b;
-  --good:#57c483; --good-wash:#0f3826; --bad:#e06a52; --bad-wash:#3a1c16;
-  --even:#b3a279; --even-wash:#163e2c; --warn:#e0a53f;
-  --diamond:#ecdfc0;
-  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px rgba(0,0,0,.45);
+  --felt:#134c34; --rail:#3d2817;
+  --bg:#04160e; --panel:#134c34; --panel-2:#1a5b40; --ink:#f6f2e8; --ink-soft:#c3d2b9;
+  --line:#2f7451; --line-2:#1f5a3e;
+  --accent:#d8b05a; --accent-ink:#f3dc97; --accent-wash:#1d523a;
+  --good:#68d492; --good-wash:#123f2b; --bad:#ef7860; --bad-wash:#46221b;
+  --even:#c9b78a; --even-wash:#1b4a34; --warn:#eeb44c;
+  --diamond:#f4ead0;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.55);
 }
 *{box-sizing:border-box}
 body{background:
@@ -1753,7 +1753,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 1:56pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 1:58pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
