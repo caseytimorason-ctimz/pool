@@ -1050,6 +1050,9 @@ function normCdf(z){
 // win probability and the win/loss point moments. E[pts]=p*winMean+(1-p)*lossMean.
 const K_MARG=15;  // shrink a player's win/loss point margins toward the league mean by sample
 const CTR_HOLD=0.06;  // counter tiebreak: penalty per skill level of overkill vs the thrown player
+const SCOUT_HOLD=0.01; // same idea in win-prob space for the Best-Picks scout list: a per-SL-gap
+                       // nudge small enough that it only reshuffles near-ties (a raw edge > ~6 pts
+                       // always survives), so a clear edge or proven H2H still ranks first outright.
 function expPts(A,Q,fmt){
   const M=PMOM[fmt], p=score(A,Q,fmt).p, prof=P[`${A.mid}:${fmt}`];
   // V2: how many points THIS player banks when winning vs losing (does he win big / lose close?),
@@ -1195,14 +1198,22 @@ function renderMatch(m){
     const blk=el('div','opp');
     const newTag=Q.new?'<span class="tag new">new · unrated</span>':'';
     blk.appendChild(el('div','opp-hd',`${sl(Q.sl)}<span class="nm">${esc(Q.name)}</span>${newTag}<span class="tag">best picks ↓</span>`));
+    // Rank by proven edge first, then by odds carrying the like-for-like hold: matching their
+    // thrown SL beats spending a big gun (or sacrificing a small one) when the raw odds are close.
+    const hs=(A,s)=>s.p-SCOUT_HOLD*Math.abs(A.sl-Q.sl);
     const ranked=ours.map(A=>[A,score(A,Q,fmt),provenEdge(A,Q,fmt)])
-      .sort((x,y)=>(y[2]-x[2])||(y[1].p-x[1].p));
+      .sort((x,y)=>(y[2]-x[2])||(hs(y[0],y[1])-hs(x[0],x[1])));
     ranked.forEach(([A,s],i)=>{const row=rankRow(i+1,A,s);attachWhy(row,A,Q,fmt);blk.appendChild(row);});
     const pe=ranked[0];
+    const raw=ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)[0];  // raw-odds leader
     if(pe[2]>0 && pe[1].h2h){
-      const alt=ours.map(A=>[A,score(A,Q,fmt)]).sort((x,y)=>y[1].p-x[1].p)[0];
-      if(alt && String(alt[0].mid)!==String(pe[0].mid))
-        blk.appendChild(el('p','sub',`${esc(pe[0].name)} is ${pe[1].h2h.wins}-${pe[1].h2h.meetings-pe[1].h2h.wins} against ${esc(Q.name)} — a proven edge over one opponent beats the handicap that favors ${esc(alt[0].name)} on paper.`));
+      if(raw && String(raw[0].mid)!==String(pe[0].mid))
+        blk.appendChild(el('p','sub',`${esc(pe[0].name)} is ${pe[1].h2h.wins}-${pe[1].h2h.meetings-pe[1].h2h.wins} against ${esc(Q.name)} — a proven edge over one opponent beats the handicap that favors ${esc(raw[0].name)} on paper.`));
+    } else if(raw && String(raw[0].mid)!==String(pe[0].mid)){
+      // the hold moved a closer-SL pick above the raw-odds leader — explain the sub-order swap
+      blk.appendChild(el('p','sub', raw[0].sl>pe[0].sl
+        ? `The handicap edges ${esc(raw[0].name)} (SL${raw[0].sl}) by a hair, but it's a near-tie — throw ${esc(pe[0].name)} (SL${pe[0].sl}) like-for-like and save your ${raw[0].sl} for their bigger players.`
+        : `The handicap edges ${esc(raw[0].name)} by a hair, but it's a near-tie — ${esc(pe[0].name)} (SL${pe[0].sl}) is the closer like-for-like matchup, without sacrificing a lower skill level into their ${Q.sl}.`));
     }
     c.appendChild(blk);
   });
@@ -2248,7 +2259,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 2:13pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 2:31pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
