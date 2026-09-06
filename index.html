@@ -911,6 +911,11 @@ function renderTeamForm(out){
     tb.appendChild(tr);
   });
   t.appendChild(tb);wrap.appendChild(t);fc.appendChild(wrap);out.appendChild(fc);
+
+  // Hot streak — who's heating up right now (current run, independent of the window above).
+  const srows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(x=>x.pr);
+  const streaks=renderStreaks(srows,fmt);
+  if(streaks)out.appendChild(streaks);
 }
 function renderTeamOverview(){
   const out=$('#teamOut'); out.innerHTML='';
@@ -984,8 +989,6 @@ function renderTeamOverview(){
   });
   table.appendChild(tb); wrap.appendChild(table); card.appendChild(wrap);
   out.appendChild(card);
-  const streaks=renderStreaks(rows,fmt);
-  if(streaks)out.appendChild(streaks);
 }
 function mergeEras(byEra,ownSL){
   const acc={};
@@ -1703,7 +1706,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 8:34am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 8:53am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
