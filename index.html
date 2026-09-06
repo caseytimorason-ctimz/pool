@@ -297,6 +297,26 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .rbtn.on.w{background:var(--good);color:#fff;border-color:var(--good)}
 .rbtn.on.l{background:var(--bad);color:#fff;border-color:var(--bad)}
 .psel{font-size:13px;padding:5px 6px;width:auto;min-width:64px}
+.qt td.who,.qt th.who{max-width:34vw}
+.qt td.who .nm{min-width:0}
+.qt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlist{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.rrow{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:9px;padding:6px 8px;
+  border:1px solid var(--line-2);border-radius:9px;font-size:13px}
+.rres{font-family:Oswald;font-weight:700;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:12px}
+.rres.w{background:var(--good)}.rres.l{background:var(--bad)}
+.rsc{font-family:Oswald;font-weight:700;font-variant-numeric:tabular-nums}.rsc .dash{color:var(--ink-soft);margin:0 3px}
+.ropp{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rdate{color:var(--ink-soft);font-size:11.5px;white-space:nowrap}
+.fpips{display:inline-flex;gap:3px}
+.fp{width:9px;height:9px;border-radius:2px;display:inline-block}.fp.w{background:var(--good)}.fp.l{background:var(--bad)}
+.up{color:var(--good);font-weight:700}.dn{color:var(--bad);font-weight:700}.flat{color:var(--ink-soft)}
+.scout-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
+@media(min-width:620px){.scout-grid{grid-template-columns:1fr 1fr 1fr}}
+.scout-h{font-family:Oswald;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.scout-h.warn{color:var(--warn)}.scout-h.good{color:var(--good)}.scout-h.bad{color:var(--bad)}
+.scout-line{font-size:13px;margin:0 0 4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.scout-line .good{color:var(--good);font-weight:700}.scout-line .bad{color:var(--bad);font-weight:700}
 </style>
 
 <header>
@@ -610,17 +630,52 @@ function rankRow(pos,A,s){
     `<div class="barw" style="grid-column:2/5"><i style="display:block;height:100%;width:${pct}%;background:var(--${s.p>=.55?'good':s.p<=.45?'bad':'even'})"></i></div>`;
   return r;
 }
+// Opponent scouting: one glance at what we're up against before the pairings — their skill
+// makeup and legal five, who is toughest for us, and the head-to-head edges both ways.
+function scoutCard(m){
+  const fmt=m.fmt, ours=roster(m.ourTeamId), theirs=roster(m.oppTeamId);
+  if(!theirs.length)return null;
+  const c=el('div','card');
+  c.appendChild(el('h2',null,`<span class="eyebrow">Scouting ${esc(m.oppTeam)}</span>`));
+  const sls=theirs.map(p=>p.sl).sort((a,b)=>b-a), five=likelyFive(theirs);
+  c.appendChild(el('p','sub',`Roster skill levels ${sls.join(' / ')}. Their likely five totals ${sumSL(five)} of ${SL_CAP}.`));
+
+  // toughest matchups for us: their players our best answer struggles most against
+  const threats=theirs.map(Q=>({Q,best:Math.max(...ours.map(A=>score(A,Q,fmt).p))}))
+    .sort((a,b)=>a.best-b.best).slice(0,3);
+  // head-to-head edges both directions (proven, well-sampled)
+  const weOwn=[], theyOwn=[];
+  theirs.forEach(Q=>ours.forEach(A=>{
+    const h=(P[`${A.mid}:${fmt}`]||{}).headToHead;
+    const rec=h&&h.find(x=>String(x.oppMid)===String(Q.mid));
+    if(rec&&rec.meetings>=3){const wr=rec.wins/rec.meetings;
+      if(wr>=0.65)weOwn.push({A,Q,rec}); else if(wr<=0.35)theyOwn.push({A,Q,rec});}
+  }));
+  const grid=el('div','scout-grid');
+  const col=(title,items,cls)=>{
+    const d=el('div');d.innerHTML=`<div class="scout-h ${cls}">${title}</div>`;
+    if(!items.length){d.appendChild(el('p','sub muted','—'));return d;}
+    items.forEach(t=>{const line=el('p','scout-line');line.innerHTML=t;d.appendChild(line);});
+    return d;
+  };
+  grid.appendChild(col('Toughest for us', threats.map(t=>`${sl(t.Q.sl)}${esc(t.Q.name)} <span class="muted">best we have ${Math.round(t.best*100)}%</span>`),'warn'));
+  grid.appendChild(col('We own', weOwn.slice(0,4).map(x=>`${esc(x.A.name.split(' ')[0])} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>`),'good'));
+  grid.appendChild(col('They own', theyOwn.slice(0,4).map(x=>`${esc(x.Q.name)} over ${esc(x.A.name.split(' ')[0])} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>`),'bad'));
+  c.appendChild(grid);
+  return c;
+}
 function renderMatch(m){
   const out=$('#matchOut');out.innerHTML='';
   const ours=roster(m.ourTeamId),theirs=roster(m.oppTeamId),fmt=m.fmt;
   // Plan (rank every pairing) vs Live (sequencing companion for during the match).
   const modeBar=el('div','ftabs');modeBar.style.margin='4px 0 0';
-  [['plan','Plan'],['live','Live']].forEach(([v,lab])=>{
+  [['plan','Scout'],['live','Live']].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
     b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
   out.appendChild(modeBar);
   if(live.mode0==='live'||live.mode0==='lineup'){renderLive(m,out);return;}
 
+  const sccard=scoutCard(m); if(sccard)out.appendChild(sccard);
   // Compact header: the dropdown directly above already names the date/teams/format, so
   // repeating it full-size just pushed the actual picks below the fold on a phone.
   const head=el('div','card');
@@ -760,7 +815,7 @@ function renderStreaks(rows,fmt){
    'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
-const teamState={fmt:null,scope:'all',view:'roster'};
+const teamState={fmt:null,scope:'all',view:'roster',window:'all'};
 function teamFormats(){
   return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
 }
@@ -768,14 +823,102 @@ function activeRosterForFormat(fmt){
   const tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
   return tid!=null ? roster(tid) : [];
 }
+// A player's full game log (date, oppSL, won, pts), flattened from the head-to-head records,
+// newest first. This is what lets the app re-compute records over ANY time window client-side
+// without a heavier per-game feed.
+function playerGames(mid,fmt){
+  const p=P[`${mid}:${fmt}`]; if(!p)return [];
+  const out=[];
+  (p.headToHead||[]).forEach(h=>(h.games||[]).forEach(g=>out.push({date:g.date,oppSL:g.oppSL,won:g.won,pts:g.pts})));
+  return out.sort((a,b)=>b.date.localeCompare(a.date));
+}
+const WINDOWS=[['all','All time'],['s8','Last 8 wks'],['s4','Last 4 wks'],['s2','Last 2 wks']];
+function windowCutoff(win){
+  if(win==='all')return '0000-00-00';
+  const wk={s8:56,s4:28,s2:14}[win]||99999;
+  const d=new Date(Date.now()-wk*864e5); return d.toISOString().slice(0,10);
+}
+// Team results + per-player recent form over a selectable window. Answers "how are we trending
+// the last couple weeks" — records, points, and hot/cold recomputed from the game logs.
+function renderTeamForm(out){
+  const fmts=teamFormats();
+  if(!fmts.length){out.appendChild(el('div','card','<p class="sub">No roster loaded.</p>'));return;}
+  teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
+  const fmt=teamState.fmt, tm=activeRosterForFormat(fmt), tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
+
+  // window + format controls
+  const ctl=el('div','ftabs');ctl.style.flexWrap='wrap';
+  if(fmts.length>1)fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
+    b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ctl.appendChild(b);});
+  WINDOWS.forEach(([v,lab])=>{const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.window===v);
+    b.onclick=()=>{teamState.window=v;renderTeamOverview();};ctl.appendChild(b);});
+  const head=el('div','card');
+  head.appendChild(el('h2',null,'<span class="eyebrow">Form &amp; results</span>'));
+  head.appendChild(el('p','sub','Team record, recent match results, and how each player is trending over the window you pick.'));
+  head.appendChild(ctl);
+  out.appendChild(head);
+
+  // team results (record + recent matches)
+  const res=(D.results||{})[String(tid)];
+  if(res){
+    const cut=windowCutoff(teamState.window);
+    const ms=res.matches.filter(m=>m.date>=cut).slice().reverse();
+    const w=ms.filter(m=>m.won).length, c=el('div','card');
+    c.appendChild(el('h2',null,`<span class="eyebrow">${esc(res.name)} · ${res.wins}-${res.losses} this session</span>`));
+    c.appendChild(el('p','sub',`${teamState.window==='all'?'Every match this session':'Window: '+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    const list=el('div','rlist');
+    (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
+      const row=el('div','rrow');
+      row.innerHTML=`<span class="rres ${m.won?'w':'l'}">${m.won?'W':'L'}</span>`+
+        `<span class="rsc">${m.us}<span class="dash">–</span>${m.them}</span>`+
+        `<span class="ropp">${esc(m.opp)}</span><span class="rdate">${(()=>{const[,mo,dd]=m.date.split('-');return MON[+mo-1]+' '+(+dd);})()}</span>`;
+      list.appendChild(row);
+    });
+    if(!list.children.length)list.appendChild(el('p','sub','No matches in this window.'));
+    c.appendChild(list);out.appendChild(c);
+  }
+
+  // per-player form over the window
+  const cut=windowCutoff(teamState.window);
+  const fc=el('div','card');
+  fc.appendChild(el('h2',null,'<span class="eyebrow">Player form in this window</span>'));
+  const rows=tm.map(p=>{
+    const gs=playerGames(p.mid,fmt).filter(g=>g.date>=cut);
+    const w=gs.filter(g=>g.won).length, n=gs.length;
+    const pts=gs.filter(g=>g.pts!=null).map(g=>g.pts);
+    const avg=pts.length?pts.reduce((a,b)=>a+b,0)/pts.length:null;
+    // trend: recent half win% vs older half
+    let arrow='';
+    if(n>=4){const half=Math.floor(n/2);const rec=gs.slice(0,half).filter(g=>g.won).length/half;
+      const old=gs.slice(half).filter(g=>g.won).length/(n-half);
+      arrow=rec>old+0.15?'<span class="up">▲</span>':rec<old-0.15?'<span class="dn">▼</span>':'<span class="flat">—</span>';}
+    return {p,n,w,avg,arrow,gs};
+  }).sort((a,b)=>b.n-a.n);
+  const wrap=el('div','qt-wrap'),t=el('table','qt');
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Record</th><th>Win%</th><th>Avg pts</th><th>Last 5</th><th>Trend</th></tr>`));
+  const tb=el('tbody');
+  rows.forEach(({p,n,w,avg,arrow,gs})=>{
+    const tr=el('tr');
+    const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
+    tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(p.name)}</span></span></td>`+
+      `<td>${n?w+'-'+(n-w):'<span class="muted">—</span>'}</td>`+
+      `<td class="${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%':'—'}</td>`+
+      `<td>${avg!=null?avg.toFixed(1):'<span class="muted">—</span>'}</td>`+
+      `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
+      `<td>${arrow||'<span class="muted">—</span>'}</td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);wrap.appendChild(t);fc.appendChild(wrap);out.appendChild(fc);
+}
 function renderTeamOverview(){
   const out=$('#teamOut'); out.innerHTML='';
   const nav=el('div','ftabs');nav.style.marginBottom='2px';
-  [['roster','Roster'],['log',"Captain's log"]].forEach(([v,lab])=>{
+  [['roster','Roster'],['form','Form & results'],['log',"Captain's log"]].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.view===v);
     b.onclick=()=>{teamState.view=v;renderTeamOverview();};nav.appendChild(b);});
   out.appendChild(nav);
   if(teamState.view==='log'){renderLog(out);return;}
+  if(teamState.view==='form'){renderTeamForm(out);return;}
   const fmts=teamFormats();
   if(!fmts.length){out.appendChild(el('div','card','<p class="sub">No roster loaded.</p>'));return;}
   teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
