@@ -133,6 +133,8 @@ table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;whit
 .icebreak .sl{width:17px;height:17px;vertical-align:middle}
 .icebreak .sl i{font-size:9.5px}
 .rot-yes{color:var(--good);font-weight:700}.rot-no{color:var(--line)}
+.fairbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
+.fairnote{flex:1 1 200px;min-width:0;font-size:12px;line-height:1.45;color:var(--ink-soft)}
 table.tt td.rot{font-family:Oswald;font-size:15px}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
@@ -1561,11 +1563,27 @@ function renderTeamForm(out){
 /* Rotation: one column per team match, filled if that player got a game that week. Sorted
    least-played first, because the person at the top of this table is the one owed a match.
    Deliberately separate from Hot Streak — that reads form, this reads fairness. */
+/* Who has and hasn't been getting games, over the last few team matches. Shared by the Rotation
+   chart and the fair-rotation nudge in the optimizer so the two can never disagree. */
+function rotationInfo(fmt,tid){
+  const res=(D.results||{})[String(tid)];
+  const out={dates:[],by:{}};
+  if(!res)return out;
+  out.dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().slice(-8);
+  activeRosterForFormat(fmt).forEach(p=>{
+    const played=new Set(playerGames(p.mid,fmt).map(g=>g.date));
+    const marks=out.dates.map(d=>played.has(d));
+    let idle=0; for(let i=marks.length-1;i>=0&&!marks[i];i--)idle++;
+    let run=0;  for(let i=marks.length-1;i>=0&&marks[i];i--)run++;
+    out.by[String(p.mid)]={marks,n:marks.filter(Boolean).length,idle,run};
+  });
+  return out;
+}
 function renderRotation(fmt,tid){
   const res=(D.results||{})[String(tid)];
   const tm=activeRosterForFormat(fmt);
   if(!res||!tm.length)return null;
-  const dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().slice(-8);
+  const info=rotationInfo(fmt,tid), dates=info.dates;
   if(dates.length<2)return null;
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Rotation — who has played</span>'));
@@ -1575,13 +1593,8 @@ function renderRotation(fmt,tid){
     dates.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
     '<th>Played</th><th>Idle</th></tr>'));
   const tb=el('tbody');
-  const rows=tm.map(p=>{
-    const played=new Set(playerGames(p.mid,fmt).map(g=>g.date));
-    const marks=dates.map(d=>played.has(d));
-    let idle=0; for(let i=marks.length-1;i>=0&&!marks[i];i--)idle++;
-    let run=0; for(let i=marks.length-1;i>=0&&marks[i];i--)run++;
-    return {p,marks,n:marks.filter(Boolean).length,idle,run};
-  }).sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
+  const rows=tm.map(p=>({p,...(info.by[String(p.mid)]||{marks:dates.map(()=>false),n:0,idle:dates.length,run:0})}))
+    .sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
   rows.forEach(({p,marks,n,idle,run})=>{
     const tr=el('tr');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
@@ -1832,7 +1845,19 @@ const meView=makePlayerView('#meOut',{hideName:true}), playersView=makePlayerVie
                       (they commit Q, we answer with our best)
    Initiative flips every match. Because a state where WE counter pays out max-over-A, the
    solver correctly rewards keeping a strong player in reserve — so it stops throwing the 6. */
-const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null,five:null,theirFive:null};
+const live={matchIdx:null,outOurs:new Set(),outTheirs:new Set(),played:[],mode:'counter',theirPick:null,five:null,theirFive:null,
+  fair:(()=>{try{return localStorage.getItem('rs-fair')!=='0'}catch(e){return true}})()};
+// Fair rotation: a REGULAR-SEASON nudge toward players who haven't been getting games. Units are
+// expected match wins (same as gameValue), so 0.03 per idle week — capped at 3 weeks — swings a
+// lineup by at most ~0.09 per swapped player. That is the same order as the like-for-like hold:
+// enough to break a near-tie, never enough to outrank a genuinely better matchup. Off in playoffs.
+const FAIR_HOLD=0.03, FAIR_IDLE_CAP=3;
+function fairBonus(players,rot){
+  if(!rot)return 0;
+  let s=0;
+  players.forEach(p=>{const r=rot.by[String(p.mid)];if(r)s+=Math.min(FAIR_IDLE_CAP,r.idle);});
+  return s*FAIR_HOLD;
+}
 function pWin(A,Q,fmt){return score(A,Q,fmt).p;}
 // Memoized minimax over the remaining lineup. weThrow=true means it's our turn to put a
 // player up (and be countered). Returns our total expected match wins over the rest of the
@@ -1985,6 +2010,7 @@ function renderLive(m,host){
     if(Q){
       const memo={};
       const liveScore=(live.played||[]).some(x=>x.ourPts!=null);
+      const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.ourTeamId):null;
       const ranked=ours.map(A=>{
         const now=pWin(A,Q,fmt);
         const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
@@ -1994,9 +2020,11 @@ function renderLive(m,host){
         // strong player on their weakest nor sacrifice a weak player into their strongest. Proven
         // edges and clearly-better matchups still win outright.
         const dist=Math.abs(A.sl-Q.sl);
-        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt),ep,ptw,dist};
+        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair:fairBonus([A],rotLive)};
+        // fairness applies while planning; once the score is live we optimise the team win outright
       }).sort((a,b)=>(b.edge-a.edge)||
-        (liveScore?(b.ptw-a.ptw):((b.total-CTR_HOLD*b.dist)-(a.total-CTR_HOLD*a.dist))));
+        (liveScore?(b.ptw-a.ptw)
+                  :((b.total-CTR_HOLD*b.dist+b.fair)-(a.total-CTR_HOLD*a.dist+a.fair))));
       // once the score is live, optimize the odds of winning the TEAM match, not raw wins
       if(liveScore){
         const sc=teamScore(m), need=teamNeed(fmt);
@@ -2139,8 +2167,21 @@ function bestFive(m,fmt){
   if(ours.length<TEAM_SIZE)legal=[ours];               // fewer than five here — play them all
   if(!legal.length)return {five:null,their5,ranked:[],ours,theirs};
   const memo={};
-  const ranked=legal.map(c=>({c,v:lineupValue(c,their5,fmt,memo)})).sort((a,b)=>b.v-a.v);
-  return {five:ranked[0].c,their5,ranked,ours,theirs};
+  // v stays the honest expected-wins number we display; t is what we rank by, so the fairness
+  // nudge can reorder near-ties without ever inflating the figure shown to the captain.
+  const rot=live.fair?rotationInfo(fmt,m.ourTeamId):null;
+  const scored=legal.map(c=>{
+    const v=lineupValue(c,their5,fmt,memo), f=fairBonus(c,rot);
+    return {c,v,f,t:v+f};
+  });
+  const ranked=scored.slice().sort((a,b)=>b.t-a.t);
+  const rawBest=scored.slice().sort((a,b)=>b.v-a.v)[0];
+  return {five:ranked[0].c,their5,ranked,ours,theirs,rawBest,fairOn:!!rot,rot};
+}
+function sameFive(a,b){
+  if(!a||!b||a.length!==b.length)return false;
+  const s=new Set(a.map(p=>String(p.mid)));
+  return b.every(p=>s.has(String(p.mid)));
 }
 function fieldFive(m,c,their5){
   live.five=new Set(c.map(p=>String(p.mid)));
@@ -2201,6 +2242,29 @@ function renderLineupSection(m,host){
     card.appendChild(el('p','sub',`Sat down: ${bench.map(p=>esc(p.name)+' ('+p.sl+')').join(', ')} — `+
       `the cap or a weaker fit left them off tonight.`));
   }
+
+  // Fair rotation — regular-season only, so it's a switch, not a guess about the calendar.
+  const fairBar=el('div','fairbar');
+  const fb=el('button','ftab',live.fair?'Fair rotation: on':'Fair rotation: off');
+  fb.setAttribute('aria-pressed',live.fair);
+  fb.onclick=()=>{live.fair=!live.fair;try{localStorage.setItem('rs-fair',live.fair?'1':'0')}catch(e){}renderMatch(m);};
+  fairBar.appendChild(fb);
+  const note=el('span','fairnote');
+  if(!live.fair){
+    note.textContent='Off — ranking purely on odds. Use this for playoffs and tournaments.';
+  }else{
+    const changed=bf.rawBest && !sameFive(bf.rawBest.c,best.c);
+    const owed=best.c.map(p=>({p,r:(bf.rot.by[String(p.mid)]||{})}))
+      .filter(x=>x.r.idle>=2).sort((a,b)=>b.r.idle-a.r.idle);
+    note.innerHTML = changed
+      ? `Nudged toward players who are owed a game — costs ${(bf.rawBest.v-best.v).toFixed(2)} expected wins vs the pure-odds five.`
+        + (owed.length?` In on rotation: ${owed.map(x=>esc(shortName(x.p.name))+' ('+x.r.idle+' wk'+(x.r.idle===1?'':'s')+' out)').join(', ')}.`:'')
+      : owed.length
+        ? `Rotation agrees with the odds here — ${owed.map(x=>esc(shortName(x.p.name))).join(', ')} already in the best five.`
+        : `Rotation is even across this roster — nothing to correct.`;
+  }
+  fairBar.appendChild(note);
+  card.appendChild(fairBar);
   host.appendChild(card);
 
   // a couple of alternatives so the cap trade-offs are visible
@@ -2517,7 +2581,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 6:13pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 6:24pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
