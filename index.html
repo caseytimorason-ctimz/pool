@@ -317,6 +317,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .scout-h.warn{color:var(--warn)}.scout-h.good{color:var(--good)}.scout-h.bad{color:var(--bad)}
 .scout-line{font-size:13px;margin:0 0 4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .scout-line .good{color:var(--good);font-weight:700}.scout-line .bad{color:var(--bad);font-weight:700}
+.build{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);opacity:.6;margin-bottom:4px}
 </style>
 
 <header>
@@ -546,6 +547,7 @@ function normCdf(z){
 // Expected match points (and variance) our player A earns against Q — derived from the calibrated
 // win probability and the win/loss point moments. E[pts]=p*winMean+(1-p)*lossMean.
 const K_MARG=15;  // shrink a player's win/loss point margins toward the league mean by sample
+const CTR_HOLD=0.06;  // counter tiebreak: penalty per skill level of overkill vs the thrown player
 function expPts(A,Q,fmt){
   const M=PMOM[fmt], p=score(A,Q,fmt).p, prof=P[`${A.mid}:${fmt}`];
   // V2: how many points THIS player banks when winning vs losing (does he win big / lose close?),
@@ -1284,8 +1286,15 @@ function renderLive(m,host){
         const now=pWin(A,Q,fmt);
         const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
         const ep=expPts(A,Q,fmt), ptw=pTeamWin(m,A,Q,{ours,theirs}).p;
-        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt),ep,ptw};
-      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.total-a.total)));
+        // "over" = how much higher our player's SL is than the one they threw — i.e. overkill.
+        // Answering their 3 with your 6 wins this match but spends your best answer on their
+        // weakest; when it's a near-tie, match like-for-like and hold your high players to
+        // counter their high players later. CTR_HOLD only governs near-ties (proven edge and a
+        // clearly-better matchup still win).
+        const over=Math.max(0,A.sl-Q.sl);
+        return {A,now,rest,total:now+rest,edge:provenEdge(A,Q,fmt),ep,ptw,over};
+      }).sort((a,b)=>(b.edge-a.edge)||
+        (liveScore?(b.ptw-a.ptw):((b.total-CTR_HOLD*b.over)-(a.total-CTR_HOLD*a.over))));
       // once the score is live, optimize the odds of winning the TEAM match, not raw wins
       if(liveScore){
         const sc=teamScore(m), need=teamNeed(fmt);
@@ -1315,9 +1324,10 @@ function renderLive(m,host){
         c.appendChild(el('p','sub',
           `${esc(best.A.name)} is ${h.wins}-${h.meetings-h.wins} against ${esc(Q.name)}, who beats the field otherwise — a record like that against one player is the strongest read there is, so put them up even though the handicap flatters ${esc(bestNow.A.name)}.`));
       } else if(bestNow && bestNow.A.mid!==best.A.mid){
-        c.appendChild(el('p','sub',
-          `Note: ${esc(bestNow.A.name)} is the better straight matchup (${Math.round(bestNow.now*100)}%), `+
-          `but using ${esc(best.A.name)} keeps a stronger set of answers for the rest of the night.`));
+        const closer = best.A.sl < bestNow.A.sl;
+        c.appendChild(el('p','sub', closer
+          ? `${esc(bestNow.A.name)} (SL ${bestNow.A.sl}) is a touch better this match, but they only threw an SL ${Q.sl} — answer like-for-like with ${esc(best.A.name)} (SL ${best.A.sl}) and keep your higher skill levels to counter their bigger players.`
+          : `Note: ${esc(bestNow.A.name)} is the better straight matchup (${Math.round(bestNow.now*100)}%), but using ${esc(best.A.name)} keeps a stronger set of answers for the rest of the night.`));
       }
       const mark=el('button','ftab','Mark this matchup played');mark.style.marginTop='10px';
       mark.onclick=()=>{live.played.push({our:String(best.A.mid),their:String(Q.mid)});live.theirPick=null;renderMatch(m);};
@@ -1693,7 +1703,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 8:34am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
