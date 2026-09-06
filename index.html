@@ -135,6 +135,7 @@ table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;whit
 .rot-yes{color:var(--good);font-weight:700}.rot-no{color:var(--line)}
 .fairbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
 .fairnote{flex:1 1 200px;min-width:0;font-size:12px;line-height:1.45;color:var(--ink-soft)}
+.warn-ink{color:var(--warn)}
 table.tt td.rot{font-family:Oswald;font-size:15px}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
@@ -1195,6 +1196,21 @@ function rankRow(pos,A,s){
 }
 // Opponent scouting: one glance at what we're up against before the pairings — their skill
 // makeup and legal five, who is toughest for us, and the head-to-head edges both ways.
+/* Every meeting between two people, split by format so the caller can label the source.
+   For DISPLAY only — score() stays strictly same-format, because pooling formats measurably
+   hurts prediction (pipeline/backtest_h2h.py). Knowing it and betting on it are different things. */
+function h2hAll(A,Q,fmt){
+  const rec=f=>{
+    const hh=(P[`${A.mid}:${f}`]||{}).headToHead;
+    const r=hh&&hh.find(x=>String(x.oppMid)===String(Q.mid));
+    return r&&r.meetings?{meetings:r.meetings,wins:r.wins}:null;
+  };
+  const otherFmt=fmt==='8'?'9':'8';
+  const same=rec(fmt), other=rec(otherFmt);
+  if(!same&&!other)return null;
+  return {meetings:(same?same.meetings:0)+(other?other.meetings:0),
+          wins:(same?same.wins:0)+(other?other.wins:0), same, other, otherFmt};
+}
 function scoutCard(m){
   const fmt=m.fmt, ours=roster(m.ourTeamId), theirs=roster(m.oppTeamId);
   if(!theirs.length)return null;
@@ -1207,23 +1223,39 @@ function scoutCard(m){
   const threats=theirs.map(Q=>({Q,best:Math.max(...ours.map(A=>score(A,Q,fmt).p))}))
     .sort((a,b)=>a.best-b.best).slice(0,3);
   // head-to-head edges both directions (proven, well-sampled)
+  // Every meeting on record, both formats. This is a scouting summary, not the odds model — a
+  // 3-1 in 8-ball is worth knowing when you scout the same person in 9-ball, even though
+  // backtest_h2h.py says it must NOT move the probability. Marked so the source is never
+  // ambiguous. Threshold is 2 meetings, ranked by how lopsided AND how well-evidenced, so one
+  // fluke pair never outranks a real pattern.
   const weOwn=[], theyOwn=[];
   theirs.forEach(Q=>ours.forEach(A=>{
-    const h=(P[`${A.mid}:${fmt}`]||{}).headToHead;
-    const rec=h&&h.find(x=>String(x.oppMid)===String(Q.mid));
-    if(rec&&rec.meetings>=3){const wr=rec.wins/rec.meetings;
-      if(wr>=0.65)weOwn.push({A,Q,rec}); else if(wr<=0.35)theyOwn.push({A,Q,rec});}
+    const rec=h2hAll(A,Q,fmt);
+    if(!rec||rec.meetings<2)return;
+    const wr=rec.wins/rec.meetings;
+    const strength=Math.abs(wr-0.5)*Math.sqrt(rec.meetings);
+    if(wr>=0.6)weOwn.push({A,Q,rec,strength});
+    else if(wr<=0.4)theyOwn.push({A,Q,rec,strength});
   }));
+  weOwn.sort((a,b)=>b.strength-a.strength);
+  theyOwn.sort((a,b)=>b.strength-a.strength);
+  const src=r=>r.same&&r.other?' <span class="muted">both formats</span>'
+            :!r.same?` <span class="muted">${r.otherFmt}-ball</span>`:'';
   const grid=el('div','scout-grid');
-  const col=(title,items,cls)=>{
+  const col=(title,items,cls,empty)=>{
     const d=el('div');d.innerHTML=`<div class="scout-h ${cls}">${title}</div>`;
-    if(!items.length){d.appendChild(el('p','sub muted','—'));return d;}
+    // say WHY it's empty — a bare dash reads like a bug rather than "no repeat meetings yet"
+    if(!items.length){d.appendChild(el('p','sub muted',empty||'—'));return d;}
     items.forEach(t=>{const line=el('p','scout-line');line.innerHTML=t;d.appendChild(line);});
     return d;
   };
   grid.appendChild(col('Toughest for us', threats.map(t=>`${sl(t.Q.sl)}${esc(t.Q.name)} <span class="muted">best we have ${Math.round(t.best*100)}%</span>`),'warn'));
-  grid.appendChild(col('We own', weOwn.slice(0,4).map(x=>`${esc(x.A.name.split(' ')[0])} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>`),'good'));
-  grid.appendChild(col('They own', theyOwn.slice(0,4).map(x=>`${esc(x.Q.name)} over ${esc(x.A.name.split(' ')[0])} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>`),'bad'));
+  grid.appendChild(col('We own', weOwn.slice(0,5).map(x=>
+    `${esc(shortName(x.A.name))} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>${src(x.rec)}`),
+    'good','Nobody on our side has a winning record over them yet — no repeat meetings on record.'));
+  grid.appendChild(col('They own', theyOwn.slice(0,5).map(x=>
+    `${esc(x.Q.name)} over ${esc(shortName(x.A.name))} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>${src(x.rec)}`),
+    'bad','None of them has a winning record over us — nothing to avoid.'));
   c.appendChild(grid);
 
   // Their whole roster vs every skill level — the same chart the Team tab gives us, pointed at
@@ -1575,7 +1607,11 @@ function rotationInfo(fmt,tid){
     const marks=out.dates.map(d=>played.has(d));
     let idle=0; for(let i=marks.length-1;i>=0&&!marks[i];i--)idle++;
     let run=0;  for(let i=marks.length-1;i>=0&&marks[i];i--)run++;
-    out.by[String(p.mid)]={marks,n:marks.filter(Boolean).length,idle,run};
+    // Someone with no games on record was never benched — they're new. Reporting that as
+    // "8 wks since" reads as a rotation debt that never happened.
+    const pr=P[`${p.mid}:${fmt}`];
+    out.by[String(p.mid)]={marks,n:marks.filter(Boolean).length,idle,run,
+      everPlayed:!!(pr&&pr.totalGames)};
   });
   return out;
 }
@@ -1595,12 +1631,17 @@ function renderRotation(fmt,tid){
   const tb=el('tbody');
   const rows=tm.map(p=>({p,...(info.by[String(p.mid)]||{marks:dates.map(()=>false),n:0,idle:dates.length,run:0})}))
     .sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
-  rows.forEach(({p,marks,n,idle,run})=>{
+  rows.forEach(({p,marks,n,idle,run,everPlayed})=>{
     const tr=el('tr');
+    // A player with no games on record is new, not benched — never report them as "N wks since".
+    const idleCell = !everPlayed
+      ? `<td class="cell"><span class="warn-ink">New</span><span class="n">no games yet</span></td>`
+      : `<td class="cell ${idle>=3?'lose':idle===0?'win':''}">`+
+        `${idle===0?(run>1?run+' wks':'played'):idle+' wk'+(idle===1?'':'s')}`+
+        `<span class="n">${idle===0?'in a row':'since'}</span></td>`;
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
       marks.map(v=>`<td class="cell rot"><span class="${v?'rot-yes':'rot-no'}">${v?'●':'○'}</span></td>`).join('')+
-      `<td class="cell">${n}<span class="n">of ${dates.length}</span></td>`+
-      `<td class="cell ${idle>=3?'lose':idle===0?'win':''}">${idle===0?(run>1?run+' wks':'played'):idle+' wk'+(idle===1?'':'s')}<span class="n">${idle===0?'in a row':'since'}</span></td>`;
+      `<td class="cell">${n}<span class="n">of ${dates.length}</span></td>`+idleCell;
     tb.appendChild(tr);
   });
   t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
@@ -2256,9 +2297,10 @@ function renderLineupSection(m,host){
     const changed=bf.rawBest && !sameFive(bf.rawBest.c,best.c);
     const owed=best.c.map(p=>({p,r:(bf.rot.by[String(p.mid)]||{})}))
       .filter(x=>x.r.idle>=2).sort((a,b)=>b.r.idle-a.r.idle);
+    const why=x=>x.r.everPlayed?`${x.r.idle} wk${x.r.idle===1?'':'s'} out`:'still waiting on a first game';
     note.innerHTML = changed
       ? `Nudged toward players who are owed a game — costs ${(bf.rawBest.v-best.v).toFixed(2)} expected wins vs the pure-odds five.`
-        + (owed.length?` In on rotation: ${owed.map(x=>esc(shortName(x.p.name))+' ('+x.r.idle+' wk'+(x.r.idle===1?'':'s')+' out)').join(', ')}.`:'')
+        + (owed.length?` In on rotation: ${owed.map(x=>esc(shortName(x.p.name))+' ('+why(x)+')').join(', ')}.`:'')
       : owed.length
         ? `Rotation agrees with the odds here — ${owed.map(x=>esc(shortName(x.p.name))).join(', ')} already in the best five.`
         : `Rotation is even across this roster — nothing to correct.`;
@@ -2581,7 +2623,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 6:24pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 6:29pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
