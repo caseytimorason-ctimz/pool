@@ -331,6 +331,82 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt-wrap,.tt-wrap{margin-left:-15px;margin-right:-15px;border-left:0;border-right:0;border-radius:0}
 .qt td.who,.qt th.who,.tt td.who,.tt th.who{max-width:38vw;padding-left:15px}
 .qt td.who .who-nm,.tt td.who .who-nm{max-width:32vw;display:inline-block;vertical-align:bottom}
+
+/* ---------- Train tab: "The Rail to 700" training library ---------- */
+#m-train{--t-dd:#2f7bb0;--t-sh:#1f9e73;--t-tl:#d98a2b;--t-fx:#cc5240;--t-nf:#7a6fc4;--t-vn:#c85b9a;--t-sn:#6ea83f;--t-da:#b0487e}
+#m-train .t-hero{padding:4px 2px 2px}
+#m-train .t-eyebrow{font-family:Oswald;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-ink)}
+#m-train .t-h1{font-family:Oswald;font-weight:700;line-height:.9;letter-spacing:-.01em;font-size:clamp(40px,13vw,66px);margin:8px 0;color:var(--ink)}
+#m-train .t-h1 .goal{color:var(--accent)}
+#m-train .t-thesis{color:var(--ink-soft);font-size:14.5px;max-width:60ch;line-height:1.5}
+#m-train .t-thesis b{color:var(--ink);font-weight:600}
+#m-train .t-stat{font-family:Oswald;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);opacity:.85;margin-top:10px}
+#m-train .t-rail{margin:18px 0 4px;height:26px;border-radius:6px;position:relative;background:linear-gradient(180deg,var(--rail),#3a2614);box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -3px 6px rgba(0,0,0,.35)}
+#m-train .t-dias{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 22px}
+#m-train .t-dia{width:9px;height:9px;background:var(--diamond);transform:rotate(45deg);border-radius:2px;opacity:.85}
+#m-train .t-dia.goal{background:var(--accent);opacity:1;box-shadow:0 0 10px rgba(154,116,20,.7)}
+#m-train .t-cue{position:absolute;left:12px;top:50%;width:19px;height:19px;border-radius:50%;transform:translateY(-50%);background:radial-gradient(circle at 33% 30%,#fff,#ece4d2 60%,#cdc3ab);box-shadow:0 2px 5px rgba(0,0,0,.4)}
+#m-train .t-raillbl{display:flex;justify-content:space-between;font-family:Oswald;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-top:7px;padding:0 3px}
+#m-train .t-crew{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+#m-train .t-crew a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-size:12.5px;font-weight:500;border:1px solid var(--line);border-radius:20px;padding:5px 11px;color:var(--ink)}
+#m-train .t-sw{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+#m-train .t-crew .role{color:var(--ink-soft);font-size:11px}
+#m-train .t-how b{color:var(--ink);font-weight:600}
+#m-train .t-how p{color:var(--ink-soft);font-size:13.5px;line-height:1.5;margin:8px 0 0}
+#m-train .t-phase{margin-top:26px}
+#m-train .t-phead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;padding-bottom:9px;border-bottom:1px solid var(--line)}
+#m-train .t-pno{font-family:Oswald;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+#m-train .t-phead h2{font-family:Oswald;font-weight:700;font-size:clamp(22px,7vw,34px);letter-spacing:-.01em;line-height:1;color:var(--ink);margin:0}
+#m-train .t-ptag{font-family:Oswald;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-left:auto}
+#m-train .t-plede{color:var(--ink-soft);font-size:13px;margin:11px 0 2px;max-width:70ch;line-height:1.5}
+#m-train .t-rung{margin-top:12px}
+#m-train .t-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel-2)}
+#m-train .t-chead{padding:13px 15px 11px;border-bottom:1px solid var(--line-2)}
+#m-train .t-rno{font-family:Oswald;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--accent-ink)}
+#m-train .t-rung.peak .t-rno{color:var(--accent)}
+#m-train .t-card h3{font-family:Oswald;font-weight:600;font-size:18px;line-height:1.12;margin:5px 0 0;color:var(--ink)}
+#m-train .t-nuance{margin-top:7px;color:var(--ink-soft);font-size:12.5px;line-height:1.5}
+#m-train .t-nuance b{color:var(--ink);font-weight:600}
+#m-train .t-nuance em{color:var(--accent-ink);font-style:normal}
+#m-train .t-cbody{padding:12px 15px 15px;display:grid;gap:14px}
+@media(min-width:640px){#m-train .t-cbody{grid-template-columns:1.15fr .85fr}#m-train .t-cbody.one{grid-template-columns:1fr}}
+#m-train .t-h4{font-family:Oswald;font-weight:600;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:6px}
+#m-train .t-vid{display:flex;gap:9px;align-items:flex-start;text-decoration:none;padding:6px 0;border-bottom:1px solid var(--line-2)}
+#m-train .t-vid:last-child{border-bottom:none}
+#m-train .t-vdot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 auto}
+#m-train .t-vt{font-size:12.5px;font-weight:500;line-height:1.3;color:var(--ink)}
+#m-train .t-vby{font-family:Oswald;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px}
+#m-train .t-more{margin-top:7px;font-size:11.5px;color:var(--ink-soft);line-height:1.6}
+#m-train .t-more a{color:var(--accent-ink);text-decoration:none;border-bottom:1px dotted var(--line)}
+#m-train .t-drill{padding:7px 0;border-bottom:1px solid var(--line-2)}
+#m-train .t-drill:last-child{border-bottom:none}
+#m-train .t-dn{font-size:13px;font-weight:600;color:var(--ink)}
+#m-train .t-dd{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.45}
+#m-train .t-tgt{font-family:Oswald;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-top:4px;display:inline-block}
+#m-train .t-tgt b{color:var(--accent);font-weight:600}
+#m-train .t-sys{display:grid;gap:9px;margin-top:2px}
+@media(min-width:560px){#m-train .t-sys{grid-template-columns:1fr 1fr}}
+#m-train .t-sysc{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:var(--panel)}
+#m-train .t-sname{font-family:Oswald;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+#m-train .t-sdesc{font-size:11px;color:var(--ink-soft);margin-bottom:5px}
+#m-train .t-auditbar{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:2px}
+#m-train .t-prog{font-family:Oswald;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);font-weight:600}
+#m-train .t-fam{margin-top:14px}
+#m-train .t-famname{font-family:Oswald;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--line-2)}
+#m-train .t-chips{display:flex;flex-wrap:wrap;gap:6px}
+#m-train .t-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:var(--ink);background:var(--panel-2);cursor:pointer;font-family:Barlow}
+#m-train .t-chip::before{content:"";width:13px;height:13px;border:1.5px solid var(--ink-soft);border-radius:3px;flex:0 0 auto;display:grid;place-items:center;line-height:1;font-size:9px}
+#m-train .t-chip.on{background:var(--good-wash);border-color:var(--good);color:var(--ink)}
+#m-train .t-chip.on::before{content:"✓";background:var(--good);border-color:var(--good);color:#fff}
+#m-train .t-shelf{display:grid;gap:9px}
+@media(min-width:600px){#m-train .t-shelf{grid-template-columns:1fr 1fr}}
+#m-train .t-book{border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:var(--panel-2)}
+#m-train .t-bt{font-weight:600;font-size:13.5px;color:var(--ink)}
+#m-train .t-ba{font-family:Oswald;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px}
+#m-train .t-bd{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.45}
+#m-train .t-reflinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#m-train .t-reflinks a{font-family:Oswald;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;color:var(--accent-ink);border:1px solid var(--line);border-radius:20px;padding:6px 11px}
+#m-train .t-note{color:var(--ink-soft);font-size:12px;line-height:1.55;margin-top:6px}
 </style>
 
 <header>
@@ -342,6 +418,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
       <button class="tab" role="tab" aria-selected="false" data-mode="matchup"><span class="lg">Matchup</span><span class="sm">Match</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="players"><span class="lg">Players</span><span class="sm">Find</span></button>
       <button class="tab" role="tab" aria-selected="false" data-mode="rules"><span class="lg">Rules</span><span class="sm">Rules</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="train"><span class="lg">Train</span><span class="sm">Train</span></button>
     </div>
     <button class="theme-btn" id="theme" title="Theme">◐</button>
   </div>
@@ -378,6 +455,409 @@ table.tt tr:hover td.who{background:var(--panel-2)}
     <div id="playerOut"></div>
   </section>
   <section id="m-rules" class="hide"><div id="rulesOut"></div></section>
+
+  <section id="m-train" class="hide">
+    <div class="card">
+      <div class="t-hero">
+        <div class="t-eyebrow">The Library · Foundation → Cue Ball → Strategy → Mastery</div>
+        <div class="t-h1">The Rail<br>to <span class="goal">700</span></div>
+        <p class="t-thesis">Twenty-five rungs across four phases — a full reference library for the climb. You go up by <b>owning the rung below before reaching the one above</b>; the number follows the skill. Every video is grouped by the skill it trains and color-coded by who teaches it. <em style="color:var(--accent-ink);font-style:normal">700 Fargo ≈ a strong SL7+ — the metaphor is the climb, not the exact number.</em></p>
+        <div class="t-stat">8 teachers · 50+ lessons · grouped by skill · tap-to-track shot audit + reference shelf</div>
+        <div class="t-rail" role="img" aria-label="Pool rail with a cue ball at the start and a gold goal diamond at the end">
+          <div class="t-cue"></div>
+          <div class="t-dias"><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia"></span><span class="t-dia goal"></span></div>
+        </div>
+        <div class="t-raillbl"><span>Start</span><span>700 →</span></div>
+      </div>
+    </div>
+
+    <div class="card t-how">
+      <h2><span class="eyebrow">How to run this</span></h2>
+      <p><b>Work one rung a week.</b> Watch the two or three anchor videos, then drill the Work column until the target feels routine, not lucky — only then move up. Twenty focused minutes beats an hour of aimless racking. Drop back to Phase I whenever your stroke gets noisy.</p>
+      <p><b>Log it like your APA stats</b> — made / attempted, one line per drill. The trend exposes the rung that's quietly leaking games. The <b>shot audit</b> lower down is tappable: tick what you own on demand and it saves on this device. The blank boxes are your practice list.</p>
+      <div class="t-crew" style="margin-top:12px">
+        <a href="https://www.youtube.com/@drdavebilliards" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-dd)"></span>Dr. Dave <span class="role">systems &amp; physics</span></a>
+        <a href="https://www.youtube.com/channel/UCjbKGThd8c8bNTjmcEw9rtw" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-sh)"></span>Sharivari <span class="role">technique &amp; drills</span></a>
+        <a href="https://www.youtube.com/c/TorLowry" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-tl)"></span>Tor Lowry <span class="role">Zero-X · patterns</span></a>
+        <a href="https://www.youtube.com/fxbilliards" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-fx)"></span>FX Billiards <span class="role">match thinking</span></a>
+        <a href="https://www.youtube.com/c/NielsTheTerminatorFeijen" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-nf)"></span>Niels Feijen <span class="role">pro &amp; mental</span></a>
+        <a href="https://www.youtube.com/user/venomtrickshots" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-vn)"></span>Venom <span class="role">jump &amp; massé</span></a>
+        <a href="https://www.youtube.com/@SenseiNatePlaysPool" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-sn)"></span>Sensei Nate <span class="role">strategy talk</span></a>
+        <a href="https://www.youtube.com/@dynamiteappleton" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-da)"></span>Darren Appleton <span class="role">pro drills</span></a>
+      </div>
+    </div>
+
+    <div class="t-phase">
+      <div class="t-phead"><span class="t-pno">PHASE I</span><h2>Foundation</h2><span class="t-ptag">the table is mechanical</span></div>
+      <p class="t-plede">Make the boring stuff automatic. Deliver a straight cue from a platform that repeats, see the line the same way every time, and pocket cleanly. None of this is fixable later — it's the floor everything else stands on.</p>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 01</div><h3>Stance &amp; Body Alignment</h3>
+          <p class="t-nuance">A base that repeats: feet, hips and head placed so the cue swings on the aim line with zero steering. <em>Most "aiming" misses are alignment misses</em> — your body, not your eye, is usually off the line.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=eBcUCyOHJJI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Pool Fundamentals — Stance, Bridge, Spin &amp; Stroke</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=qzjousgGLjU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">Learn Pool Quickly — Fundamentals</span><span class="t-vby">Tor Lowry</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/tutorial/fundamentals/" target="_blank" rel="noopener">Dr. Dave Fundamentals tutorial</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Alignment freeze</div><div class="t-dd">Down on a straight shot, freeze, confirm head/eye and cue on the line before any feather.</div><span class="t-tgt">Target · line true <b>before every shot</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 02</div><h3>Grip, Bridge &amp; Tip Contact</h3>
+          <p class="t-nuance"><b>Cradle the cue, don't clench it.</b> A relaxed grip lets the cue finish straight; a solid bridge stabilizes the line; precise tip contact is what actually decides spin. Tightening the grip mid-stroke drops the tip and scoops the ball.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=JeZPLFW3MBg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">10 Secrets of a GOOD Stroke (set, grip, bridge)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <div class="t-more">See also Sharivari's Fundamentals (Rung 01) for grip &amp; bridge detail.</div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Tip-contact map</div><div class="t-dd">Mark a practice CB; shoot center, follow, draw and check the chalk mark landed where you aimed.</div><span class="t-tgt">Target · mark on intent <b>9/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 03</div><h3>The Stroke</h3>
+          <p class="t-nuance">Straight, level, accelerating <b>through</b> the ball to a relaxed finish — no deceleration, no early elbow drop. A slow, unrushed transition from back- to fore-stroke is what makes it repeat under pressure.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=xlmhEqTikYI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Pendulum Stroke Technique (no elbow drop)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=F2NluIc9Kac" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Build a Consistent Stroke</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=oRRwPqTgHs4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-nf)"></span><span><span class="t-vt">Make Your Pool Stroke More Accurate</span><span class="t-vby">Niels Feijen</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Dead stop shot</div><div class="t-dd">Straight in, medium pace; CB stops on a dime.</div><span class="t-tgt">Target · <b>10 in a row</b></span></div>
+            <div class="t-drill"><div class="t-dn">Length-of-table return</div><div class="t-dd">CB over a spot and straight back to the tip.</div><span class="t-tgt">Target · within <b>1 ball</b>, 8/10</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 04</div><h3>Aiming Systems</h3>
+          <p class="t-nuance">Ghost-ball and fractional/contact-point get you started; pivot and CTE systems are options. <em>The real destination is "auto-aim"</em> — seeing the line without consciously running a system, earned through volume.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=oTA35cKbhnA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Become a Consistent Shotmaker (aiming)</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=Lx6FpomOCs4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The Key to Make Balls Consistently</span><span class="t-vby">Sharivari</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://sharivari.shop/collections/beginners-guide" target="_blank" rel="noopener">Sharivari Beginner's Guide</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Spot-to-spot potting</div><div class="t-dd">Pot from fixed marked positions to one pocket; isolate aim from everything else.</div><span class="t-tgt">Target · <b>9/10</b> per position</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 05</div><h3>Pre-Shot Routine &amp; Rhythm</h3>
+          <p class="t-nuance">The same sequence every shot: see it standing, set the bridge, two–three feathers, pause, deliver. A fixed routine is what survives pressure — it's the bridge between the practice table and the match.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=7raN6I_KTus" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Shoot Every Ball — Step by Step</span><span class="t-vby">Sharivari</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Routine every rep</div><div class="t-dd">No practice ball gets shot without the full routine. Build it before it matters.</div><span class="t-tgt">Target · <b>zero</b> routine skips</span></div></div>
+        </div></div></div>
+    </div>
+
+    <div class="t-phase">
+      <div class="t-phead"><span class="t-pno">PHASE II</span><h2>Cue Ball Mastery</h2><span class="t-ptag">the table is physics</span></div>
+      <p class="t-plede">The cue ball is the whole game. Learn where it goes and why — center-ball reference, tangent geometry, speed, spin, and the small lies (squirt, swerve, throw) that bend the line. This is the long middle where players plateau for years.</p>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 06</div><h3>Center-Ball: Stop · Follow · Draw</h3>
+          <p class="t-nuance">The vocabulary of position. Know exactly where center, tip-of-follow and tip-of-draw send the ball at a given speed. Master these three before you ever reach for sidespin.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=PZFBAMFZPWk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Understanding the Cue Ball</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=fPQEBxbByD4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Cue Ball Control — Everything You Need to Know</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=Sor910-kdBU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The 5 Most Important Shots in Pool</span><span class="t-vby">Sharivari</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/tutorial/cue-ball-control/" target="_blank" rel="noopener">Dr. Dave Cue Ball Control tutorial</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Three-spin reference</div><div class="t-dd">One cut shot, three ways — stop, follow, draw — calling the landing zone before each.</div><span class="t-tgt">Target · all three <b>called &amp; hit</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 07</div><h3>The Draw Shot — Deep Dive</h3>
+          <p class="t-nuance">The shot that most reveals a flawed stroke. Low, level, smooth acceleration, full follow-through — <em>let the cue do the work; don't jab.</em> Draw distance is far harder to judge than follow, so calibrate it deliberately.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=e8X15F-6w4s" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Pool Made Simple — Master the Draw Shot</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=yg1_yFmEHFY" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">Create a Powerful Draw Stroke · Part 1</span><span class="t-vby">Tor Lowry</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=AG5-Ti4QKAo" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">Create a Powerful Draw Stroke · Part 2</span><span class="t-vby">Tor Lowry</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Draw distance ladder</div><div class="t-dd">Same straight shot; draw back to 1, 2, 3 diamonds on call.</div><span class="t-tgt">Target · zone hit <b>4/5</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 08</div><h3>Tangent Line &amp; the 90° Rule</h3>
+          <p class="t-nuance"><b>Stun → the cue ball leaves on the 90° tangent</b>, perpendicular to the object ball's path, regardless of speed. Reading this line on every shot is the foundation of position and of not scratching.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/shorts/gsGDdf_Y2wU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">The 90° Rule Tangent Line (short)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=z8-pznb0LUQ" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Using the 30° and 90° Rules to Aim</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=7tWq9303-w0" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Calculate the CB Path with the Tangent Line + Drill</span><span class="t-vby">Sharivari</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Tangent-line landing</div><div class="t-dd">Stun a cut; pre-place a coin on the 90° path and land the CB on it.</div><span class="t-tgt">Target · within <b>a ball</b>, 7/10</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 09</div><h3>The 30° Rule &amp; Natural Angle</h3>
+          <p class="t-nuance">A <b>rolling</b> cue ball deflects ~30° for a wide band of cuts (the peace-sign). The path persists down the tangent and curves later with more speed — so the final angle is reliable, but the landing spot shifts with pace.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=NSy9xos4tG8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Master Cue Ball Control — Follow vs. Draw</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=Ag1PJY93GTk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Controlling CB Direction off a Rail with Follow</span><span class="t-vby">Dr. Dave</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Peace-sign target</div><div class="t-dd">Rolling cuts to a predicted 30° zone; vary speed and watch the landing shift.</div><span class="t-tgt">Target · zone hit <b>7/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 10</div><h3>Speed Control &amp; Distance</h3>
+          <p class="t-nuance">The single biggest separator into the 600s. Same mechanics, calibrated pace. Build a feel for distance-per-speed and remember the rolling ball carries past the tangent with power — <em>follow for distance, it reads cleaner than draw.</em></p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=5yR2OpCCchc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Speed Control Tips &amp; Drills</span><span class="t-vby">Dr. Dave</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Speed ladder</div><div class="t-dd">Roll the CB to stop in zones at 1, 2, 3, then 1.5 diamonds — only speed changes.</div><span class="t-tgt">Target · <b>4/5</b> per distance</span></div>
+            <div class="t-drill"><div class="t-dn">Position wagon wheel</div><div class="t-dd">Pocket one OB, land the CB in a chosen slice; cycle all slices.</div><span class="t-tgt">Target · <b>6/8 slices</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 11</div><h3>Sidespin: Squirt, Swerve &amp; Pivot Aiming</h3>
+          <p class="t-nuance">English is for position, not a default. Understand <b>squirt</b> (deflection off the tip), <b>swerve</b> (the curve on an elevated cue), and how back-hand vs front-hand English changes your aim and pivot. <em>Over-spinning is the classic amateur accuracy killer.</em></p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=kTU-YqcO_Rg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Cross-Table Cue Ball Control System</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=3P9xNgDbbDc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Advanced Position Play &amp; Cue Ball Physics</span><span class="t-vby">Sharivari</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Minimal-English position</div><div class="t-dd">Reach the shape with the least spin possible; prove you don't need it.</div><span class="t-tgt">Target · shape <b>without</b> english first</span></div>
+            <div class="t-drill"><div class="t-dn">Squirt &amp; pivot test</div><div class="t-dd">Same pot L and R english; learn your cue's deflection and pivot point.</div><span class="t-tgt">Target · pot holds <b>both sides</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 12</div><h3>Throw: Cut-Induced &amp; Spin-Induced</h3>
+          <p class="t-nuance">Object balls don't leave on the pure geometric line — friction <b>throws</b> them. CIT (from the cut) and SIT (from sidespin) matter most on slow, stunned, half-ball shots. Learn it both to compensate and to use it (gearing outside english cancels throw).</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=-jUL_8aZ2LU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Cut-Induced (CIT) &amp; Spin-Induced (SIT) Throw</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=GHrSAmOxRHA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Throw Shots You Need to Know (GoPro POV)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/tutorial/throw/" target="_blank" rel="noopener">Dr. Dave Throw tutorial</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Half-ball throw map</div><div class="t-dd">Slow stun half-ball cuts; note how far the OB throws and adjust aim.</div><span class="t-tgt">Target · pot <b>7/10</b> with comp</span></div></div>
+        </div></div></div>
+    </div>
+
+    <div class="t-phase">
+      <div class="t-phead"><span class="t-pno">PHASE III</span><h2>Table Strategy</h2><span class="t-ptag">the thinking game</span></div>
+      <p class="t-plede">You can pocket and you can move the cue ball — now choose well. Patterns, clusters, banks and kicks by system, defense, and shot selection. This is where knowledge starts to beat raw shotmaking.</p>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 13</div><h3>Position Play Fundamentals</h3>
+          <p class="t-nuance">Shape is angles, not spots. Aim for a <b>zone</b>, leave a natural angle into the next ball, and stay on the correct side. The shortest cue-ball path that keeps an angle is almost always the right one.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=d0Wn5VnE70E" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">Principles of Position Play — Shot by Shot</span><span class="t-vby">Tor Lowry</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=JQkyXdMMHPk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">How Professionals Play Position — Pro Hacks</span><span class="t-vby">Tor Lowry</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Zone shape</div><div class="t-dd">Call a zone (not a dot) for each leave; you're safe anywhere inside it.</div><span class="t-tgt">Target · land in zone <b>8/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 14</div><h3>Pattern Play &amp; Run-Outs</h3>
+          <p class="t-nuance">Think <b>three balls ahead</b>; identify the key ball onto the game ball. Simplicity wins — stop shots connect zones cleanly. Study real run-outs and reverse-engineer why each leave was chosen.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=DMlQGu_pRNU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Pattern Play Principles</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=L3cF-3Sb4og" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">How to Run Out in 8-Ball — 20 Run-Outs</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=k0MLqZWPjVM" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Smart Runout — Pattern &amp; Position (Pt 1)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=nN6TU0sU0V8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-fx)"></span><span><span class="t-vt">SVB vs. Ouschan — Shot-by-Shot Analysis</span><span class="t-vby">FX Billiards</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Progressive run-out</div><div class="t-dd">Run 3 with shape, then 6, then 9; add only when clean.</div><span class="t-tgt">Target · clear the <b>6-set</b>, 3/5</span></div>
+            <div class="t-drill"><div class="t-dn">The Line drill</div><div class="t-dd">Run a line keeping the CB on the correct side of every leave.</div><span class="t-tgt">Target · <b>no off-side</b> leaves</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 15</div><h3>Cluster Management &amp; Break-Outs</h3>
+          <p class="t-nuance">Plan the problem ball first. Break clusters <b>early, with insurance</b> — a ball already made and a soft, controlled bump from the right angle. Know when to leave a cluster intact and play around it instead.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=eGAEfE71WPc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">8-Ball Run-Outs &amp; Break Advice (break-outs)</span><span class="t-vby">Dr. Dave</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Insurance break-out</div><div class="t-dd">Set a 2-ball cluster + an easy insurance ball; break the cluster while keeping a shot.</div><span class="t-tgt">Target · cluster open + shot <b>6/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 16</div><h3>Banking — by System</h3>
+          <p class="t-nuance"><b>Test the table first</b> — bar boxes bank short. Start from the mirror/equal-angle line at center ball, then learn to adjust for speed and spin transfer on bigger angles.</p></div>
+        <div class="t-cbody one">
+          <div><div class="t-h4">Systems</div>
+            <div class="t-sys">
+              <div class="t-sysc"><div class="t-sname">Mirror · equal-angle</div><div class="t-sdesc">The baseline for every one-rail bank.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=4QWcQhytefI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">The Only Diamond System You Need</span><span class="t-vby">Dr. Dave</span></span></a></div>
+              <div class="t-sysc"><div class="t-sname">Large-angle · spin transfer</div><div class="t-sdesc">Sliding banks into far corner/side pockets.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=ZtK0Jqom3_o" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Diamond Systems for Large-Angle Banks</span><span class="t-vby">Dr. Dave</span></span></a></div>
+            </div>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/faq/bank-kick/diamond-systems/" target="_blank" rel="noopener">Dr. Dave diamond-systems FAQ</a></div>
+            <div class="t-drill" style="margin-top:10px"><div class="t-dn">Work · cross-corner bank</div><div class="t-dd">Bank from repeatable positions; track make rate, not feel.</div><span class="t-tgt">Target · <b>50%+</b> over 20</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 17</div><h3>Kicking — by System</h3>
+          <p class="t-nuance">A reliable kick means a missed leave isn't a lost rack. Learn one system per rail count cold; the Corner-5 has running English baked into its numbers, so get the line first.</p></div>
+        <div class="t-cbody one">
+          <div><div class="t-h4">Systems</div>
+            <div class="t-sys">
+              <div class="t-sysc"><div class="t-sname">Plus · two rail</div><div class="t-sdesc">Diamond count for two-railers off the short rail.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=2BsOZ09Nsyg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Plus System (two-rail kicks)</span><span class="t-vby">Dr. Dave</span></span></a></div>
+              <div class="t-sysc"><div class="t-sname">Corner-5 · three rail</div><div class="t-sdesc">CB number − 3rd-rail number = first-rail aim.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=G4dv9ekF3FY" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Corner-5 System (three-rail kicks)</span><span class="t-vby">Dr. Dave</span></span></a></div>
+              <div class="t-sysc"><div class="t-sname">Magic Spot · no-math 3-rail</div><div class="t-sdesc">Visual reference for symmetric three-railers.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=EIXygbHvJ_8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">"Magic Spot" Symmetric 3-Rail Kicks</span><span class="t-vby">Dr. Dave</span></span></a></div>
+              <div class="t-sysc"><div class="t-sname">All systems · overview</div><div class="t-sdesc">The full menu — pick your defaults.</div>
+                <a class="t-vid" href="https://www.youtube.com/watch?v=U5Exnt3WDXA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Bank &amp; Kick Aiming Systems</span><span class="t-vby">Dr. Dave</span></span></a></div>
+            </div>
+            <div class="t-drill" style="margin-top:10px"><div class="t-dn">Work · one-rail kick to contact</div><div class="t-dd">Hide targets; mirror-system kick to full contact.</div><span class="t-tgt">Target · clean hit <b>7/10</b></span></div>
+            <div class="t-drill"><div class="t-dn">Work · Plus System two-railers</div><div class="t-dd">Fixed positions; run the count, adjust for your rails.</div><span class="t-tgt">Target · within <b>1 diamond</b>, 6/10</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 18</div><h3>Safety &amp; Defensive Play</h3>
+          <p class="t-nuance">When there's no run, win the exchange. <b>Hide the cue ball or the object ball</b>, control distance, and use SIT to hold the cue ball into a blocker. Defensive discipline is the quiet gap between a 640 and a 680.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=Ji_jFE6QVmQ" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Safeties Every Player Must Master</span><span class="t-vby">Dr. Dave</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Hook the ghost</div><div class="t-dd">From no-shot layouts, leave the CB hooked. A real hook counts as a make.</div><span class="t-tgt">Target · hook <b>6/10</b></span></div>
+            <div class="t-drill"><div class="t-dn">Distance safe</div><div class="t-dd">Leave the OB long, the CB tucked — maximize their distance.</div><span class="t-tgt">Target · safe-on-miss <b>every rep</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 19</div><h3>Two-Way Shots &amp; Shot Selection</h3>
+          <p class="t-nuance">Run the percentages every shot: offense, safety, or two-way. The <b>two-way</b> — make it, or leave safe on the miss — is the signature high-level tool. Knowing when <em>not</em> to fire wins more than any shot in your bag.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=1rJVrgv0Na0" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Useful Game-Winning Shots</span><span class="t-vby">Dr. Dave</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Two-way reps</div><div class="t-dd">Plan the safe leave on the miss <em>before</em> shooting the tough one.</div><span class="t-tgt">Target · <b>both outcomes</b> planned</span></div>
+            <div class="t-drill"><div class="t-dn">Decision log</div><div class="t-dd">In games, note every shot you chose wrong in hindsight.</div><span class="t-tgt">Target · review <b>weekly</b></span></div></div>
+        </div></div></div>
+    </div>
+
+    <div class="t-phase">
+      <div class="t-phead"><span class="t-pno">PHASE IV</span><h2>Mastery</h2><span class="t-ptag">the mind game</span></div>
+      <p class="t-plede">The shots aren't new anymore — the break, the specialty escapes, the game-specific judgment, and the nerve are. This last climb happens in competition, executing the routine you built in Phase I when it counts.</p>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 20</div><h3>The Break</h3>
+          <p class="t-nuance">Controlled power, not maximum power. A square, level hit and the cue ball squatting near center table beat a big dry smash. In 9-ball, break from the side to pocket the wing ball; track made-ball <b>and</b> cue-ball control as one stat.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=GBNm7rju28o" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-fx)"></span><span><span class="t-vt">How to Break Better in 8-Ball &amp; 9-Ball</span><span class="t-vby">FX Billiards</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/faq/break/9-ball/" target="_blank" rel="noopener">9-Ball break strategy</a> · <a href="https://drdavepoolinfo.com/faq/break/advice/" target="_blank" rel="noopener">break technique advice</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Break + control</div><div class="t-dd">Track made-ball AND where the cue ball settles, not power.</div><span class="t-tgt">Target · CB near center <b>7/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 21</div><h3>Specialty: The Jump Shot</h3>
+          <p class="t-nuance">Elevate, hit center, and let the cue do the work — <em>don't scoop.</em> A real stroke with an angled cue jumps higher than you'd think. Learn the legal half-ball jump and when a kick is the smarter escape.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=NFd9tUgFbFE" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Jump Shot — Everything You Need to Know</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/shorts/A0D1HuLQD_c" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Jump Shot Basics (short)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=xCdBFtmg3tA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-vn)"></span><span><span class="t-vt">How to Massé and Jump the Cue Ball</span><span class="t-vby">Venom</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/faq/jump/technique/" target="_blank" rel="noopener">Dr. Dave jump technique</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Jump to contact</div><div class="t-dd">Clear a blocker, make legal contact at increasing gaps.</div><span class="t-tgt">Target · clean hit <b>6/10</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 22</div><h3>Specialty: Massé &amp; Swerve</h3>
+          <p class="t-nuance">Curve the cue ball around a blocker — small swerve for subtle adjustments, full massé for big arcs. High leverage but low frequency; learn it after the fundamentals are solid, and respect the cloth.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=rIjchLs7p4c" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Massé &amp; Swerve — Everything You Need to Know</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=p2XHxXypNWI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Massé Shot Technique &amp; Aiming</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=NZcZlJNW5IA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Power Draw &amp; Large-Curve Massé</span><span class="t-vby">Dr. Dave</span></span></a>
+            <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/tutorial/advanced/" target="_blank" rel="noopener">Dr. Dave advanced-shots tutorial</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Swerve around</div><div class="t-dd">Small curve past a close blocker to make legal contact.</div><span class="t-tgt">Target · contact <b>6/10</b>, cloth intact</span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 23</div><h3>Game-Specific Strategy</h3>
+          <p class="t-nuance">Each game rewards different judgment: 8-ball is cluster &amp; group management, 9/10-ball is speed and two-way aggression, one-pocket and 14.1 are patience and position banking. Study the game you compete in deeply, then borrow from the others.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch &amp; study</div>
+            <a class="t-vid" href="https://www.youtube.com/playlist?list=PLUXphgDzN-9j_9F-mZIsK-tsY8wfBEJ4S" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-da)"></span><span><span class="t-vt">Appleton's Drills — Intermediate/Beginner (playlist)</span><span class="t-vby">Darren Appleton</span></span></a>
+            <div class="t-more">Game encyclopedias: <a href="https://drdavebilliards.com/videos/8-ball/" target="_blank" rel="noopener">VEEB · 8-ball</a> · <a href="https://drdavebilliards.com/videos/vent/resources/" target="_blank" rel="noopener">VENT · 9/10-ball</a> · <a href="https://drdavebilliards.com/videos/veop/resources/" target="_blank" rel="noopener">VEOP · one-pocket</a></div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Game of the month</div><div class="t-dd">Pick one game; run its patterns and study a pro match in it weekly.</div><span class="t-tgt">Target · <b>one match analyzed/week</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 24</div><h3>The Mental Game &amp; Pressure</h3>
+          <p class="t-nuance"><b>The routine doesn't change when it matters</b> — that's the entire skill. Breathing, a quiet mind, and full commitment to the chosen shot. Train pressure on purpose so the basement stroke shows up under the lights.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Watch</div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=eralilXdNoQ" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-nf)"></span><span><span class="t-vt">Mental Tips for World-Class Pool (Ep. 1)</span><span class="t-vby">Niels Feijen</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=pkrkCp-Sxfk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-nf)"></span><span><span class="t-vt">Training the Mental Side of Pool</span><span class="t-vby">Niels Feijen</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/@SenseiNatePlaysPool" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sn)"></span><span><span class="t-vt">Mental &amp; strategic side of the game (channel)</span><span class="t-vby">Sensei Nate</span></span></a></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Consequence reps</div><div class="t-dd">Tournament patterns with a real cost for a miss. Train the nerve.</div><span class="t-tgt">Target · log it <b>like a match</b></span></div></div>
+        </div></div></div>
+
+      <div class="t-rung peak"><div class="t-card">
+        <div class="t-chead"><div class="t-rno">RUNG 25 · 700</div><h3>Practice Systems &amp; Measuring Progress</h3>
+          <p class="t-nuance">700 is built on measured reps, not vibes. Score yourself with repeatable benchmarks — <b>play the ghost</b>, run the BU exams, work a structured drill set — and chart the trend. The number you can't fake is the one that climbs.</p></div>
+        <div class="t-cbody">
+          <div><div class="t-h4">Systems &amp; benchmarks</div>
+            <div class="t-more" style="font-size:12px;color:var(--ink-soft)">
+              <b style="color:var(--ink)">Play the Ghost</b> — race the ghost to 5 (break, ball-in-hand, run or lose). The closest at-home Fargo proxy.<br>
+              <b style="color:var(--ink)">BU Exams</b> — Dr. Dave / Billiard University scored ability tests: <a href="https://billiarduniversity.org/resources/videos/" target="_blank" rel="noopener">BU resources</a>.<br>
+              <b style="color:var(--ink)">VEPP</b> — the most comprehensive published drill workout, with log sheets: <a href="https://drdavebilliards.com/videos/vepp/resources/" target="_blank" rel="noopener">VEPP resources</a>.<br>
+              <b style="color:var(--ink)">Drill libraries</b> — <a href="https://sharivari.shop/collections/drills" target="_blank" rel="noopener">Sharivari drills</a> · <a href="https://www.youtube.com/playlist?list=PLUXphgDzN-9j_9F-mZIsK-tsY8wfBEJ4S" target="_blank" rel="noopener">Appleton drills</a>.
+            </div></div>
+          <div><div class="t-h4">Work</div>
+            <div class="t-drill"><div class="t-dn">Ghost score</div><div class="t-dd">Race the ghost weekly; log the result and watch the line.</div><span class="t-tgt">Target · beat it <b>1 in 3</b></span></div>
+            <div class="t-drill"><div class="t-dn">Re-test</div><div class="t-dd">Re-run one BU exam monthly; compare scores.</div><span class="t-tgt">Target · score <b>trending up</b></span></div></div>
+        </div></div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="eyebrow">Common shots you must master</span></h2>
+      <p class="sub">A shot-vocabulary audit in the spirit of Martin &amp; Reeves' <b>The 99 Critical Shots</b> and Dr. Dave's <b>VEPS</b>. These are the families a 700-level player owns cold. <b>Tap what you can execute on demand</b> — it saves on this device. The blank boxes are your practice list.</p>
+      <div class="t-auditbar"><span></span><span class="t-prog" id="t-audit-prog">0 / 0 owned</span></div>
+      <div class="t-fam"><div class="t-famname">Pocketing &amp; cut angles</div><div class="t-chips">
+        <button class="t-chip">Straight-in</button><button class="t-chip">Half-ball (anchor)</button><button class="t-chip">Thin cut</button><button class="t-chip">Three-quarter</button><button class="t-chip">Long pot</button><button class="t-chip">Cheat-the-pocket</button><button class="t-chip">Back cut</button><button class="t-chip">Rail cut</button><button class="t-chip">Spot shot</button></div></div>
+      <div class="t-fam"><div class="t-famname">Core cue-ball control</div><div class="t-chips">
+        <button class="t-chip">Stop shot</button><button class="t-chip">Stun run-through</button><button class="t-chip">Follow</button><button class="t-chip">Draw</button><button class="t-chip">Stun across (tangent)</button><button class="t-chip">Force follow</button><button class="t-chip">Force draw</button><button class="t-chip">Kill / deaden</button></div></div>
+      <div class="t-fam"><div class="t-famname">Around-the-table position</div><div class="t-chips">
+        <button class="t-chip">One-rail position</button><button class="t-chip">Two-rail position</button><button class="t-chip">Follow off the rail</button><button class="t-chip">Draw &amp; around</button><button class="t-chip">Float the natural angle</button><button class="t-chip">Shorten with stun</button><button class="t-chip">Cinch vs. perfect shape</button></div></div>
+      <div class="t-fam"><div class="t-famname">Spin &amp; throw</div><div class="t-chips">
+        <button class="t-chip">Inside english</button><button class="t-chip">Outside english</button><button class="t-chip">Gearing (cancel throw)</button><button class="t-chip">Use CIT to create angle</button><button class="t-chip">Use SIT to hold</button><button class="t-chip">BHE / FHE pivot</button></div></div>
+      <div class="t-fam"><div class="t-famname">Rail &amp; frozen-ball</div><div class="t-chips">
+        <button class="t-chip">OB frozen to rail</button><button class="t-chip">CB frozen to OB</button><button class="t-chip">CB frozen to rail</button><button class="t-chip">Rail-first shot</button><button class="t-chip">Cut off the rail</button></div></div>
+      <div class="t-fam"><div class="t-famname">Combos · caroms · kisses</div><div class="t-chips">
+        <button class="t-chip">Combination</button><button class="t-chip">Carom (billiard)</button><button class="t-chip">Kiss shot</button><button class="t-chip">Dead-combo read</button><button class="t-chip">Frozen kiss</button></div></div>
+      <div class="t-fam"><div class="t-famname">Banks &amp; kicks</div><div class="t-chips">
+        <button class="t-chip">One-rail bank</button><button class="t-chip">Cross-corner bank</button><button class="t-chip">Cross-side bank</button><button class="t-chip">One-rail kick (mirror)</button><button class="t-chip">Two-rail kick (Plus)</button><button class="t-chip">Three-rail kick (Corner-5)</button></div></div>
+      <div class="t-fam"><div class="t-famname">Escape &amp; defense</div><div class="t-chips">
+        <button class="t-chip">Hide-CB safety</button><button class="t-chip">Hide-OB safety</button><button class="t-chip">Kick-safe</button><button class="t-chip">Hook escape</button><button class="t-chip">Break-out / nudge</button><button class="t-chip">Two-way shot</button></div></div>
+      <div class="t-fam"><div class="t-famname">Specialty</div><div class="t-chips">
+        <button class="t-chip">Jump (full)</button><button class="t-chip">Jump (half / legal)</button><button class="t-chip">Swerve</button><button class="t-chip">Massé</button><button class="t-chip">Controlled break</button><button class="t-chip">Soft finesse / push</button></div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="eyebrow">Reference shelf</span></h2>
+      <div class="t-shelf" style="margin-top:8px">
+        <div class="t-book"><div class="t-bt">The Illustrated Principles of Pool &amp; Billiards</div><div class="t-ba">Dr. Dave Alciatore</div><div class="t-bd">The physics-grounded backbone of nearly every rung here — companion text to the VEPS/VEPP video series.</div></div>
+        <div class="t-book"><div class="t-bt">The 99 Critical Shots in Pool</div><div class="t-ba">Ray Martin &amp; Rosser Reeves</div><div class="t-bd">The classic shot encyclopedia behind the audit above. Old but canonical.</div></div>
+        <div class="t-book"><div class="t-bt">Play Your Best Pool / Eight Ball / Nine Ball</div><div class="t-ba">Phil Capelle</div><div class="t-bd">The deepest published treatment of pattern play, strategy and percentages.</div></div>
+        <div class="t-book"><div class="t-bt">Pleasures of Small Motions · Zen Pool</div><div class="t-ba">Bob Fancher · Max Eberle</div><div class="t-bd">Two takes on the mental game — pair with the Niels Feijen rung.</div></div>
+      </div>
+      <div class="t-reflinks">
+        <a href="https://drdavepoolinfo.com/tutorial/" target="_blank" rel="noopener">Dr. Dave free tutorial</a>
+        <a href="https://billiarduniversity.org/resources/videos/" target="_blank" rel="noopener">Billiard University</a>
+        <a href="https://sharivari.shop/" target="_blank" rel="noopener">Sharivari courses</a>
+        <a href="https://www.zerox-billiards.com/free-pool-lessons" target="_blank" rel="noopener">Zero-X free lessons</a>
+        <a href="https://www.nielsfeijen.pro/courses" target="_blank" rel="noopener">Terminator College</a>
+      </div>
+      <p class="t-note">Phase bands are orientation, not gates — they overlap and they're individual. Climb by skill and the number follows. Treat this as a living library: when a teacher posts something better for a rung, swap it in.</p>
+    </div>
+  </section>
+
   <p class="foot" id="foot"></p>
 </div>
 
@@ -1742,8 +2222,23 @@ function setMode(m){document.querySelectorAll('.tab').forEach(t=>t.setAttribute(
   $('#m-team').classList.toggle('hide',m!=='team');
   $('#m-matchup').classList.toggle('hide',m!=='matchup');$('#m-players').classList.toggle('hide',m!=='players');
   $('#m-rules').classList.toggle('hide',m!=='rules');
+  $('#m-train').classList.toggle('hide',m!=='train');
   if(m==='team')renderTeamOverview();
   if(m==='rules')renderRulesTab();}
+/* Shot audit: tappable chips, owned set persisted per-device. Keyed by family|label so
+   inserting a new shot later never silently reshuffles what you'd already ticked. */
+function initTrain(){
+  let owned={};try{owned=JSON.parse(localStorage.getItem('rs-shots')||'{}')||{}}catch(e){owned={}}
+  const chips=[...document.querySelectorAll('#m-train .t-chip')];
+  chips.forEach(c=>{const fam=(c.closest('.t-fam')||{}).querySelector?c.closest('.t-fam').querySelector('.t-famname').textContent:'';
+    c.dataset.shot=fam+'|'+c.textContent.trim();});
+  const prog=$('#t-audit-prog');
+  function refresh(){let n=0;chips.forEach(c=>{const on=!!owned[c.dataset.shot];c.classList.toggle('on',on);if(on)n++;});
+    if(prog)prog.textContent=n+' / '+chips.length+' owned';}
+  chips.forEach(c=>c.onclick=()=>{if(owned[c.dataset.shot])delete owned[c.dataset.shot];else owned[c.dataset.shot]=1;
+    try{localStorage.setItem('rs-shots',JSON.stringify(owned))}catch(e){}refresh();});
+  refresh();
+}
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
@@ -1753,8 +2248,8 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 2:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
-  fillMe();fillSchedule();fillPlayers('');
+  $('#foot').innerHTML=`<span class="build">build sep 6, 2:13pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
   function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();init();}
