@@ -574,9 +574,9 @@ function expPts(A,Q,fmt){
 }
 // Points banked so far this match (from entered results), our side and theirs.
 function teamScore(m){
-  const M=PMOM[m.fmt]; let us=0, them=0;
-  (live.played||[]).forEach(x=>{ if(x.ourPts!=null){ us+=x.ourPts; them+=(M.total-x.ourPts); }});
-  return {us, them, matchesLeft:M.matches-(live.played||[]).length};
+  const M=PMOM[m.fmt]; let us=0, them=0, usW=0, themW=0;
+  (live.played||[]).forEach(x=>{ if(x.ourPts!=null){ us+=x.ourPts; them+=(M.total-x.ourPts); if(x.won)usW++; else themW++; }});
+  return {us, them, usW, themW, matchesLeft:M.matches-(live.played||[]).length};
 }
 // P(win the team match) if we play matchup {A,Q} now and the remaining matches land near their
 // expected points. Shifts the advice with the score: behind -> upside/variance helps; ahead ->
@@ -1228,16 +1228,24 @@ function renderLive(m,host){
   if(live.played.length){
     const M=PMOM[fmt], sc=teamScore(m), need=teamNeed(fmt), pool=M.total*M.matches;
     const scored=live.played.filter(x=>x.ourPts!=null).length;
-    const clinched=sc.us>=need, lost=sc.them>(pool-need);
+    const remaining=sc.matchesLeft*M.total, winMatches=Math.floor(M.matches/2)+1;   // 3 of 5
+    // The match is decided the moment it's mathematically settled: someone reaches the majority,
+    // OR the other side can no longer catch up on points. A points tie goes to whoever won 3+
+    // individual matches.
+    const clinched = sc.us>=need || sc.us>sc.them+remaining || (sc.us===sc.them+remaining && sc.usW>=winMatches);
+    const lost     = sc.them>=need || sc.them>sc.us+remaining || (sc.them===sc.us+remaining && sc.themW>=winMatches);
     const sard=el('div','card');
     sard.style.borderColor=clinched?'var(--good)':lost?'var(--bad)':'var(--accent)';
-    const stillNeed=Math.max(0,need-sc.us), theyNeed=Math.max(0,(pool-need+1)-sc.them);
+    const stillNeed=Math.max(0,need-sc.us), theyNeed=Math.max(0,need-sc.them);
+    const cantCatch = !clinched && !lost && sc.matchesLeft>0 && (sc.them+remaining<need);  // they can't reach the majority
     sard.innerHTML=`<div class="eyebrow" style="color:${clinched?'var(--good)':lost?'var(--bad)':'var(--accent)'}">Team score`+
       `${sc.matchesLeft>0?` · ${sc.matchesLeft} match${sc.matchesLeft===1?'':'es'} left`:' · final'}</div>`+
       `<div class="ts-row"><span class="ts-us">${sc.us}</span><span class="ts-dash">—</span><span class="ts-them">${sc.them}</span></div>`+
-      `<p class="sub" style="margin-top:2px">Us vs ${esc(m.oppTeam)} · first to ${need} of ${pool} wins`+
+      `<p class="sub" style="margin-top:2px">Matches won ${sc.usW}–${sc.themW} · first to ${need} of ${pool} wins`+
       (clinched?' · <b style="color:var(--good)">clinched</b>':lost?' · <b style="color:var(--bad)">out of reach</b>':
         ` · <b>we need ${stillNeed}</b> more (they need ${theyNeed})`)+`</p>`+
+      (cantCatch?`<p class="sub" style="color:var(--good);margin-top:3px">They can no longer reach ${need} — a couple more points and it's mathematically over.</p>`:'')+
+      (!clinched&&!lost&&sc.us===sc.them?`<p class="sub" style="margin-top:3px">Dead even — a points tie goes to whoever wins 3 of the 5 matches, so match wins matter now.</p>`:'')+
       (scored<live.played.length?`<p class="sub" style="color:var(--warn);margin-top:4px">Enter each result below to keep the score live.</p>`:'');
     host.appendChild(sard);
 
@@ -1735,7 +1743,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 9:28am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 9:35am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
