@@ -127,6 +127,13 @@ table.qt td.cell{font-family:Oswald;font-weight:600;background:none;border:0;bor
 table.qt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
 table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;white-space:nowrap}
 .log .sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent-ink);margin-left:4px}
+.icebreak{margin:-2px 0 4px;padding:9px 11px;border:1px dashed var(--line);border-left:3px solid var(--accent);
+  border-radius:9px;background:var(--accent-wash);font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+.icebreak b{font-family:Oswald;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-right:4px}
+.icebreak .sl{width:17px;height:17px;vertical-align:middle}
+.icebreak .sl i{font-size:9.5px}
+.rot-yes{color:var(--good);font-weight:700}.rot-no{color:var(--line)}
+table.tt td.rot{font-family:Oswald;font-size:15px}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
 .qchip.yes{background:var(--good-wash);color:var(--good);border-color:var(--good)}
@@ -411,6 +418,33 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 #m-train .t-reflinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 #m-train .t-reflinks a{font-family:Oswald;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;color:var(--accent-ink);border:1px solid var(--line);border-radius:20px;padding:6px 11px}
 #m-train .t-note{color:var(--ink-soft);font-size:12px;line-height:1.55;margin-top:6px}
+/* training log */
+#m-train .t-logform{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:12px}
+#m-train .t-f{display:flex;flex-direction:column;gap:3px;min-width:0}
+#m-train .t-f span{font-family:Oswald;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+#m-train .t-f input{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+  padding:8px 9px;font-family:Barlow;font-size:14px;min-width:0;width:100%}
+#m-train .t-f input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#m-train .t-f-drill{flex:1 1 100%}
+#m-train .t-f-num{flex:0 0 68px}
+#m-train .t-f-date{flex:1 1 130px}
+#m-train .t-logbtn{flex:0 0 auto;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;
+  font-family:Oswald;font-weight:600;font-size:13px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+#m-train .t-logerr{color:var(--bad);font-size:12px;margin-top:8px}
+#m-train .t-logsum{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px}
+#m-train .t-sumc{border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--panel-2);font-size:12px}
+#m-train .t-sumc b{font-family:Oswald;font-size:15px;color:var(--accent);display:block;font-variant-numeric:tabular-nums}
+#m-train .t-drilltbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+#m-train .t-drilltbl th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-soft);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+#m-train .t-drilltbl td{padding:7px 6px;border-bottom:1px solid var(--line-2);color:var(--ink)}
+#m-train .t-drilltbl td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:Oswald;font-weight:600}
+#m-train .t-entry{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:12.5px}
+#m-train .t-entry .d{font-family:Oswald;font-size:10.5px;color:var(--ink-soft);letter-spacing:.04em;flex:0 0 auto}
+#m-train .t-entry .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#m-train .t-entry .sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;flex:0 0 auto}
+#m-train .t-entry .x{flex:0 0 auto;background:none;border:0;color:var(--ink-soft);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+#m-train .t-entry .x:hover{color:var(--bad)}
 </style>
 
 <header>
@@ -489,6 +523,22 @@ table.tt tr:hover td.who{background:var(--panel-2)}
         <a href="https://www.youtube.com/@SenseiNatePlaysPool" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-sn)"></span>Sensei Nate <span class="role">strategy talk</span></a>
         <a href="https://www.youtube.com/@dynamiteappleton" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-da)"></span>Darren Appleton <span class="role">pro drills</span></a>
       </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="eyebrow">Training log</span></h2>
+      <p class="sub">Log every rep like your APA stats — made / attempted, one line per drill. The trend is what exposes the rung that's quietly leaking games. Saves on this device.</p>
+      <div class="t-logform">
+        <label class="t-f t-f-drill"><span>Drill</span>
+          <input id="tl-drill" list="tl-drills" placeholder="e.g. Dead stop shot" autocomplete="off"></label>
+        <datalist id="tl-drills"></datalist>
+        <label class="t-f t-f-num"><span>Made</span><input id="tl-made" type="number" min="0" inputmode="numeric"></label>
+        <label class="t-f t-f-num"><span>Of</span><input id="tl-att" type="number" min="1" inputmode="numeric"></label>
+        <label class="t-f t-f-date"><span>Date</span><input id="tl-date" type="date"></label>
+        <button class="t-logbtn" id="tl-add">Log it</button>
+      </div>
+      <p class="t-logerr" id="tl-err" hidden></p>
+      <div id="tl-out"></div>
     </div>
 
     <div class="t-phase">
@@ -1357,9 +1407,32 @@ function renderStreaks(rows,fmt){
       `<span class="strk-sub">${when}</span></span>`+
       `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}">${g.won?'W':'L'}</span>`).join('')}</span>`;
     wrap.appendChild(row);
+    // A cold run is usually a scheduling problem, not a talent problem — find the softest
+    // matchup actually on the calendar and hand them a game they should win.
+    if(kind==='cold'&&!stale){
+      const ib=iceBreaker(p,fmt);
+      if(ib){
+        const [,mo,dd]=ib.m.date.split('-');
+        wrap.appendChild(el('div','icebreak',
+          `<b>Ice breaker</b> — throw ${esc(shortName(p.name))} at ${sl(ib.Q.sl)} ${esc(ib.Q.name)} `+
+          `on ${MON[+mo-1]} ${+dd} vs ${esc(ib.m.oppTeam)} · <span class="good">${Math.round(ib.p*100)}%</span>`));
+      }
+    }
   });
   card.appendChild(wrap);
   return card;
+}
+/* Best matchup available to a player across the next few scheduled matches. Used to break a
+   cold streak: returns null unless we'd actually favour them, so it never suggests a coin flip. */
+function iceBreaker(A,fmt){
+  const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const ups=(D.schedule||[]).filter(m=>m.fmt===fmt&&m.date>=today).slice(0,3);
+  let best=null;
+  ups.forEach(m=>roster(m.oppTeamId).forEach(Q=>{
+    const s=score(A,Q,fmt);
+    if(!best||s.p>best.p)best={p:s.p,Q,m};
+  }));
+  return best&&best.p>=0.55?best:null;
 }
 
 /* ---------- Team Overview: whole roster vs every SL, at a glance ---------- */
@@ -1476,10 +1549,49 @@ function renderTeamForm(out){
   });
   t.appendChild(tb);wrap.appendChild(t);fc.appendChild(wrap);out.appendChild(fc);
 
+  // Who's actually been getting games — the rotation, not the form.
+  const rot=renderRotation(fmt,tid);
+  if(rot)out.appendChild(rot);
+
   // Hot streak — who's heating up right now (current run, independent of the window above).
   const srows=tm.map(p=>({p,pr:P[`${p.mid}:${fmt}`]})).filter(x=>x.pr);
   const streaks=renderStreaks(srows,fmt);
   if(streaks)out.appendChild(streaks);
+}
+/* Rotation: one column per team match, filled if that player got a game that week. Sorted
+   least-played first, because the person at the top of this table is the one owed a match.
+   Deliberately separate from Hot Streak — that reads form, this reads fairness. */
+function renderRotation(fmt,tid){
+  const res=(D.results||{})[String(tid)];
+  const tm=activeRosterForFormat(fmt);
+  if(!res||!tm.length)return null;
+  const dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().slice(-8);
+  if(dates.length<2)return null;
+  const card=el('div','card');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Rotation — who has played</span>'));
+  card.appendChild(el('p','sub',`Each column is a ${fmt}-ball team match, oldest on the left. Least-played sits at the top — that's who's owed a game.`));
+  const wrap=el('div','tt-wrap'),t=el('table','tt');
+  t.appendChild(el('thead',null,'<tr><th class="who">Player</th>'+
+    dates.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
+    '<th>Played</th><th>Idle</th></tr>'));
+  const tb=el('tbody');
+  const rows=tm.map(p=>{
+    const played=new Set(playerGames(p.mid,fmt).map(g=>g.date));
+    const marks=dates.map(d=>played.has(d));
+    let idle=0; for(let i=marks.length-1;i>=0&&!marks[i];i--)idle++;
+    let run=0; for(let i=marks.length-1;i>=0&&marks[i];i--)run++;
+    return {p,marks,n:marks.filter(Boolean).length,idle,run};
+  }).sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
+  rows.forEach(({p,marks,n,idle,run})=>{
+    const tr=el('tr');
+    tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
+      marks.map(v=>`<td class="cell rot"><span class="${v?'rot-yes':'rot-no'}">${v?'●':'○'}</span></td>`).join('')+
+      `<td class="cell">${n}<span class="n">of ${dates.length}</span></td>`+
+      `<td class="cell ${idle>=3?'lose':idle===0?'win':''}">${idle===0?(run>1?run+' wks':'played'):idle+' wk'+(idle===1?'':'s')}<span class="n">${idle===0?'in a row':'since'}</span></td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
+  return card;
 }
 function renderTeamOverview(){
   const out=$('#teamOut'); out.innerHTML='';
@@ -2316,6 +2428,85 @@ function initTrain(){
   chips.forEach(c=>c.onclick=()=>{if(owned[c.dataset.shot])delete owned[c.dataset.shot];else owned[c.dataset.shot]=1;
     try{localStorage.setItem('rs-shots',JSON.stringify(owned))}catch(e){}refresh();});
   refresh();
+  initTrainLog();
+}
+/* Training log — made/attempted per drill, per session, saved on this device. The ladder's
+   whole premise is "own the rung below before reaching the one above", which needs a number
+   you can't fake, so the per-drill table is the point: best, last, and which way it's going. */
+const TL_KEY='rs-trainlog';
+function tlLoad(){try{const v=JSON.parse(localStorage.getItem(TL_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
+function tlSave(v){try{localStorage.setItem(TL_KEY,JSON.stringify(v))}catch(e){}}
+function initTrainLog(){
+  const drillEl=$('#tl-drill'),madeEl=$('#tl-made'),attEl=$('#tl-att'),dateEl=$('#tl-date'),
+        errEl=$('#tl-err'),outEl=$('#tl-out'),addBtn=$('#tl-add'),dl=$('#tl-drills');
+  if(!drillEl||!outEl)return;
+  // offer every drill named in the ladder above, so the log lines up with the rungs
+  const names=[...new Set([...document.querySelectorAll('#m-train .t-dn')]
+    .map(n=>n.textContent.replace(/^Work\s*·\s*/,'').trim()).filter(Boolean))].sort();
+  dl.innerHTML=names.map(n=>`<option value="${esc(n)}"></option>`).join('');
+  const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  if(!dateEl.value)dateEl.value=today();
+
+  function render(){
+    const log=tlLoad().slice().sort((a,b)=>b.d.localeCompare(a.d)||b.t-a.t);
+    outEl.innerHTML='';
+    if(!log.length){outEl.appendChild(el('p','sub muted','No sessions logged yet — your first line goes above.'));return;}
+    const att=log.reduce((s,e)=>s+e.a,0), made=log.reduce((s,e)=>s+e.m,0);
+    const days=new Set(log.map(e=>e.d)).size;
+    const sum=el('div','t-logsum');
+    sum.innerHTML=`<div class="t-sumc"><b>${days}</b>session${days===1?'':'s'}</div>`+
+      `<div class="t-sumc"><b>${log.length}</b>drill log${log.length===1?'':'s'}</div>`+
+      `<div class="t-sumc"><b>${att?Math.round(100*made/att):0}%</b>${made} of ${att}</div>`;
+    outEl.appendChild(sum);
+
+    // per-drill: best, most recent, and direction of travel
+    const by={};
+    log.forEach(e=>{(by[e.drill]=by[e.drill]||[]).push(e);});
+    const tbl=el('table','t-drilltbl');
+    tbl.innerHTML='<thead><tr><th>Drill</th><th style="text-align:right">Best</th>'+
+      '<th style="text-align:right">Last</th><th style="text-align:right">Reps</th></tr></thead>';
+    const tb=el('tbody');
+    Object.entries(by).sort((a,b)=>b[1].length-a[1].length).forEach(([drill,es])=>{
+      const pct=e=>e.a?e.m/e.a:0;
+      const best=Math.max(...es.map(pct)), last=pct(es[0]);
+      const prev=es.length>1?pct(es[1]):null;
+      const arrow=prev==null?'':last>prev+0.05?' <span class="up">▲</span>'
+        :last<prev-0.05?' <span class="dn">▼</span>':'';
+      const tr=el('tr');
+      tr.innerHTML=`<td>${esc(drill)}</td><td class="num">${Math.round(best*100)}%</td>`+
+        `<td class="num ${last>=best?'up':''}">${Math.round(last*100)}%${arrow}</td>`+
+        `<td class="num">${es.length}</td>`;
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);outEl.appendChild(tbl);
+
+    outEl.appendChild(el('div','t-h4',`Recent sessions`)).style.marginTop='16px';
+    log.slice(0,15).forEach(e=>{
+      const row=el('div','t-entry');
+      const [,mo,dd]=e.d.split('-');
+      row.innerHTML=`<span class="d">${MON[+mo-1]} ${+dd}</span><span class="nm">${esc(e.drill)}</span>`+
+        `<span class="sc ${e.a&&e.m/e.a>=0.7?'up':e.a&&e.m/e.a<0.4?'dn':''}">${e.m}/${e.a}</span>`;
+      const x=el('button','x','&times;');x.title='Delete this entry';
+      x.onclick=()=>{tlSave(tlLoad().filter(o=>!(o.t===e.t&&o.d===e.d&&o.drill===e.drill)));render();};
+      row.appendChild(x);outEl.appendChild(row);
+    });
+  }
+
+  addBtn.onclick=()=>{
+    const drill=(drillEl.value||'').trim();
+    const m=parseInt(madeEl.value,10), a=parseInt(attEl.value,10), d=dateEl.value||today();
+    const fail = !drill ? 'Name the drill first.'
+      : !(a>0) ? 'How many attempts?'
+      : !(m>=0) ? 'How many did you make?'
+      : m>a ? "You can't make more than you attempted."
+      : null;
+    errEl.hidden=!fail; errEl.textContent=fail||'';
+    if(fail)return;
+    const log=tlLoad(); log.push({d,drill,m,a,t:Date.now()}); tlSave(log);
+    madeEl.value='';attEl.value='';drillEl.value='';
+    render();
+  };
+  render();
 }
 function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
@@ -2326,7 +2517,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 6:10pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 6:13pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
