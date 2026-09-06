@@ -136,6 +136,12 @@ table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;whit
 .fairbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-2)}
 .fairnote{flex:1 1 200px;min-width:0;font-size:12px;line-height:1.45;color:var(--ink-soft)}
 .warn-ink{color:var(--warn)}
+/* Rotation: keep the status column on screen while the weeks scroll behind it, mirroring the
+   sticky Player column on the left. */
+table.rot-tbl td.pin,table.rot-tbl th.pin{position:sticky;right:0;z-index:1;background:var(--panel);
+  box-shadow:-1px 0 0 var(--line)}
+table.rot-tbl th.pin{background:var(--panel-2);z-index:2}
+table.rot-tbl tr:hover td.pin{background:var(--panel-2)}
 table.tt td.rot{font-family:Oswald;font-size:15px}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
@@ -344,6 +350,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .build{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);opacity:.6;margin-bottom:4px}
 .qt-wrap,.tt-wrap{margin-left:-15px;margin-right:-15px;border-left:0;border-right:0;border-radius:0}
 .qt td.who,.qt th.who,.tt td.who,.tt th.who{max-width:38vw;padding-left:15px}
+/* the wrap is full-bleed here, so mirror the who column's gutter on the pinned status column */
+.tt td.pin,.tt th.pin{padding-right:15px}
 .qt td.who .who-nm,.tt td.who .who-nm{max-width:32vw;display:inline-block;vertical-align:bottom}
 
 /* ---------- Train tab: "The Rail to 700" training library ---------- */
@@ -1623,11 +1631,11 @@ function renderRotation(fmt,tid){
   if(dates.length<2)return null;
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Rotation — who has played</span>'));
-  card.appendChild(el('p','sub',`Each column is a ${fmt}-ball team match, oldest on the left. Least-played sits at the top — that's who's owed a game.`));
-  const wrap=el('div','tt-wrap'),t=el('table','tt');
+  card.appendChild(el('p','sub',`Status stays pinned on the right; scroll left through the weeks for the history. Least-played sits at the top — that's who's owed a game.`));
+  const wrap=el('div','tt-wrap'),t=el('table','tt rot-tbl');
   t.appendChild(el('thead',null,'<tr><th class="who">Player</th>'+
     dates.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
-    '<th>Played</th><th>Idle</th></tr>'));
+    '<th>Played</th><th class="pin">Idle</th></tr>'));
   const tb=el('tbody');
   const rows=tm.map(p=>({p,...(info.by[String(p.mid)]||{marks:dates.map(()=>false),n:0,idle:dates.length,run:0})}))
     .sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
@@ -1635,8 +1643,8 @@ function renderRotation(fmt,tid){
     const tr=el('tr');
     // A player with no games on record is new, not benched — never report them as "N wks since".
     const idleCell = !everPlayed
-      ? `<td class="cell"><span class="warn-ink">New</span><span class="n">no games yet</span></td>`
-      : `<td class="cell ${idle>=3?'lose':idle===0?'win':''}">`+
+      ? `<td class="cell pin"><span class="warn-ink">New</span><span class="n">no games yet</span></td>`
+      : `<td class="cell pin ${idle>=3?'lose':idle===0?'win':''}">`+
         `${idle===0?(run>1?run+' wks':'played'):idle+' wk'+(idle===1?'':'s')}`+
         `<span class="n">${idle===0?'in a row':'since'}</span></td>`;
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
@@ -1645,6 +1653,14 @@ function renderRotation(fmt,tid){
     tb.appendChild(tr);
   });
   t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
+  // Open on the most recent weeks next to the pinned status; scrolling LEFT walks back through
+  // the history. No-op when the table already fits, so it can't strand a narrow roster.
+  // Re-applied across layout settling AND webfont load: measured on the first frame the table
+  // is still at fallback-font width, so there is no overflow yet and the scroll silently does
+  // nothing. Cheap to repeat, and idempotent.
+  const snapEnd=()=>{wrap.scrollLeft=wrap.scrollWidth;};
+  requestAnimationFrame(()=>{snapEnd();requestAnimationFrame(snapEnd);});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(snapEnd).catch(()=>{});
   return card;
 }
 function renderTeamOverview(){
@@ -2623,7 +2639,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 6:29pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 6:42pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
