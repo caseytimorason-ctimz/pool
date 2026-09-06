@@ -544,6 +544,12 @@ const PMOM={
   '8':{total:3, matches:5,win:{m:2.4, sd:0.5},loss:{m:0.6, sd:0.5},splits:[3,2]}
 };
 function teamNeed(fmt){const M=PMOM[fmt]; return Math.floor(M.total*M.matches/2)+1;}
+// 8-ball "Games Must Win" chart (APA Team Manual): RACE8[yourSL][oppSL] = games YOU race to.
+// The opponent's race is the mirror, RACE8[oppSL][yourSL]. A low SL needs very few games, so
+// reaching the hill (race-1) against a tough opponent takes only a rack or two — the wildcard.
+const RACE8={2:{2:2,3:2,4:2,5:2,6:2,7:2},3:{2:3,3:2,4:2,5:2,6:2,7:2},4:{2:4,3:3,4:3,5:3,6:3,7:2},
+             5:{2:5,3:4,4:4,5:4,6:4,7:3},6:{2:6,3:5,4:5,5:5,6:5,7:4},7:{2:7,3:6,4:5,5:5,6:5,7:5}};
+function race8(mySL,oppSL){const c=n=>Math.max(2,Math.min(7,n||3));return [RACE8[c(mySL)][c(oppSL)],RACE8[c(oppSL)][c(mySL)]];}
 // erf-based normal CDF (Abramowitz-Stegun 7.1.26) for P(total points >= need)
 function normCdf(z){
   const t=1/(1+0.3275911*Math.abs(z));
@@ -1337,6 +1343,23 @@ function renderLive(m,host){
           `${esc(bestNow.A.name)} (SL ${bestNow.A.sl}) is a hair better this match, but ${esc(best.A.name)} (SL ${best.A.sl}) matches their SL ${Q.sl} more closely`+
           (spend? ` — save your higher skill levels for their bigger players.` : ` and is the better use of your lineup.`)));
       }
+      // Wildcard (8-ball): a strong low player who reaches the hill against a tough opponent on
+      // just a rack or two — banks points even losing and frees your higher players. Flagged, not
+      // forced (it trades a little expected value for variance — best when you need points).
+      if(fmt==='8' && Q.sl>=5){
+        const cands=ours.filter(A=>A.sl<Q.sl).map(A=>{const[mine,theirs]=race8(A.sl,Q.sl);
+          return {A,hill:mine-1,theirRace:theirs,p:score(A,Q,fmt).p};})
+          .filter(x=>x.hill<=1 && x.theirRace>=5)
+          .sort((a,b)=>(a.hill-b.hill)||(b.p-a.p));   // easiest hill, then strongest
+        const wc=cands[0];
+        if(wc && wc.A.mid!==best.A.mid){
+          const sc=liveScore?teamScore(m):null, behind=sc&&sc.us<sc.them;
+          c.appendChild(el('p','sub',
+            `Wildcard: ${esc(wc.A.name)} (SL ${wc.A.sl}) only needs ${wc.hill} game${wc.hill===1?'':'s'} to reach the hill — their SL ${Q.sl} needs ${wc.theirRace}. `+
+            `Put your best SL ${wc.A.sl} up as a live underdog, hope for a couple racks, and keep your higher players for their weaker ones. `+
+            (behind?`You're behind — this is the kind of swing you want.`:`Higher variance, so lean on it when you need points.`)));
+        }
+      }
       const mark=el('button','ftab','Mark this matchup played');mark.style.marginTop='10px';
       mark.onclick=()=>{live.played.push({our:String(best.A.mid),their:String(Q.mid)});live.theirPick=null;renderMatch(m);};
       c.appendChild(mark);
@@ -1711,7 +1734,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 9:02am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 9:14am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
