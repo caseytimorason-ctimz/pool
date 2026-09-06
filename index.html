@@ -1242,10 +1242,10 @@ function renderLive(m,host){
       `${sc.matchesLeft>0?` · ${sc.matchesLeft} match${sc.matchesLeft===1?'':'es'} left`:' · final'}</div>`+
       `<div class="ts-row"><span class="ts-us">${sc.us}</span><span class="ts-dash">—</span><span class="ts-them">${sc.them}</span></div>`+
       `<p class="sub" style="margin-top:2px">Matches won ${sc.usW}–${sc.themW} · first to ${need} of ${pool} wins`+
-      (clinched?' · <b style="color:var(--good)">clinched</b>':lost?' · <b style="color:var(--bad)">out of reach</b>':
+      (clinched?' · <b style="color:var(--good)">clinched the win</b>':lost?' · <b style="color:var(--bad)">out of reach</b>':
         ` · <b>we need ${stillNeed}</b> more (they need ${theyNeed})`)+`</p>`+
-      (cantCatch?`<p class="sub" style="color:var(--good);margin-top:3px">They can no longer reach ${need} — a couple more points and it's mathematically over.</p>`:'')+
-      (!clinched&&!lost&&sc.us===sc.them?`<p class="sub" style="margin-top:3px">Dead even — a points tie goes to whoever wins 3 of the 5 matches, so match wins matter now.</p>`:'')+
+      (cantCatch?`<p class="sub" style="color:var(--good);margin-top:3px">They can no longer reach ${need} — the win is locked. Regular season you still play all five for points; a playoff would stop here.</p>`:'')+
+      (!clinched&&!lost&&sc.us===sc.them?`<p class="sub" style="margin-top:3px">Dead even. Regular season plays all five and total points decide; in a playoff or tournament a points tie goes to whoever won 3 of the 5 matches.</p>`:'')+
       (scored<live.played.length?`<p class="sub" style="color:var(--warn);margin-top:4px">Enter each result below to keep the score live.</p>`:'');
     host.appendChild(sard);
 
@@ -1743,7 +1743,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 9:35am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 9:40am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
