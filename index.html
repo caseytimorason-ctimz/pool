@@ -123,6 +123,10 @@ table.qt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transfor
 table.qt td.who,table.qt th.who{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1;box-shadow:1px 0 0 var(--line)}
 table.qt th.who{background:var(--panel-2);z-index:2}
 table.qt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
+table.qt td.cell{font-family:Oswald;font-weight:600;background:none;border:0;border-bottom:1px solid var(--line-2);border-radius:0}
+table.qt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
+table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;white-space:nowrap}
+.log .sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent-ink);margin-left:4px}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
 .qchip.yes{background:var(--good-wash);color:var(--good);border-color:var(--good)}
@@ -1169,7 +1173,29 @@ function scoutCard(m){
   grid.appendChild(col('We own', weOwn.slice(0,4).map(x=>`${esc(x.A.name.split(' ')[0])} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>`),'good'));
   grid.appendChild(col('They own', theyOwn.slice(0,4).map(x=>`${esc(x.Q.name)} over ${esc(x.A.name.split(' ')[0])} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>`),'bad'));
   c.appendChild(grid);
-  return c;
+
+  // Their whole roster vs every skill level — the same chart the Team tab gives us, pointed at
+  // them. Reading down a column tells you how they handle the skill level you'd throw.
+  const allTime=scoutState.scope==='all';
+  const sc=el('div','card');
+  sc.appendChild(el('h2',null,`<span class="eyebrow">${esc(m.oppTeam)} vs each skill level</span>`));
+  sc.appendChild(el('p','sub', allTime
+    ? 'Every game of their career, by the skill level they faced. Find the column matching the player you would throw.'
+    : 'Only games they played at their current skill level — the same slice the engine scores with.'));
+  const sctl=el('div','ftabs');
+  [['all','All time'],['current','At current SL']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',scoutState.scope===v);
+    b.onclick=()=>{scoutState.scope=v;renderMatch(m);};sctl.appendChild(b);});
+  sc.appendChild(sctl);
+  const stbl=vsSLTable(theirs,fmt,allTime,p=>{
+    setMode('players'); const q=$('#pSearch');
+    if(q)q.value=p.name; fillPlayers((p.name||'').toLowerCase());
+  });
+  sc.appendChild(stbl||el('p','sub muted',`No ${fmt}-ball history on record for their roster yet.`));
+
+  const frag=document.createDocumentFragment();
+  frag.appendChild(c); frag.appendChild(sc);
+  return frag;
 }
 function renderMatch(m){
   const out=$('#matchOut');out.innerHTML='';
@@ -1209,7 +1235,22 @@ function renderMatch(m){
     if(pe[2]>0 && pe[1].h2h){
       if(raw && String(raw[0].mid)!==String(pe[0].mid))
         blk.appendChild(el('p','sub',`${esc(pe[0].name)} is ${pe[1].h2h.wins}-${pe[1].h2h.meetings-pe[1].h2h.wins} against ${esc(Q.name)} — a proven edge over one opponent beats the handicap that favors ${esc(raw[0].name)} on paper.`));
-    } else if(raw && String(raw[0].mid)!==String(pe[0].mid)){
+    }
+    // Records against this same person in the OTHER format. Shown because "I'm 3-1 on that guy"
+    // is real information a captain wants, but deliberately kept out of the odds: a point-in-time
+    // backtest (pipeline/backtest_h2h.py) found cross-format H2H costs accuracy (53.2%->52.9% on
+    // the games where it applies) and is worst in 9-ball, so it informs you, not the model.
+    const other=fmt==='8'?'9':'8';
+    const xf=ours.map(A=>{
+      const hh=(P[`${A.mid}:${other}`]||{}).headToHead;
+      const rec=hh&&hh.find(x=>String(x.oppMid)===String(Q.mid));
+      return rec&&rec.meetings?{A,rec}:null;
+    }).filter(Boolean).sort((a,b)=>b.rec.meetings-a.rec.meetings);
+    if(xf.length)
+      blk.appendChild(el('p','sub muted',`In ${other}-ball: `+
+        xf.slice(0,3).map(x=>`${esc(shortName(x.A.name))} ${x.rec.wins}-${x.rec.meetings-x.rec.wins}`).join(' · ')+
+        ` — context only, not counted in these odds.`));
+    if(raw && String(raw[0].mid)!==String(pe[0].mid) && !(pe[2]>0 && pe[1].h2h)){
       // the hold moved a closer-SL pick above the raw-odds leader — explain the sub-order swap
       blk.appendChild(el('p','sub', raw[0].sl>pe[0].sl
         ? `The handicap edges ${esc(raw[0].name)} (SL${raw[0].sl}) by a hair, but it's a near-tie — throw ${esc(pe[0].name)} (SL${pe[0].sl}) like-for-like and save your ${raw[0].sl} for their bigger players.`
@@ -1331,6 +1372,7 @@ function renderStreaks(rows,fmt){
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
 const teamState={fmt:null,scope:'all',view:'roster',window:'all'};
+const scoutState={scope:'all'};   // scope for the opponent's vs-SL chart in the Scout view
 function teamFormats(){
   return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
 }
@@ -1348,6 +1390,7 @@ function playerGames(mid,fmt){
   return out.sort((a,b)=>b.date.localeCompare(a.date));
 }
 const WINDOWS=[['all','All time'],['s8','Last 8 wks'],['s4','Last 4 wks'],['s2','Last 2 wks']];
+const TREND_N=8;   // games that count as "recent" when trending a player against their baseline
 function windowCutoff(win){
   if(win==='all')return '0000-00-00';
   const wk={s8:56,s4:28,s2:14}[win]||99999;
@@ -1402,22 +1445,30 @@ function renderTeamForm(out){
     const w=gs.filter(g=>g.won).length, n=gs.length;
     const pts=gs.filter(g=>g.pts!=null).map(g=>g.pts);
     const avg=pts.length?pts.reduce((a,b)=>a+b,0)/pts.length:null;
-    // trend: recent half win% vs older half
+    // Trend = RECENT form vs the player's own baseline. The old half-vs-half split compared a
+    // 200-game career's first half to its second, which always converges — every player read
+    // "flat" on the All-time window. Anchoring on the last few games gives it something to say.
     let arrow='';
-    if(n>=4){const half=Math.floor(n/2);const rec=gs.slice(0,half).filter(g=>g.won).length/half;
-      const old=gs.slice(half).filter(g=>g.won).length/(n-half);
-      arrow=rec>old+0.15?'<span class="up">▲</span>':rec<old-0.15?'<span class="dn">▼</span>':'<span class="flat">—</span>';}
+    if(n>=6){
+      const k=Math.min(TREND_N,Math.floor(n/2));
+      const rec=gs.slice(0,k).filter(g=>g.won).length/k;
+      const base=gs.slice(k).filter(g=>g.won).length/(n-k);
+      const d=Math.round((rec-base)*100);
+      arrow = d>=12 ? `<span class="up">▲ ${d}</span>`
+            : d<=-12 ? `<span class="dn">▼ ${Math.abs(d)}</span>`
+            : `<span class="flat">—</span>`;
+    }
     return {p,n,w,avg,arrow,gs};
   }).sort((a,b)=>b.n-a.n);
   const wrap=el('div','qt-wrap'),t=el('table','qt');
-  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Record</th><th>Win%</th><th>Avg pts</th><th>Last 5</th><th>Trend</th></tr>`));
+  // Record folded into the Win% cell: six columns crushed the numbers to slivers on a phone.
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Avg pts</th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
   rows.forEach(({p,n,w,avg,arrow,gs})=>{
     const tr=el('tr');
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
-      `<td>${n?w+'-'+(n-w):'<span class="muted">—</span>'}</td>`+
-      `<td class="${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%':'—'}</td>`+
+      `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
       `<td>${avg!=null?avg.toFixed(1):'<span class="muted">—</span>'}</td>`+
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
       `<td>${arrow||'<span class="muted">—</span>'}</td>`;
@@ -1463,14 +1514,27 @@ function renderTeamOverview(){
   card.appendChild(ctl);
 
   if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}
+  const tbl=vsSLTable(tm,fmt,allTime,p=>{
+    setMode('me'); const s=$('#meSel');
+    if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); }
+  });
+  if(!tbl){card.appendChild(el('p','sub muted','No '+fmt+'-ball history yet for this roster.'));out.appendChild(card);return;}
+  card.appendChild(tbl);
+  out.appendChild(card);
+}
+/* Whole-roster-vs-every-skill-level table. Shared by the Team tab (our roster) and the Scout
+   view (the opponent's), so both read identically — same columns, colouring and thin-sample
+   dashing. `onName(player)` wires up what tapping a name does; null leaves names inert.
+   Returns null when nobody on the roster has history in this format. */
+function vsSLTable(roster,fmt,allTime,onName){
   // Pick the row set per scope: merged career totals, or current-SL-only.
-  const rows=tm.map(p=>{
+  const rows=roster.map(p=>{
     const pr=P[`${p.mid}:${fmt}`];
     if(!pr)return null;
     const cells=allTime?mergeEras(pr.descriptiveByEra||{},'all'):(pr.predictiveVsSL||[]);
     return {p,pr,cells};
   }).filter(Boolean);
-  if(!rows.length){card.appendChild(el('p','sub muted','No '+fmt+'-ball history yet for this roster.'));out.appendChild(card);return;}
+  if(!rows.length)return null;
 
   const slCols=[...new Set(rows.flatMap(r=>r.cells.map(c=>c.vsSL)))].sort((a,b)=>a-b);
   rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
@@ -1478,19 +1542,20 @@ function renderTeamOverview(){
   const wrap=el('div','tt-wrap');
   const table=el('table','tt');
   table.appendChild(el('thead',null,
-    '<tr><th class="who">Player</th>'+slCols.map(sl=>`<th>vs SL${sl}</th>`).join('')+'</tr>'));
+    '<tr><th class="who">Player</th>'+slCols.map(s=>`<th>vs SL${s}</th>`).join('')+'</tr>'));
   const tb=el('tbody');
   rows.forEach(({p,pr,cells})=>{
     const tr=el('tr');
     const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
-    who.style.cursor='pointer';
-    who.onclick=()=>{ setMode('me'); const s=$('#meSel'); if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); } };
+    if(onName){ who.style.cursor='pointer'; who.onclick=()=>onName(p,pr); }
     tr.appendChild(who);
     const byVs={}; cells.forEach(c=>byVs[c.vsSL]=c);
     slCols.forEach(sl0=>{
       const c=byVs[sl0];
       const td=el('td','cell');
-      if(!c){ td.className='empty'; td.textContent='—'; }
+      // keep .cell so an empty column keeps the same box, padding and borders as a filled one —
+      // dropping it made rows with a gap (Casey/Silfredo vs SL1) visibly misalign.
+      if(!c){ td.className='cell empty'; td.textContent='—'; }
       else{
         const thin=c.games<5;
         td.className='cell'+(thin?' thin':'')+' '+(c.winPct>=55?'win':c.winPct<=45?'lose':'evn');
@@ -1500,8 +1565,8 @@ function renderTeamOverview(){
     });
     tb.appendChild(tr);
   });
-  table.appendChild(tb); wrap.appendChild(table); card.appendChild(wrap);
-  out.appendChild(card);
+  table.appendChild(tb); wrap.appendChild(table);
+  return wrap;
 }
 function mergeEras(byEra,ownSL){
   const acc={};
@@ -1626,7 +1691,9 @@ function drawH2H(out,pr,fmt){
        if(games.length){
          const det=el('tr');det.className='hide';
          det.innerHTML=`<td colspan="3" class="log">`+games.slice().reverse().map(g=>
-           `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b></div>`).join('')+`</td>`;
+           `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b>`+
+           (g.pts!=null&&g.oppPts!=null?` <span class="sc">${g.pts}–${g.oppPts}</span>`
+            :g.pts!=null?` <span class="sc">${g.pts} pt${g.pts===1?'':'s'}</span>`:'')+`</div>`).join('')+`</td>`;
          tr.onclick=()=>det.classList.toggle('hide');
          tb.appendChild(det);
        }
@@ -2259,7 +2326,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 2:31pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 6:10pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
