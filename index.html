@@ -6,34 +6,44 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@0,400;0,500;0,600;0,700&display=swap">
 <style>
 :root{
-  --bg:#eef1f4; --panel:#ffffff; --panel-2:#f5f7f9; --ink:#1b2430; --ink-soft:#5a6b7b;
-  --line:#dae1e8; --line-2:#e9eef2;
-  --accent:#1f7a8c; --accent-ink:#0e4d5a;
-  --good:#2f8f5b; --good-wash:#e4f3ea; --bad:#c0483b; --bad-wash:#f7e5e2;
-  --even:#7c8b99; --even-wash:#eef1f4; --warn:#b8791f;
-  --diamond:#243447;
-  --shadow:0 1px 2px rgba(20,30,40,.06),0 6px 18px rgba(20,30,40,.05);
+  --felt:#1f6e49; --rail:#5a3d29;
+  --bg:#1f6e49; --panel:#f5efe0; --panel-2:#eae0cb; --ink:#243021; --ink-soft:#5f6b54;
+  --line:#d8cbaf; --line-2:#e8dfca;
+  --accent:#9a7414; --accent-ink:#6b5010; --accent-wash:#f0e7cf;
+  --good:#2f8f5b; --good-wash:#e2f0e6; --bad:#bf3b2e; --bad-wash:#f6e3df;
+  --even:#8a8266; --even-wash:#efe8d7; --warn:#a9731a;
+  --diamond:#8a6d1e;
+  --shadow:0 1px 2px rgba(20,40,25,.10),0 8px 22px rgba(20,40,25,.14);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
-  --line:#26333f; --line-2:#1f2b35;
-  --accent:#4bb6c9; --accent-ink:#a7e0e9;
-  --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
-  --even:#8296a6; --even-wash:#1b2732; --warn:#d8a24a;
-  --diamond:#9db4c9;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+  --felt:#0f3d2a; --rail:#3d2817;
+  --bg:#08251a; --panel:#0f3d2a; --panel-2:#154a34; --ink:#f0ebdc; --ink-soft:#9fb6a4;
+  --line:#1d5540; --line-2:#123f2c;
+  --accent:#cca24e; --accent-ink:#e8d089; --accent-wash:#183f2b;
+  --good:#57c483; --good-wash:#0f3826; --bad:#e06a52; --bad-wash:#3a1c16;
+  --even:#b3a279; --even-wash:#163e2c; --warn:#e0a53f;
+  --diamond:#ecdfc0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px rgba(0,0,0,.45);
 }}
 :root[data-theme="dark"]{
-  --bg:#0e141b; --panel:#161f28; --panel-2:#1b2732; --ink:#e7edf2; --ink-soft:#93a4b3;
-  --line:#26333f; --line-2:#1f2b35;
-  --accent:#4bb6c9; --accent-ink:#a7e0e9;
-  --good:#4bbd7f; --good-wash:#12301f; --bad:#e0715f; --bad-wash:#331812;
-  --even:#8296a6; --even-wash:#1b2732; --warn:#d8a24a;
-  --diamond:#9db4c9;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.35);
+  --felt:#0f3d2a; --rail:#3d2817;
+  --bg:#08251a; --panel:#0f3d2a; --panel-2:#154a34; --ink:#f0ebdc; --ink-soft:#9fb6a4;
+  --line:#1d5540; --line-2:#123f2c;
+  --accent:#cca24e; --accent-ink:#e8d089; --accent-wash:#183f2b;
+  --good:#57c483; --good-wash:#0f3826; --bad:#e06a52; --bad-wash:#3a1c16;
+  --even:#b3a279; --even-wash:#163e2c; --warn:#e0a53f;
+  --diamond:#ecdfc0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{background:
+    radial-gradient(130% 70% at 50% -8%, rgba(255,255,255,.05), transparent 55%),
+    var(--bg);
+  color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+/* faint felt weave */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.05) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px)}
 h1,h2,h3{font-family:Oswald,system-ui,sans-serif;font-weight:600;letter-spacing:.01em;margin:0}
 .tnum{font-variant-numeric:tabular-nums}
 .wrap{max-width:820px;margin:0 auto;padding:0 14px 72px}
@@ -1743,7 +1753,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 1:03pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 1:35pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
