@@ -357,6 +357,43 @@
       ]
     },
     {
+      "id": "playoffs-2026-summer-8ball",
+      "type": "playoff",
+      "label": "Summer 8-Ball Playoffs",
+      "date": "2026-08",
+      "datePrecision": "month",
+      "note": "Summer session 8-ball playoffs. Partial record — only three of the five individual matches are on hand; the other two and the final team result aren't recorded yet.",
+      "matches": [
+        {
+          "n": 1,
+          "results": [
+            {
+              "p": "patrick",
+              "result": "W",
+              "sl": 4,
+              "opp": "Jason Salemi",
+              "oppSl": 7,
+              "note": "the wildcard — a strong 4 raced 2 against their 7's 5"
+            },
+            {
+              "p": "stefano",
+              "result": "W",
+              "sl": 3,
+              "opp": "Jenny",
+              "scoreRaw": "sweep"
+            },
+            {
+              "p": "jorge",
+              "result": "W",
+              "sl": 4,
+              "opp": "Mike Hall",
+              "scoreRaw": "2-0"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "vegas-2026",
       "type": "vegas",
       "label": "Vegas",

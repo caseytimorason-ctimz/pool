@@ -1702,8 +1702,9 @@ function renderLog(host){
       const parts=mm.results.map(r=>{
         const who=r.p?((ps.players||{})[r.p]||{name:r.p}).name:'(forfeit)';
         const mark=r.result==='W'?'<b class="win">W</b>':r.result==='L'?'<b class="lose">L</b>':'<span class="muted">F</span>';
+        const vs=r.opp?` <span class="muted">vs ${esc(r.opp)}${r.oppSl?' ('+r.oppSl+')':''}</span>`:'';
         const extra=[r.scoreRaw?esc(r.scoreRaw):null, r.note?esc(r.note):null].filter(Boolean).join(', ');
-        return `${esc(who)} ${mark}${extra?` <span class="muted">(${extra})</span>`:''}`+
+        return `${esc(who)} ${mark}${vs}${extra?` <span class="muted">(${extra})</span>`:''}`+
                (r.uncertain?' <span class="qchip unknown">unconfirmed</span>':'');
       }).join(' · ');
       return `<div style="margin-top:4px">${ev.matches.length>1?`<span class="muted">Match ${mm.n}:</span> `:''}${parts}`+
@@ -1734,7 +1735,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 6, 9:14am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 6, 9:28am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');
 }
 (function start(){
