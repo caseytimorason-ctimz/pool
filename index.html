@@ -1806,15 +1806,42 @@ function makePlayerView(outSel,opts){
     chips.appendChild(row);c.appendChild(chips);
     c.appendChild(el('div',null,vsGrid(mergeEras(pr.descriptiveByEra||{},st.ownSL))));
     out.appendChild(c);
-    drawH2H(out,pr,st.fmt);
+    drawH2H(out,pr,st.fmt,st.ownSL);
   }
   return {render};
 }
-function drawH2H(out,pr,fmt){
-  const h=(pr.headToHead||[]).filter(x=>x.meetings>=1);
+function drawH2H(out,pr,fmt,ownSL){
+  // The "As SL5" chips filter the vs-SL grid above, so head-to-head has to follow or the two
+  // panels contradict each other. Entry totals are career-wide, so rebuild each row from just
+  // the meetings played at that skill level.
+  const era=(ownSL==null||ownSL==='all')?null:String(ownSL);
+  const src=(pr.headToHead||[]).filter(x=>x.meetings>=1);
+  // Per-meeting logs are only carried for players we'd actually scout (roster + everyone they've
+  // faced); league-wide profiles keep totals only and genuinely cannot be split by era.
+  const logged=src.filter(o=>(o.games||[]).length);
+  const canFilter=!!era&&logged.length>0;
+  let h=src, hidden=0;
+  const noLog=src.length-logged.length;
+  if(canFilter){
+    h=[];
+    logged.forEach(o=>{
+      const gs=o.games.filter(g=>String(g.mySL)===era);
+      if(!gs.length){hidden++;return;}
+      h.push(Object.assign({},o,{games:gs,meetings:gs.length,wins:gs.filter(g=>g.won).length}));
+    });
+  }
+  const scope=canFilter?`${fmt}-ball, as SL${era}`:`${fmt}-ball`;
   const hc=el('div','card');
-  const eyebrow=el('div','eyebrow',`Head-to-head — ${h.length} opponents faced (${fmt}-ball)`);
+  const eyebrow=el('div','eyebrow',`Head-to-head — ${h.length} opponents faced (${scope})`);
   hc.appendChild(eyebrow);
+  // Never let the filter quietly mislead: say when it couldn't be applied, or what it dropped.
+  if(era&&!canFilter)
+    hc.appendChild(el('p','sub muted',`Per-meeting logs aren't on record for this player, so head-to-head can't be split by skill level — these are career totals.`));
+  else if(canFilter&&(hidden||noLog))
+    hc.appendChild(el('p','sub muted',
+      `Showing only meetings played at SL${era}.`+
+      (hidden?` ${hidden} opponent${hidden===1?'':'s'} never faced at this level.`:'')+
+      (noLog?` ${noLog} without a per-game log can't be split and ${noLog===1?'is':'are'} omitted.`:'')));
   const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter opponents…">`;
   const q=tools.querySelector('input');
   hc.appendChild(tools);
@@ -1848,7 +1875,7 @@ function drawH2H(out,pr,fmt){
       th.querySelector('.arrow').textContent = active ? (sort.dir===1?' ▲':' ▼') : '';
     });
     const col=COLS.find(c=>c.key===sort.key);
-    eyebrow.textContent=`Head-to-head — ${h.length} opponents faced (${fmt}-ball) · `+
+    eyebrow.textContent=`Head-to-head — ${h.length} opponents faced (${scope}) · `+
       (col?`by ${col.label.toLowerCase()}`:'most played first');
     const rows=h.filter(o=>!query||(o.oppName||'').toLowerCase().includes(query));
     rows.sort((a,b)=>{
@@ -2639,7 +2666,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 7:15am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 11:37am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
