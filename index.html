@@ -1438,7 +1438,7 @@ function renderStreaks(rows,fmt){
   items.sort((a,b)=>b.rank-a.rank);
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Hot streak</span>'));
-  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left.`));
+  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it.`));
   const wrap=el('div','streaks');
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
@@ -1591,8 +1591,8 @@ function renderTeamForm(out){
   });
   t.appendChild(tb);wrap.appendChild(t);fc.appendChild(wrap);out.appendChild(fc);
 
-  // Who's actually been getting games — the rotation, not the form.
-  const rot=renderRotation(fmt,tid);
+  // Who's actually been getting games — the rotation, not the form. Follows the window filter.
+  const rot=renderRotation(fmt,tid,teamState.window);
   if(rot)out.appendChild(rot);
 
   // Hot streak — who's heating up right now (current run, independent of the window above).
@@ -1605,11 +1605,15 @@ function renderTeamForm(out){
    Deliberately separate from Hot Streak — that reads form, this reads fairness. */
 /* Who has and hasn't been getting games, over the last few team matches. Shared by the Rotation
    chart and the fair-rotation nudge in the optimizer so the two can never disagree. */
-function rotationInfo(fmt,tid){
+function rotationInfo(fmt,tid,win){
   const res=(D.results||{})[String(tid)];
   const out={dates:[],by:{}};
   if(!res)return out;
-  out.dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().slice(-8);
+  // `win` lets the Team chart follow the window filter. The optimizer deliberately omits it and
+  // gets the default last-8, so the fair-rotation nudge can't change because someone poked a
+  // filter on another tab.
+  const cut=windowCutoff(win||'all');
+  out.dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().filter(d=>d>=cut).slice(-8);
   activeRosterForFormat(fmt).forEach(p=>{
     const played=new Set(playerGames(p.mid,fmt).map(g=>g.date));
     const marks=out.dates.map(d=>played.has(d));
@@ -1623,15 +1627,15 @@ function rotationInfo(fmt,tid){
   });
   return out;
 }
-function renderRotation(fmt,tid){
+function renderRotation(fmt,tid,win){
   const res=(D.results||{})[String(tid)];
   const tm=activeRosterForFormat(fmt);
   if(!res||!tm.length)return null;
-  const info=rotationInfo(fmt,tid), dates=info.dates;
-  if(dates.length<2)return null;
+  const info=rotationInfo(fmt,tid,win), dates=info.dates;
+  if(!dates.length)return null;
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Rotation — who has played</span>'));
-  card.appendChild(el('p','sub',`Status stays pinned on the right; scroll left through the weeks for the history. Least-played sits at the top — that's who's owed a game.`));
+  card.appendChild(el('p','sub',`The ${dates.length} ${fmt}-ball match${dates.length===1?'':'es'} in this window. Status stays pinned on the right; scroll left for the history. Least-played sits at the top — that's who's owed a game.`));
   const wrap=el('div','tt-wrap'),t=el('table','tt rot-tbl');
   t.appendChild(el('thead',null,'<tr><th class="who">Player</th>'+
     dates.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
@@ -1786,17 +1790,25 @@ function makePlayerView(outSel,opts){
     if(!fmts.length){out.innerHTML='<div class="card"><p class="sub">No data.</p></div>';return;}
     const pr=P[`${mid}:${st.fmt}`];
     const c=el('div','card');
-    const wr=pr.totalGames?Math.round(pr.wins/pr.totalGames*100):0;
+    const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
+    // A filter should govern EVERY number on the screen, headline included — leaving the summary
+    // career-wide while the panels below it are filtered is how a view starts contradicting itself.
+    if(st.ownSL!=='all'&&!eras.includes(Number(st.ownSL)))st.ownSL='all';
+    const cells=mergeEras(pr.descriptiveByEra||{},st.ownSL);
+    const filtered=st.ownSL!=='all';
+    const fw=cells.reduce((a,x)=>a+x.wins,0), fg=cells.reduce((a,x)=>a+x.games,0);
+    const w=filtered?fw:pr.wins, g=filtered?fg:pr.totalGames;
+    const wr=g?Math.round(w/g*100):0;
     const hd=el('div','phd');
     // In the "Me" view the identity pill directly above already shows badge + name, so
     // repeating it here is pure duplication; the Players tab has no pill and keeps it.
     hd.innerHTML=(opts.hideName?'':`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>`)+
-      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${pr.wins}-${pr.totalGames-pr.wins} (${wr}%)</span>`;
+      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${w}-${g-w} (${wr}%)`+
+      (filtered?` <span class="muted">as SL${st.ownSL}</span>`:'')+`</span>`;
     c.appendChild(hd);
     if(fmts.length>1){const ft=el('div','ftabs');
       fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
         b.onclick=()=>{st.fmt=f;st.ownSL='all';draw();};ft.appendChild(b);});c.appendChild(ft);}
-    const eras=Object.keys(pr.descriptiveByEra||{}).map(Number).sort((a,b)=>a-b);
     const chips=el('div');
     chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">Record vs each skill level</div>`;
     const row=el('div','chips');
@@ -1804,7 +1816,7 @@ function makePlayerView(outSel,opts){
       const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
       b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
     chips.appendChild(row);c.appendChild(chips);
-    c.appendChild(el('div',null,vsGrid(mergeEras(pr.descriptiveByEra||{},st.ownSL))));
+    c.appendChild(el('div',null,vsGrid(cells)));
     out.appendChild(c);
     drawH2H(out,pr,st.fmt,st.ownSL);
   }
@@ -2666,7 +2678,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 11:37am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 11:41am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
