@@ -2157,7 +2157,7 @@ function renderLive(m,host){
   }
 
   if(live.mode==='counter'){
-    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is expected match wins across the whole night out of 5 — it counts what the pick leaves you for the rest of the night, not just this match, and carries the like-for-like and rotation adjustments, so it is exactly what the order follows. Around 2.5 is an even night.'));
+    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is the match points this pick is expected to bank — out of 20 in 9-ball, 3 in 8-ball — and the list is ranked on exactly that. An even match is about half the pool. Where a like-for-like answer is the smarter use of your lineup, it is called out underneath rather than hidden in the ordering.'));
     const pickRow=el('div','chips');
     theirs.forEach(Q=>{
       const b=el('button','chip'+(live.theirPick===String(Q.mid)?' on':''),`${sl(Q.sl)}${esc(Q.name)}`);
@@ -2180,12 +2180,12 @@ function renderLive(m,host){
         // edges and clearly-better matchups still win outright.
         const dist=Math.abs(A.sl-Q.sl);
         const total=now+rest, fair=fairBonus([A],rotLive);
-        // `rank` is the value the list is ORDERED by, and it is what we display. Showing raw
-        // `total` while sorting on this printed a visibly out-of-order list (a 2.5 above a 2.6).
-        // fairness applies while planning; once the score is live we optimise the team win outright
-        const rank=total-CTR_HOLD*dist+fair;
-        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair,rank};
-      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.rank-a.rank)));
+        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair};
+        // Ordered by the MATCH POINTS this pick banks — the same number shown on the row, on the
+        // real scale (20 in 9-ball, 3 in 8-ball). The like-for-like fit no longer reorders the
+        // list; it is called out in the note underneath instead, so the advice stays visible
+        // rather than being silently baked into an ordering nobody can see.
+      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.ep.m-a.ep.m)));
       // once the score is live, optimize the odds of winning the TEAM match, not raw wins
       if(liveScore){
         const sc=teamScore(m), need=teamNeed(fmt);
@@ -2202,22 +2202,28 @@ function renderLive(m,host){
         const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
-          `<span class="strk-sub">${Math.round(r.now*100)}% · ~${Math.round(r.ep.m)} of ${PMOM[fmt].total} pts${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
+          `<span class="strk-sub">${Math.round(r.now*100)}% to win${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
           (liveScore?`<div class="pv">${Math.round(r.ptw*100)}<span class="pv-u">team win</span></div>`
-                    :`<div class="pv">${r.rank.toFixed(2)}<span class="pv-u">of 5 wins</span></div>`);
+                    :`<div class="pv">${r.ep.m.toFixed(1)}<span class="pv-u">of ${PMOM[fmt].total} pts</span></div>`);
         attachWhy(row,r.A,Q,fmt);
         c.appendChild(row);
       });
-      const bestNow=ranked.slice().sort((a,b)=>b.now-a.now)[0];
+      // The list now ranks on this match's points, so the like-for-like read has to be stated out
+      // loud or it disappears. Convert the hold from expected-wins into points (one win is worth
+      // win-mean minus loss-mean) so the two live on the same scale.
+      const M0=PMOM[fmt], ptsPerWin=M0.win.m-M0.loss.m;
+      const fitOf=r=>r.ep.m-CTR_HOLD*ptsPerWin*r.dist+r.fair*ptsPerWin;
+      const bestPts=ranked.slice().sort((a,b)=>b.ep.m-a.ep.m)[0];      // pure points leader
+      const bestFit=ranked.slice().sort((a,b)=>fitOf(b)-fitOf(a))[0];  // like-for-like leader
       const bestH2H=score(best.A,Q,fmt).h2h;
       if(best.edge>0 && bestH2H){
         const h=bestH2H;
         c.appendChild(el('p','sub',
-          `${esc(best.A.name)} is ${h.wins}-${h.meetings-h.wins} against ${esc(Q.name)}, who beats the field otherwise — a record like that against one player is the strongest read there is, so put them up even though the handicap flatters ${esc(bestNow.A.name)}.`));
-      } else if(bestNow && bestNow.A.mid!==best.A.mid){
-        const spend = bestNow.A.sl>Q.sl && best.A.sl<=Q.sl;   // bestNow would overkill their thrown SL
+          `${esc(best.A.name)} is ${h.wins}-${h.meetings-h.wins} against ${esc(Q.name)}, who beats the field otherwise — a record like that against one player is the strongest read there is, so put them up even though the handicap flatters ${esc(bestPts.A.name)}.`));
+      } else if(bestFit && String(bestFit.A.mid)!==String(best.A.mid)){
+        const spend = best.A.sl>Q.sl && bestFit.A.sl<=Q.sl;   // the points leader would overkill
         c.appendChild(el('p','sub',
-          `${esc(bestNow.A.name)} (SL ${bestNow.A.sl}) is a hair better this match, but ${esc(best.A.name)} (SL ${best.A.sl}) matches their SL ${Q.sl} more closely`+
+          `${esc(best.A.name)} banks the most points here (${best.ep.m.toFixed(1)} of ${M0.total}), but ${esc(bestFit.A.name)} (SL ${bestFit.A.sl}) answers their SL ${Q.sl} like-for-like at ${bestFit.ep.m.toFixed(1)}`+
           (spend? ` — save your higher skill levels for their bigger players.` : ` and is the better use of your lineup.`)));
       }
       // Wildcard (8-ball): a strong low player who reaches the hill against a tough opponent on
@@ -2743,7 +2749,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 4:10pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 4:16pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
