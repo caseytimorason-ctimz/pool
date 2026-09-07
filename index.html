@@ -2159,7 +2159,7 @@ function renderLive(m,host){
   }
 
   if(live.mode==='counter'){
-    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is the match points this pick is expected to bank — out of 20 in 9-ball, 3 in 8-ball — and an even match is about half the pool. Because the handicap keeps almost every match near even, the order also weighs what spending that player costs you — a much bigger player than the match needs is tagged overkill and sinks, however good their odds look.'));
+    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is the match points this pick is expected to bank — out of 20 in 9-ball, 3 in 8-ball — and an even match is about half the pool. Because the handicap keeps almost every match near even, the order also weighs which skill level you burn: throw low against most of their lineup, and only answer their biggest player like-for-like. Anyone bigger than the match needs is tagged overkill and sinks, however good their odds look.'));
     const pickRow=el('div','chips');
     theirs.forEach(Q=>{
       const b=el('button','chip'+(live.theirPick===String(Q.mid)?' on':''),`${sl(Q.sl)}${esc(Q.name)}`);
@@ -2172,6 +2172,10 @@ function renderLive(m,host){
       const memo={};
       const liveScore=(live.played||[]).some(x=>x.ourPts!=null);
       const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.ourTeamId):null;
+      // Is this their best player on the table? Only then is it worth spending ours to match.
+      const theirTop=Math.max(...theirs.map(p=>p.sl));
+      const ourLow=Math.min(...ours.map(p=>p.sl));
+      const vsTheirBest=Q.sl>=theirTop;
       const ranked=ours.map(A=>{
         const now=pWin(A,Q,fmt);
         const rest=gameValue(ours.filter(x=>x.mid!==A.mid),theirs.filter(x=>x.mid!==Q.mid),fmt,true,memo);
@@ -2183,12 +2187,17 @@ function renderLive(m,host){
         const dist=Math.abs(A.sl-Q.sl);
         const total=now+rest, fair=fairBonus([A],rotLive);
         // The row SHOWS the match points this pick banks, on the real scale. The list ORDERS by
-        // those points minus the cost of spending this player here — otherwise an SL7 ranks near
-        // the top against an SL1, which is never the right call however good the odds look.
+        // those points minus the cost of spending this player here, because the handicap keeps
+        // almost every match near even and the SL you burn is the real decision.
+        //
+        // Two regimes, because they call for opposite things:
+        //   their BIGGEST player  -> answer like-for-like, penalty on the SL distance.
+        //   anyone else           -> throw low, penalty on how far above our lowest we are.
         // CTR_HOLD is in expected-wins, so convert with points-per-win to compare like with like.
         const ppw=PMOM[fmt].win.m-PMOM[fmt].loss.m;
-        const fit=ep.m-CTR_HOLD*ppw*dist+fair*ppw;
-        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair,fit};
+        const penSL=vsTheirBest ? dist : (A.sl-ourLow);
+        const fit=ep.m-CTR_HOLD*ppw*penSL+fair*ppw;
+        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair,fit,penSL};
       }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.fit-a.fit)));
       // once the score is live, optimize the odds of winning the TEAM match, not raw wins
       if(liveScore){
@@ -2203,12 +2212,12 @@ function renderLive(m,host){
       // "Overkill" is relative to the closest answer we actually have, not an absolute gap. When
       // the lowest player on the roster is an SL3 and they throw an SL1, that SL3 is the best
       // available — tagging it overkill would tag literally everyone and say nothing.
-      const minDist=Math.min(...ranked.map(r=>r.dist));
+      const minPen=Math.min(...ranked.map(r=>r.penSL));
       ranked.forEach((r,i)=>{
         const row=el('div','rk'+(i===0?' best':''));
         const s=score(r.A,Q,fmt);
         const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'')+
-          (!liveScore&&r.A.sl>Q.sl&&r.dist>=minDist+2?`<span class="h2h over">overkill</span>`:'');
+          (!liveScore&&r.A.sl>Q.sl&&r.penSL>=minPen+2?`<span class="h2h over">overkill</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
           `<span class="strk-sub">${Math.round(r.now*100)}% to win${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
@@ -2235,7 +2244,9 @@ function renderLive(m,host){
         const rota   = !higher && best.fair>bestPts.fair+1e-9;
         c.appendChild(el('p','sub',
           `${esc(bestPts.A.name)} banks marginally more here (${bestPts.ep.m.toFixed(1)} of ${M0.total} vs ${best.ep.m.toFixed(1)}), but `+
-          (higher? `SL ${bestPts.A.sl} against their SL ${Q.sl} spends a bigger player than this match needs — ${esc(best.A.name)} (SL ${best.A.sl}) answers closer and keeps yours for theirs.`
+          (higher? (vsTheirBest
+              ? `this is their biggest player, so ${esc(best.A.name)} (SL ${best.A.sl}) answers like-for-like rather than spending an SL ${bestPts.A.sl} elsewhere.`
+              : `SL ${bestPts.A.sl} is more than this match needs — throw ${esc(best.A.name)} (SL ${best.A.sl}) and keep your bigger players for their best.`)
            : rota ? `${esc(best.A.name)} is owed a game and the two are level on merit.`
            : `${esc(best.A.name)} (SL ${best.A.sl}) is the better use of your lineup.`)));
       }
@@ -2770,7 +2781,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 5:39pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 7:49pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
