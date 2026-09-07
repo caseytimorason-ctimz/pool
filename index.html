@@ -125,6 +125,7 @@ table.qt th.who{background:var(--panel-2);z-index:2}
 table.qt td.who .nm{display:flex;align-items:center;gap:7px;font-weight:500}
 table.qt td.cell{font-family:Oswald;font-weight:600;background:none;border:0;border-bottom:1px solid var(--line-2);border-radius:0}
 table.qt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
+table.qt th .of{display:block;font-family:Barlow;font-weight:400;font-size:9.5px;letter-spacing:0;text-transform:none;opacity:.75}
 table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;white-space:nowrap}
 .log .sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent-ink);margin-left:4px}
 .icebreak{margin:-2px 0 4px;padding:9px 11px;border:1px dashed var(--line);border-left:3px solid var(--accent);
@@ -1631,14 +1632,20 @@ function renderTeamForm(out){
   }).sort((a,b)=>b.n-a.n);
   const wrap=el('div','qt-wrap'),t=el('table','qt');
   // Record folded into the Win% cell: six columns crushed the numbers to slivers on a phone.
-  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Avg pts</th><th>Last 5</th><th>Trend</th></tr>`));
+  // Points carry no meaning without their pool: 9-ball splits 20 a match, 8-ball splits 3, so a
+  // bare "4.5" reads as fine until you know it's a 16-4 hiding. Name the scale in the header and
+  // colour each value against an even split.
+  const PM=PMOM[fmt];
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Avg pts<span class="of">of ${PM.total}</span></th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
   rows.forEach(({p,n,w,avg,arrow,gs})=>{
     const tr=el('tr');
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
       `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
-      `<td>${avg!=null?avg.toFixed(1):'<span class="muted">—</span>'}</td>`+
+      `<td class="cell ${avg!=null?cls(avg/PM.total):''}">${avg!=null
+        ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
+        : '<span class="muted">—</span>'}</td>`+
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
       `<td>${arrow||'<span class="muted">—</span>'}</td>`;
     tb.appendChild(tr);
@@ -2191,7 +2198,7 @@ function renderLive(m,host){
         const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
-          `<span class="strk-sub">${Math.round(r.now*100)}% · ~${Math.round(r.ep.m)} pts${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
+          `<span class="strk-sub">${Math.round(r.now*100)}% · ~${Math.round(r.ep.m)} of ${PMOM[fmt].total} pts${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
           (liveScore?`<div class="pv">${Math.round(r.ptw*100)}<span class="pv-u">win</span></div>`
                     :`<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`);
         attachWhy(row,r.A,Q,fmt);
@@ -2732,7 +2739,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 3:47pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 3:54pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
