@@ -1504,12 +1504,20 @@ function playerGames(mid,fmt){
   (p.headToHead||[]).forEach(h=>(h.games||[]).forEach(g=>out.push({date:g.date,oppSL:g.oppSL,won:g.won,pts:g.pts})));
   return out.sort((a,b)=>b.date.localeCompare(a.date));
 }
-const WINDOWS=[['all','All time'],['s8','Last 8 wks'],['s4','Last 4 wks'],['s2','Last 2 wks']];
+const WINDOWS=[['all','All time'],['m8','Last 8'],['m4','Last 4'],['m2','Last 2']];
 const TREND_N=8;   // games that count as "recent" when trending a player against their baseline
-function windowCutoff(win){
-  if(win==='all')return '0000-00-00';
-  const wk={s8:56,s4:28,s2:14}[win]||99999;
-  const d=new Date(Date.now()-wk*864e5); return d.toISOString().slice(0,10);
+/* The window is counted in MATCHES, not weeks. A league season has bye weeks, holidays and
+   session gaps, so "last 8 weeks" quietly returned a different number of matches every time —
+   8 weeks was showing 6 matches. Counting matches makes the window mean one thing.
+   Returns the date of the Nth-from-last team match, so every existing `date >= cut` filter
+   keeps working unchanged. */
+function windowCutoff(win,tid){
+  if(win==='all'||tid==null)return '0000-00-00';
+  const n=parseInt(String(win).replace(/\D/g,''),10);
+  if(!n)return '0000-00-00';
+  const res=(D.results||{})[String(tid)];
+  const dates=[...new Set(((res&&res.matches)||[]).map(m=>m.date))].sort();
+  return dates.length?dates.slice(-n)[0]:'0000-00-00';
 }
 // Team results + per-player recent form over a selectable window. Answers "how are we trending
 // the last couple weeks" — records, points, and hot/cold recomputed from the game logs.
@@ -1527,18 +1535,18 @@ function renderTeamForm(out){
     b.onclick=()=>{teamState.window=v;renderTeamOverview();};ctl.appendChild(b);});
   const head=el('div','card');
   head.appendChild(el('h2',null,'<span class="eyebrow">Form &amp; results</span>'));
-  head.appendChild(el('p','sub','Team record, recent match results, and how each player is trending over the window you pick.'));
+  head.appendChild(el('p','sub','Team record, recent match results, and how each player is trending. The window counts matches, not weeks — bye weeks and holidays made a week count mean different things on different nights.'));
   head.appendChild(ctl);
   out.appendChild(head);
 
   // team results (record + recent matches)
   const res=(D.results||{})[String(tid)];
   if(res){
-    const cut=windowCutoff(teamState.window);
+    const cut=windowCutoff(teamState.window,tid);
     const ms=res.matches.filter(m=>m.date>=cut).slice().reverse();
     const w=ms.filter(m=>m.won).length, c=el('div','card');
     c.appendChild(el('h2',null,`<span class="eyebrow">${esc(res.name)} · ${res.wins}-${res.losses} this session</span>`));
-    c.appendChild(el('p','sub',`${teamState.window==='all'?'Every match this session':'Window: '+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    c.appendChild(el('p','sub',`${teamState.window==='all'?`Every match this session`:`Last ${ms.length} match${ms.length===1?'':'es'}: `+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
     const list=el('div','rlist');
     (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
       const row=el('div','rrow');
@@ -1552,7 +1560,7 @@ function renderTeamForm(out){
   }
 
   // per-player form over the window
-  const cut=windowCutoff(teamState.window);
+  const cut=windowCutoff(teamState.window,tid);
   const fc=el('div','card');
   fc.appendChild(el('h2',null,'<span class="eyebrow">Player form in this window</span>'));
   const rows=tm.map(p=>{
@@ -1612,7 +1620,7 @@ function rotationInfo(fmt,tid,win){
   // `win` lets the Team chart follow the window filter. The optimizer deliberately omits it and
   // gets the default last-8, so the fair-rotation nudge can't change because someone poked a
   // filter on another tab.
-  const cut=windowCutoff(win||'all');
+  const cut=windowCutoff(win||'all',tid);
   out.dates=[...new Set((res.matches||[]).map(m=>m.date))].sort().filter(d=>d>=cut).slice(-8);
   activeRosterForFormat(fmt).forEach(p=>{
     const played=new Set(playerGames(p.mid,fmt).map(g=>g.date));
@@ -2678,7 +2686,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 11:41am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 12:43pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
