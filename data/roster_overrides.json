@@ -5,12 +5,19 @@
     "matchup until then. This file injects known players into a team's roster during the build.",
     "",
     "New APA players start as Skill Level 3. They have no match history, so the matchup engine",
-    "scores them purely on the SL3-vs-SL baseline (low confidence) — which is exactly right for",
+    "scores them purely on the SL3-vs-SL baseline (low confidence) \u2014 which is exactly right for",
     "an unrated player. Once they show up in a real API pull, drop them from here so their real",
     "record takes over. `new:true` just flags them in the UI as unrated.",
     "",
-    "Keyed by APA team id. mid is a synthetic 'new-…' string so nothing collides with a real",
-    "member id; if you later learn their real mid, delete the entry (the pull will carry them)."
+    "Keyed by APA team id. mid is a synthetic 'new-\u2026' string so nothing collides with a real",
+    "member id; if you later learn their real mid, delete the entry (the pull will carry them).",
+    "",
+    "\"rename\": display-name overrides keyed by APA member id. The API roster name isn't always",
+    "what the team calls someone. Applied to rosters, player profiles and head-to-head opponent",
+    "names during the build, so one entry renames that person everywhere in the app."
   ],
-  "add": {}
+  "add": {},
+  "rename": {
+    "3086725": "Jan Timorason"
+  }
 }
