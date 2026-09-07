@@ -91,6 +91,8 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .rk .nm.two .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk .nm .h2h{font-size:11px;color:var(--accent-ink);font-weight:600;margin-left:6px;flex:0 0 auto;white-space:nowrap}
 .rk .nm .h2h.unrated{color:var(--warn)}
+/* why this row sits lower than its points suggest — spending this player here is the cost */
+.rk .nm .h2h.over{color:var(--bad)}
 .rk .pv{font-family:Oswald;font-weight:700;font-size:18px;text-align:right}
 .rk .pv-u{font-family:Barlow;font-size:9px;font-weight:600;color:var(--ink-soft);display:block;margin-top:-2px;white-space:nowrap}
 .rk.best{background:var(--good-wash)}
@@ -2157,7 +2159,7 @@ function renderLive(m,host){
   }
 
   if(live.mode==='counter'){
-    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is the match points this pick is expected to bank — out of 20 in 9-ball, 3 in 8-ball — and the list is ranked on exactly that. An even match is about half the pool. Where a like-for-like answer is the smarter use of your lineup, it is called out underneath rather than hidden in the ordering.'));
+    c.appendChild(el('p','sub','Pick who they put up, then take the top counter. The big number is the match points this pick is expected to bank — out of 20 in 9-ball, 3 in 8-ball — and an even match is about half the pool. Because the handicap keeps almost every match near even, the order also weighs what spending that player costs you — a much bigger player than the match needs is tagged overkill and sinks, however good their odds look.'));
     const pickRow=el('div','chips');
     theirs.forEach(Q=>{
       const b=el('button','chip'+(live.theirPick===String(Q.mid)?' on':''),`${sl(Q.sl)}${esc(Q.name)}`);
@@ -2180,12 +2182,14 @@ function renderLive(m,host){
         // edges and clearly-better matchups still win outright.
         const dist=Math.abs(A.sl-Q.sl);
         const total=now+rest, fair=fairBonus([A],rotLive);
-        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair};
-        // Ordered by the MATCH POINTS this pick banks — the same number shown on the row, on the
-        // real scale (20 in 9-ball, 3 in 8-ball). The like-for-like fit no longer reorders the
-        // list; it is called out in the note underneath instead, so the advice stays visible
-        // rather than being silently baked into an ordering nobody can see.
-      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.ep.m-a.ep.m)));
+        // The row SHOWS the match points this pick banks, on the real scale. The list ORDERS by
+        // those points minus the cost of spending this player here — otherwise an SL7 ranks near
+        // the top against an SL1, which is never the right call however good the odds look.
+        // CTR_HOLD is in expected-wins, so convert with points-per-win to compare like with like.
+        const ppw=PMOM[fmt].win.m-PMOM[fmt].loss.m;
+        const fit=ep.m-CTR_HOLD*ppw*dist+fair*ppw;
+        return {A,now,rest,total,edge:provenEdge(A,Q,fmt),ep,ptw,dist,fair,fit};
+      }).sort((a,b)=>(b.edge-a.edge)||(liveScore?(b.ptw-a.ptw):(b.fit-a.fit)));
       // once the score is live, optimize the odds of winning the TEAM match, not raw wins
       if(liveScore){
         const sc=teamScore(m), need=teamNeed(fmt);
@@ -2196,10 +2200,15 @@ function renderLive(m,host){
                  :`You're ahead, so it favors the steady pick that best protects the lead.`)));
       }
       const best=ranked[0];
+      // "Overkill" is relative to the closest answer we actually have, not an absolute gap. When
+      // the lowest player on the roster is an SL3 and they throw an SL1, that SL3 is the best
+      // available — tagging it overkill would tag literally everyone and say nothing.
+      const minDist=Math.min(...ranked.map(r=>r.dist));
       ranked.forEach((r,i)=>{
         const row=el('div','rk'+(i===0?' best':''));
         const s=score(r.A,Q,fmt);
-        const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'');
+        const h2hTag=(s.h2h&&s.h2h.meetings?`<span class="h2h">${s.h2h.wins}-${s.h2h.meetings-s.h2h.wins} vs them</span>`:'')+(s.unrated?`<span class="h2h unrated">unrated</span>`:'')+
+          (!liveScore&&r.A.sl>Q.sl&&r.dist>=minDist+2?`<span class="h2h over">overkill</span>`:'');
         row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
           `<div class="nm two"><span class="strk-top"><span class="who">${esc(r.A.name)}</span>${h2hTag}<span class="dot d-${s.conf}"></span></span>`+
           `<span class="strk-sub">${Math.round(r.now*100)}% to win${liveScore?` · team win ${Math.round(r.ptw*100)}%`:''}</span></div>`+
@@ -2211,20 +2220,24 @@ function renderLive(m,host){
       // The list now ranks on this match's points, so the like-for-like read has to be stated out
       // loud or it disappears. Convert the hold from expected-wins into points (one win is worth
       // win-mean minus loss-mean) so the two live on the same scale.
-      const M0=PMOM[fmt], ptsPerWin=M0.win.m-M0.loss.m;
-      const fitOf=r=>r.ep.m-CTR_HOLD*ptsPerWin*r.dist+r.fair*ptsPerWin;
+      const M0=PMOM[fmt];
       const bestPts=ranked.slice().sort((a,b)=>b.ep.m-a.ep.m)[0];      // pure points leader
-      const bestFit=ranked.slice().sort((a,b)=>fitOf(b)-fitOf(a))[0];  // like-for-like leader
       const bestH2H=score(best.A,Q,fmt).h2h;
       if(best.edge>0 && bestH2H){
         const h=bestH2H;
         c.appendChild(el('p','sub',
           `${esc(best.A.name)} is ${h.wins}-${h.meetings-h.wins} against ${esc(Q.name)}, who beats the field otherwise — a record like that against one player is the strongest read there is, so put them up even though the handicap flatters ${esc(bestPts.A.name)}.`));
-      } else if(bestFit && String(bestFit.A.mid)!==String(best.A.mid)){
-        const spend = best.A.sl>Q.sl && bestFit.A.sl<=Q.sl;   // the points leader would overkill
+      } else if(bestPts && String(bestPts.A.mid)!==String(best.A.mid)){
+        // The list already ranks on fit; this says WHY the points leader is not on top. Attribute
+        // it to the reason that actually applies — spending a bigger player, or rotation when the
+        // two are the same skill level and merit is level.
+        const higher = bestPts.A.sl>best.A.sl;
+        const rota   = !higher && best.fair>bestPts.fair+1e-9;
         c.appendChild(el('p','sub',
-          `${esc(best.A.name)} banks the most points here (${best.ep.m.toFixed(1)} of ${M0.total}), but ${esc(bestFit.A.name)} (SL ${bestFit.A.sl}) answers their SL ${Q.sl} like-for-like at ${bestFit.ep.m.toFixed(1)}`+
-          (spend? ` — save your higher skill levels for their bigger players.` : ` and is the better use of your lineup.`)));
+          `${esc(bestPts.A.name)} banks marginally more here (${bestPts.ep.m.toFixed(1)} of ${M0.total} vs ${best.ep.m.toFixed(1)}), but `+
+          (higher? `SL ${bestPts.A.sl} against their SL ${Q.sl} spends a bigger player than this match needs — ${esc(best.A.name)} (SL ${best.A.sl}) answers closer and keeps yours for theirs.`
+           : rota ? `${esc(best.A.name)} is owed a game and the two are level on merit.`
+           : `${esc(best.A.name)} (SL ${best.A.sl}) is the better use of your lineup.`)));
       }
       // Wildcard (8-ball): a strong low player who reaches the hill against a tough opponent on
       // just a rack or two — banks points even losing and frees your higher players. Flagged, not
@@ -2757,7 +2770,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 4:20pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 5:39pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
