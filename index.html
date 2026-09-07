@@ -81,8 +81,8 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .opp-hd .tag{margin-left:auto;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
 
 /* ranked row */
-/* last track fits the value unit ("of 5 wins") on one line — "wins" is what keeps it from being
-   read as match points, which are a different scale entirely (3 in 8-ball, 20 in 9-ball). */
+/* last track fits the value unit ("of 20 pts") on one line — every counter value is expressed in
+   match points on its real scale, 3 in 8-ball and 20 in 9-ball. */
 .rk{display:grid;grid-template-columns:20px 22px 1fr 60px;align-items:center;gap:9px;padding:6px 8px;border-radius:9px}
 .rk+.rk{margin-top:2px}
 .rk .pos{font-family:Oswald;font-size:12px;color:var(--ink-soft);text-align:right}
@@ -2266,25 +2266,33 @@ function renderLive(m,host){
         if(worst===null||tot<worst.total)worst={Q,now,rest,total:tot};
       });
       const cv=theirs.reduce((s,Q)=>s+pWin(A,Q,fmt),0)/theirs.length;
-      return {A,...worst,cv,adj:worst.total-SL_HOLD*A.sl};
-    }).sort((a,b)=>b.adj-a.adj);
+      // Points banked in that worst case — the number we show AND sort on, on the real scale.
+      const wp=expPts(A,worst.Q,fmt).m;
+      return {A,...worst,cv,wp,adj:worst.total-SL_HOLD*A.sl};
+    }).sort((a,b)=>b.wp-a.wp);
     // who you'd most want to keep in reserve = flattest, highest win-odds vs their pool
     const hold=ranked.slice().sort((a,b)=>b.cv-a.cv)[0];
     const spread=Math.max(...ranked.map(r=>r.total))-Math.min(...ranked.map(r=>r.total));
-    if(hold && ranked[0].A.mid!==hold.A.mid){
+    // The list ranks on points, so the throw-low strategy is stated rather than hidden in the sort.
+    const leadPick=ranked.slice().sort((a,b)=>b.adj-a.adj)[0];
+    if(leadPick && String(leadPick.A.mid)!==String(ranked[0].A.mid)){
       c.appendChild(el('p','sub',
-        `Expected wins run within ${spread.toFixed(2)} across every choice, so throw ${esc(ranked[0].A.name)} `+
-        `(SL ${ranked[0].A.sl}) and keep ${esc(hold.A.name)} (SL ${hold.A.sl}) back — they are even-or-better against `+
-        `their whole lineup, your best answer to whatever they put up.`));
+        `${esc(ranked[0].A.name)} banks the most in the worst case (${ranked[0].wp.toFixed(1)} of ${PMOM[fmt].total}), `+
+        `but lead with ${esc(leadPick.A.name)} (SL ${leadPick.A.sl}) — expected wins run within ${spread.toFixed(2)} across every choice, `+
+        `so throw order barely moves the total and your higher skill levels are worth more as answers.`));
+    }
+    if(hold && leadPick && String(leadPick.A.mid)!==String(hold.A.mid)){
+      c.appendChild(el('p','sub',
+        `Keep ${esc(hold.A.name)} (SL ${hold.A.sl}) back — they are even-or-better against their whole lineup, `+
+        `your best answer to whatever they put up.`));
     }
     ranked.forEach((r,i)=>{
       const row=el('div','rk'+(i===0?' best':''));
-      // Headline the number we actually rank on (night value); the single-match odds sit
-      // underneath, otherwise a correct sacrificial throw reads as a ranking bug.
+      // Headline the number we actually rank on, on the real points scale.
       row.innerHTML=`<div class="pos">${i+1}</div>${sl(r.A.sl)}`+
         `<div class="nm two"><span class="who">${esc(r.A.name)}</span>`+
         `<span class="strk-sub">worst case they answer ${esc(r.Q.name)} — ${Math.round(r.now*100)}% that match</span></div>`+
-        `<div class="pv">${r.total.toFixed(1)}<span class="pv-u">exp</span></div>`;
+        `<div class="pv">${r.wp.toFixed(1)}<span class="pv-u">of ${PMOM[fmt].total} pts</span></div>`;
       attachWhy(row,r.A,r.Q,fmt);
       c.appendChild(row);
     });
@@ -2749,7 +2757,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 4:16pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 4:20pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
