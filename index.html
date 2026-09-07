@@ -1304,14 +1304,58 @@ function renderMatch(m){
   // Compact header: the dropdown directly above already names the date/teams/format, so
   // repeating it full-size just pushed the actual picks below the fold on a phone.
   const head=el('div','card');
-  head.innerHTML=`<p class="sub" style="margin:0">Each of their players, with our whole roster ranked
-      best-to-worst underneath. The tick on each bar is 50% — past it, we're favored.</p>
+  const byUs=scoutState.by==='us';
+  head.innerHTML=`<p class="sub" style="margin:0">`+(byUs
+      ? `Each of ours, with their roster ranked by the draw we'd most want. Ordered by fit rather than raw odds, so a wide skill gap sinks even when the percentage looks fine — spending your best on their weakest frees their best for someone else. The tick on each bar is 50%.`
+      : `Each of their players, with our whole roster ranked best-to-worst underneath. The tick on each bar is 50% — past it, we're favored.`)+`</p>
     <div class="legend"><span><i class="dot d-high"></i>lots of history</span>
       <span><i class="dot d-med"></i>some</span>
       <span><i class="dot d-low"></i>thin — treat as a guess</span></div>`;
+  const byBar=el('div','ftabs');byBar.style.marginTop='10px';
+  [['them','Who to throw'],['us','Ideal draws']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',scoutState.by===v);
+    b.onclick=()=>{scoutState.by=v;renderMatch(m);};byBar.appendChild(b);});
+  head.appendChild(byBar);
   out.appendChild(head);
   if(!theirs.length){out.appendChild(el('div','card','<p class="sub">No roster posted for this opponent yet.</p>'));return;}
   const c=el('div','card');
+  if(byUs){
+    // The mirror: for each of OUR players, which of theirs we'd most want across the table.
+    // Same engine, same like-for-like hold — asking "who does Casey want?" instead of
+    // "who do we answer Tanveer with?". Useful when a teammate is already committed.
+    const other=fmt==='8'?'9':'8';
+    ours.slice().sort((a,b)=>b.sl-a.sl).forEach(A=>{
+      const blk=el('div','opp');
+      const nt=A.new?'<span class="tag new">new · unrated</span>':'';
+      blk.appendChild(el('div','opp-hd',`${sl(A.sl)}<span class="nm">${esc(A.name)}</span>${nt}<span class="tag">ideal draws ↓</span>`));
+      const hs2=(Q,s)=>s.p-SCOUT_HOLD*Math.abs(A.sl-Q.sl);
+      const ranked=theirs.map(Q=>[Q,score(A,Q,fmt),provenEdge(A,Q,fmt)])
+        .sort((x,y)=>(y[2]-x[2])||(hs2(y[0],y[1])-hs2(x[0],x[1])));
+      ranked.forEach(([Q,s],i)=>{const row=rankRow(i+1,Q,s);attachWhy(row,A,Q,fmt);blk.appendChild(row);});
+      const best=ranked[0], worst=ranked[ranked.length-1];
+      if(best&&worst&&String(best[0].mid)!==String(worst[0].mid)){
+        const wp=Math.round(worst[1].p*100), gap=Math.abs(A.sl-worst[0].sl);
+        // The list is ordered by FIT, so the bottom entry is often a healthy win probability that
+        // simply wastes this player. Saying "avoid, 52%" there reads as a contradiction.
+        blk.appendChild(el('p','sub',`Best draw ${esc(best[0].name)} at ${Math.round(best[1].p*100)}%. `+
+          (gap>=3&&worst[1].p>=0.5
+            ? `Least useful is ${esc(worst[0].name)} — SL${worst[0].sl} against your SL${A.sl} is overkill at ${wp}%, and it leaves their bigger players for someone else.`
+            : `Worst is ${esc(worst[0].name)} at ${wp}%.`)));
+      }
+      const xf=theirs.map(Q=>{
+        const hh=(P[`${A.mid}:${other}`]||{}).headToHead;
+        const rec=hh&&hh.find(x=>String(x.oppMid)===String(Q.mid));
+        return rec&&rec.meetings?{Q,rec}:null;
+      }).filter(Boolean).sort((a,b)=>b.rec.meetings-a.rec.meetings);
+      if(xf.length)
+        blk.appendChild(el('p','sub muted',`In ${other}-ball: `+
+          xf.slice(0,3).map(x=>`${esc(x.Q.name)} ${x.rec.wins}-${x.rec.meetings-x.rec.wins}`).join(' · ')+
+          ` — context only, not counted in these odds.`));
+      c.appendChild(blk);
+    });
+    out.appendChild(c);
+    return;
+  }
   theirs.slice().sort((a,b)=>b.sl-a.sl).forEach(Q=>{
     const blk=el('div','opp');
     const newTag=Q.new?'<span class="tag new">new · unrated</span>':'';
@@ -1487,7 +1531,9 @@ function iceBreaker(A,fmt){
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
 const teamState={fmt:null,scope:'all',view:'roster',window:'all'};
-const scoutState={scope:'all'};   // scope for the opponent's vs-SL chart in the Scout view
+// scope = the opponent's vs-SL chart; by = whose side the pairing list is organised from
+// ('them' = who to throw at each of theirs, 'us' = the draw each of ours would most want)
+const scoutState={scope:'all',by:'them'};
 function teamFormats(){
   return [...new Set((D.myActiveTeams||[]).map(t=>(D.teams[t]||{}).fmt).filter(Boolean))].sort();
 }
@@ -2686,7 +2732,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 7, 12:43pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 7, 3:47pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
