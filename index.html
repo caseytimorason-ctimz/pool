@@ -343,6 +343,24 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .rsc{font-family:Oswald;font-weight:700;font-variant-numeric:tabular-nums}.rsc .dash{color:var(--ink-soft);margin:0 3px}
 .ropp{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .rdate{color:var(--ink-soft);font-size:11.5px;white-space:nowrap}
+/* a finished match expands into the five individual matchups that produced the score */
+.rrow.open{cursor:pointer}
+.rrow.open .rdate::after{content:" ▾";color:var(--ink-soft)}
+.rrow.open.on .rdate::after{content:" ▴"}
+.rdet{margin:-2px 0 6px;padding:9px 10px;border:1px solid var(--line-2);border-left:3px solid var(--accent);
+  border-radius:9px;background:var(--panel-2);display:flex;flex-direction:column;gap:4px}
+.rbreak{display:flex;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--ink-soft);
+  padding-bottom:6px;margin-bottom:2px;border-bottom:1px solid var(--line-2)}
+.rbreak .rb b{font-family:Oswald;color:var(--ink);font-variant-numeric:tabular-nums}
+.rbreak .rb.bad b{color:var(--bad)}
+.rline{display:grid;grid-template-columns:16px 21px 1fr auto;align-items:center;gap:7px;font-size:12.5px}
+.rline .rl-res{font-family:Oswald;font-weight:700;font-size:11px}
+.rline.w .rl-res{color:var(--good)}.rline.l .rl-res{color:var(--bad)}
+.rline .rl-who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rline .rl-sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rline .rl-opp{grid-column:3/5;font-size:11.5px;color:var(--ink-soft);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;margin-top:-3px}
+.rline .sl{width:19px;height:19px}.rline .sl i{font-size:10px}
 .fpips{display:inline-flex;gap:3px}
 .fp{width:9px;height:9px;border-radius:2px;display:inline-block}.fp.w{background:var(--good)}.fp.l{background:var(--bad)}
 .up{color:var(--good);font-weight:700}.dn{color:var(--bad);font-weight:700}.flat{color:var(--ink-soft)}
@@ -1600,11 +1618,35 @@ function renderTeamForm(out){
     c.appendChild(el('p','sub',`${teamState.window==='all'?`Every match this session`:`Last ${ms.length} match${ms.length===1?'':'es'}: `+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
     const list=el('div','rlist');
     (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
-      const row=el('div','rrow');
+      const row=el('div','rrow'+(m.line&&m.line.length?' open':''));
       row.innerHTML=`<span class="rres ${m.won?'w':'l'}">${m.won?'W':'L'}</span>`+
         `<span class="rsc">${m.us}<span class="dash">–</span>${m.them}</span>`+
         `<span class="ropp">${esc(m.opp)}</span><span class="rdate">${(()=>{const[,mo,dd]=m.date.split('-');return MON[+mo-1]+' '+(+dd);})()}</span>`;
       list.appendChild(row);
+      if(m.line&&m.line.length){
+        // The APA total is NOT the five match points: bonus is added (and a penalty or
+        // adjustment can apply), which is why 8-ball can report 13-4 out of a 15-point pool.
+        // Show the arithmetic so the headline score reconciles to the matches underneath.
+        const sub=(t,b,p,a)=>t-(b||0)+(p||0)-(a||0);
+        const ourSub=sub(m.us,m.bonus,m.pen,m.adj), theirSub=sub(m.them,m.oppBonus,m.oppPen,m.oppAdj);
+        const det=el('div','rdet hide');
+        const bits=[`<span class="rb"><b>${ourSub}–${theirSub}</b> from the matches</span>`];
+        if(m.bonus||m.oppBonus)bits.push(`<span class="rb">+ <b>${m.bonus||0}–${m.oppBonus||0}</b> bonus</span>`);
+        if(m.pen||m.oppPen)bits.push(`<span class="rb bad">− <b>${m.pen||0}–${m.oppPen||0}</b> penalty</span>`);
+        if(m.adj||m.oppAdj)bits.push(`<span class="rb">± <b>${m.adj||0}–${m.oppAdj||0}</b> adjustment</span>`);
+        bits.push(`<span class="rb">= <b>${m.us}–${m.them}</b></span>`);
+        det.appendChild(el('div','rbreak',bits.join('')));
+        m.line.forEach(x=>{
+          const r2=el('div','rline'+(x.won?' w':' l'));
+          r2.innerHTML=`<span class="rl-res">${x.won?'W':'L'}</span>`+
+            `${x.sl?sl(x.sl):'<span class="sl"><i>–</i></span>'}<span class="rl-who">${esc(x.who||'')}</span>`+
+            `<span class="rl-sc">${x.pts==null?'–':x.pts}<span class="dash">–</span>${x.oppPts==null?'–':x.oppPts}</span>`+
+            `<span class="rl-opp">${esc(x.opp||'')}${x.oppSL?` <span class="muted">SL${x.oppSL}</span>`:''}</span>`;
+          det.appendChild(r2);
+        });
+        list.appendChild(det);
+        row.onclick=()=>{det.classList.toggle('hide');row.classList.toggle('on');};
+      }
     });
     if(!list.children.length)list.appendChild(el('p','sub','No matches in this window.'));
     c.appendChild(list);out.appendChild(c);
@@ -2781,7 +2823,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 8, 7:29am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 8, 9:34am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
