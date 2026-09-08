@@ -1911,7 +1911,7 @@ function makePlayerView(outSel,opts){
     // repeating it here is pure duplication; the Players tab has no pill and keeps it.
     hd.innerHTML=(opts.hideName?'':`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>`)+
       `<span class="stat"><b>SL${pr.currentSL}</b> now · ${w}-${g-w} (${wr}%)`+
-      (filtered?` <span class="muted">as SL${st.ownSL}</span>`:'')+`</span>`;
+      (filtered?` <span class="muted">${st.ownSL==='0'?'unrated':'as SL'+st.ownSL}</span>`:'')+`</span>`;
     c.appendChild(hd);
     if(fmts.length>1){const ft=el('div','ftabs');
       fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
@@ -1919,7 +1919,8 @@ function makePlayerView(outSel,opts){
     const chips=el('div');
     chips.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">Record vs each skill level</div>`;
     const row=el('div','chips');
-    [['all','All time']].concat(eras.map(e=>[String(e),'As SL'+e])).forEach(([v,lab])=>{
+    // era 0 is APA's marker for UNRATED, not a skill level — label it as such
+    [['all','All time']].concat(eras.map(e=>[String(e),e?'As SL'+e:'Unrated'])).forEach(([v,lab])=>{
       const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
       b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
     chips.appendChild(row);c.appendChild(chips);
@@ -2019,7 +2020,7 @@ function drawH2H(out,pr,fmt,ownSL){
        if(games.length){
          const det=el('tr');det.className='hide';
          det.innerHTML=`<td colspan="3" class="log">`+games.slice().reverse().map(g=>
-           `<div>${g.date} — you SL${g.mySL} vs SL${g.oppSL} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b>`+
+           `<div>${g.date} — you ${g.mySL?'SL'+g.mySL:'unrated'} vs ${g.oppSL?'SL'+g.oppSL:'unrated'} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b>`+
            (g.pts!=null&&g.oppPts!=null?` <span class="sc">${g.pts}–${g.oppPts}</span>`
             :g.pts!=null?` <span class="sc">${g.pts} pt${g.pts===1?'':'s'}</span>`:'')+`</div>`).join('')+`</td>`;
          tr.onclick=()=>det.classList.toggle('hide');
@@ -2823,7 +2824,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 8, 9:34am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 8, 11:18am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
