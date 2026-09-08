@@ -378,7 +378,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt td.who .who-nm,.tt td.who .who-nm{max-width:32vw;display:inline-block;vertical-align:bottom}
 
 /* ---------- Train tab: "The Rail to 700" training library ---------- */
-#m-train{--t-dd:#2f7bb0;--t-sh:#1f9e73;--t-tl:#d98a2b;--t-fx:#cc5240;--t-nf:#7a6fc4;--t-vn:#c85b9a;--t-sn:#6ea83f;--t-da:#b0487e}
+#m-train{--t-dd:#2f7bb0;--t-sh:#1f9e73;--t-tl:#d98a2b;--t-fx:#cc5240;--t-nf:#7a6fc4;--t-vn:#c85b9a;--t-sn:#6ea83f;--t-da:#b0487e;
+  --t-j8:#c9803f;--t-ss:#4aa39a;--t-ps:#8d7fd1}
 #m-train .t-hero{padding:4px 2px 2px}
 #m-train .t-eyebrow{font-family:Oswald;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-ink)}
 #m-train .t-h1{font-family:Oswald;font-weight:700;line-height:.9;letter-spacing:-.01em;font-size:clamp(40px,13vw,66px);margin:8px 0;color:var(--ink)}
@@ -419,8 +420,11 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 #m-train .t-vid{display:flex;gap:9px;align-items:flex-start;text-decoration:none;padding:6px 0;border-bottom:1px solid var(--line-2)}
 #m-train .t-vid:last-child{border-bottom:none}
 #m-train .t-vdot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 auto}
-#m-train .t-vt{font-size:12.5px;font-weight:500;line-height:1.3;color:var(--ink)}
-#m-train .t-vby{font-family:Oswald;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px}
+/* title over author. The wrapper carries no class, so stack it here — as plain inline spans the
+   two ran together into "…Stroke Sharivari" with nothing between them. */
+#m-train .t-vid>span:not(.t-vdot){display:flex;flex-direction:column;min-width:0}
+#m-train .t-vt{display:block;font-size:12.5px;font-weight:500;line-height:1.35;color:var(--ink)}
+#m-train .t-vby{display:block;font-family:Oswald;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px}
 #m-train .t-more{margin-top:7px;font-size:11.5px;color:var(--ink-soft);line-height:1.6}
 #m-train .t-more a{color:var(--accent-ink);text-decoration:none;border-bottom:1px dotted var(--line)}
 #m-train .t-drill{padding:7px 0;border-bottom:1px solid var(--line-2)}
@@ -556,6 +560,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
         <a href="https://www.youtube.com/user/venomtrickshots" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-vn)"></span>Venom <span class="role">jump &amp; massé</span></a>
         <a href="https://www.youtube.com/@SenseiNatePlaysPool" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-sn)"></span>Sensei Nate <span class="role">strategy talk</span></a>
         <a href="https://www.youtube.com/@dynamiteappleton" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-da)"></span>Darren Appleton <span class="role">pro drills</span></a>
+        <a href="https://www.youtube.com/@Joe8BallOfficial" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-j8)"></span>Joe 8 Ball <span class="role">aiming &amp; break</span></a>
+        <a href="https://www.youtube.com/@ShortstopOnPool" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-ss)"></span>Shortstop On Pool <span class="role">cue ball routes</span></a>
+        <a href="https://www.youtube.com/@poolshot" target="_blank" rel="noopener"><span class="t-sw" style="background:var(--t-ps)"></span>PoolShot.org <span class="role">structured drills</span></a>
       </div>
     </div>
 
@@ -608,7 +615,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
         <div class="t-cbody">
           <div><div class="t-h4">Watch</div>
             <a class="t-vid" href="https://www.youtube.com/watch?v=xlmhEqTikYI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Pendulum Stroke Technique (no elbow drop)</span><span class="t-vby">Dr. Dave</span></span></a>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=F2NluIc9Kac" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Build a Consistent Stroke</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=tYR9T7DjYHw" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The Secrets to Your Perfect Stroke — Step by Step</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=gjYrNQplxl4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">A Beginner's Pool Drill You Must Master</span><span class="t-vby">Sharivari</span></span></a>
             <a class="t-vid" href="https://www.youtube.com/watch?v=oRRwPqTgHs4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-nf)"></span><span><span class="t-vt">Make Your Pool Stroke More Accurate</span><span class="t-vby">Niels Feijen</span></span></a></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Dead stop shot</div><div class="t-dd">Straight in, medium pace; CB stops on a dime.</div><span class="t-tgt">Target · <b>10 in a row</b></span></div>
@@ -622,6 +630,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
           <div><div class="t-h4">Watch</div>
             <a class="t-vid" href="https://www.youtube.com/watch?v=oTA35cKbhnA" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Become a Consistent Shotmaker (aiming)</span><span class="t-vby">Sharivari</span></span></a>
             <a class="t-vid" href="https://www.youtube.com/watch?v=Lx6FpomOCs4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The Key to Make Balls Consistently</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=6ivxawzmcRI" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-j8)"></span><span><span class="t-vt">The Aiming Tool That Changes Your Game</span><span class="t-vby">Joe 8 Ball</span></span></a>
             <div class="t-more">Deep reference: <a href="https://sharivari.shop/collections/beginners-guide" target="_blank" rel="noopener">Sharivari Beginner's Guide</a></div></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Spot-to-spot potting</div><div class="t-dd">Pot from fixed marked positions to one pocket; isolate aim from everything else.</div><span class="t-tgt">Target · <b>9/10</b> per position</span></div></div>
@@ -649,7 +658,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
           <div><div class="t-h4">Watch</div>
             <a class="t-vid" href="https://www.youtube.com/watch?v=PZFBAMFZPWk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Understanding the Cue Ball</span><span class="t-vby">Sharivari</span></span></a>
             <a class="t-vid" href="https://www.youtube.com/watch?v=fPQEBxbByD4" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Cue Ball Control — Everything You Need to Know</span><span class="t-vby">Dr. Dave</span></span></a>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=Sor910-kdBU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The 5 Most Important Shots in Pool</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=nDKD04xZcGE" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">The Secret to Natural Cue Ball Control — Step by Step</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=bqsOQO_Dsio" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Always Know Where the Cue Ball Will Go</span><span class="t-vby">Sharivari</span></span></a>
             <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/tutorial/cue-ball-control/" target="_blank" rel="noopener">Dr. Dave Cue Ball Control tutorial</a></div></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Three-spin reference</div><div class="t-dd">One cut shot, three ways — stop, follow, draw — calling the landing zone before each.</div><span class="t-tgt">Target · all three <b>called &amp; hit</b></span></div></div>
@@ -695,7 +705,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
           <p class="t-nuance">The single biggest separator into the 600s. Same mechanics, calibrated pace. Build a feel for distance-per-speed and remember the rolling ball carries past the tangent with power — <em>follow for distance, it reads cleaner than draw.</em></p></div>
         <div class="t-cbody">
           <div><div class="t-h4">Watch</div>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=5yR2OpCCchc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Speed Control Tips &amp; Drills</span><span class="t-vby">Dr. Dave</span></span></a></div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=5yR2OpCCchc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Speed Control Tips &amp; Drills</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=z_6adzWUNyg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-ps)"></span><span><span class="t-vt">Cue Ball Path &amp; Position Control — Drill 4</span><span class="t-vby">PoolShot.org</span></span></a></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Speed ladder</div><div class="t-dd">Roll the CB to stop in zones at 1, 2, 3, then 1.5 diamonds — only speed changes.</div><span class="t-tgt">Target · <b>4/5</b> per distance</span></div>
             <div class="t-drill"><div class="t-dn">Position wagon wheel</div><div class="t-dd">Pocket one OB, land the CB in a chosen slice; cycle all slices.</div><span class="t-tgt">Target · <b>6/8 slices</b></span></div></div>
@@ -707,7 +718,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
         <div class="t-cbody">
           <div><div class="t-h4">Watch</div>
             <a class="t-vid" href="https://www.youtube.com/watch?v=kTU-YqcO_Rg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Cross-Table Cue Ball Control System</span><span class="t-vby">Dr. Dave</span></span></a>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=3P9xNgDbbDc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Advanced Position Play &amp; Cue Ball Physics</span><span class="t-vby">Sharivari</span></span></a></div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=3P9xNgDbbDc" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Advanced Position Play &amp; Cue Ball Physics</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=LH8Z-8Cif_8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">How to Adjust Your Aim for Every Spin Shot</span><span class="t-vby">Sharivari</span></span></a></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Minimal-English position</div><div class="t-dd">Reach the shape with the least spin possible; prove you don't need it.</div><span class="t-tgt">Target · shape <b>without</b> english first</span></div>
             <div class="t-drill"><div class="t-dn">Squirt &amp; pivot test</div><div class="t-dd">Same pot L and R english; learn your cue's deflection and pivot point.</div><span class="t-tgt">Target · pot holds <b>both sides</b></span></div></div>
@@ -736,7 +748,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
         <div class="t-cbody">
           <div><div class="t-h4">Watch</div>
             <a class="t-vid" href="https://www.youtube.com/watch?v=d0Wn5VnE70E" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">Principles of Position Play — Shot by Shot</span><span class="t-vby">Tor Lowry</span></span></a>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=JQkyXdMMHPk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">How Professionals Play Position — Pro Hacks</span><span class="t-vby">Tor Lowry</span></span></a></div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=JQkyXdMMHPk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-tl)"></span><span><span class="t-vt">How Professionals Play Position — Pro Hacks</span><span class="t-vby">Tor Lowry</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=SzgSTmvhuGk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-ss)"></span><span><span class="t-vt">Cue Ball Routes &amp; Position Play for Beginners</span><span class="t-vby">Shortstop On Pool</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=NNANsmHu6JY" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Position Game &amp; Cue Ball Control (GoPro)</span><span class="t-vby">Sharivari</span></span></a></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Zone shape</div><div class="t-dd">Call a zone (not a dot) for each leave; you're safe anywhere inside it.</div><span class="t-tgt">Target · land in zone <b>8/10</b></span></div></div>
         </div></div></div>
@@ -749,7 +763,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
             <a class="t-vid" href="https://www.youtube.com/watch?v=DMlQGu_pRNU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Top 10 Pattern Play Principles</span><span class="t-vby">Dr. Dave</span></span></a>
             <a class="t-vid" href="https://www.youtube.com/watch?v=L3cF-3Sb4og" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">How to Run Out in 8-Ball — 20 Run-Outs</span><span class="t-vby">Dr. Dave</span></span></a>
             <a class="t-vid" href="https://www.youtube.com/watch?v=k0MLqZWPjVM" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Smart Runout — Pattern &amp; Position (Pt 1)</span><span class="t-vby">Dr. Dave</span></span></a>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=nN6TU0sU0V8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-fx)"></span><span><span class="t-vt">SVB vs. Ouschan — Shot-by-Shot Analysis</span><span class="t-vby">FX Billiards</span></span></a></div>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=nN6TU0sU0V8" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-fx)"></span><span><span class="t-vt">SVB vs. Ouschan — Shot-by-Shot Analysis</span><span class="t-vby">FX Billiards</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=YGgvyx8--wk" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">8-Ball Aiming &amp; Runout — Step by Step</span><span class="t-vby">Sharivari</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=isAyYM5iEmg" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-sh)"></span><span><span class="t-vt">Where to Aim &amp; How to Run 8-Ball (GoPro)</span><span class="t-vby">Sharivari</span></span></a></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Progressive run-out</div><div class="t-dd">Run 3 with shape, then 6, then 9; add only when clean.</div><span class="t-tgt">Target · clear the <b>6-set</b>, 3/5</span></div>
             <div class="t-drill"><div class="t-dn">The Line drill</div><div class="t-dd">Run a line keeping the CB on the correct side of every leave.</div><span class="t-tgt">Target · <b>no off-side</b> leaves</span></div></div>
@@ -831,7 +847,8 @@ table.tt tr:hover td.who{background:var(--panel-2)}
           <p class="t-nuance">Controlled power, not maximum power. A square, level hit and the cue ball squatting near center table beat a big dry smash. In 9-ball, break from the side to pocket the wing ball; track made-ball <b>and</b> cue-ball control as one stat.</p></div>
         <div class="t-cbody">
           <div><div class="t-h4">Watch</div>
-            <a class="t-vid" href="https://www.youtube.com/watch?v=GBNm7rju28o" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-fx)"></span><span><span class="t-vt">How to Break Better in 8-Ball &amp; 9-Ball</span><span class="t-vby">FX Billiards</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=jJXSs5KGx9k" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-dd)"></span><span><span class="t-vt">Pool Made Simple — The Break Shot (8-, 9- &amp; 10-ball strategy)</span><span class="t-vby">Dr. Dave</span></span></a>
+            <a class="t-vid" href="https://www.youtube.com/watch?v=7fqQfWFkGiU" target="_blank" rel="noopener"><span class="t-vdot" style="background:var(--t-j8)"></span><span><span class="t-vt">Best 8-Ball &amp; 9-Ball Break Positions</span><span class="t-vby">Joe 8 Ball</span></span></a>
             <div class="t-more">Deep reference: <a href="https://drdavepoolinfo.com/faq/break/9-ball/" target="_blank" rel="noopener">9-Ball break strategy</a> · <a href="https://drdavepoolinfo.com/faq/break/advice/" target="_blank" rel="noopener">break technique advice</a></div></div>
           <div><div class="t-h4">Work</div>
             <div class="t-drill"><div class="t-dn">Break + control</div><div class="t-dd">Track made-ball AND where the cue ball settles, not power.</div><span class="t-tgt">Target · CB near center <b>7/10</b></span></div></div>
@@ -2824,7 +2841,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 8, 11:18am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 8, 11:29am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
