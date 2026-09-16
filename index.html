@@ -4,7 +4,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@0,400;0,500;0,600;0,700&display=swap">
+<meta name="color-scheme" content="light dark">
 <style>
+/* Declare that this page themes itself. Without it Chrome/Samsung Internet on Android treat
+   the page as light-only and run their "Auto dark theme" filter over it — a per-element
+   heuristic that re-darkens colours the app has already darkened, and a known cause of text
+   that simply stops painting. That is the best explanation for the vs-SL table losing its
+   player names on an Android phone while the cells carried the right text and the right
+   colour in the DOM, and rendered fine everywhere it could be tested. Declaring the scheme
+   opts the page out of that filter entirely, and also gives form controls and scrollbars the
+   right chrome. Kept in sync with the three theme blocks below: auto, forced dark, light. */
+:root{color-scheme:light dark}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 :root{
   --felt:#1f6e49; --rail:#5a3d29;
   --bg:#1f6e49; --panel:#f5efe0; --panel-2:#eae0cb; --ink:#243021; --ink-soft:#5f6b54;
@@ -253,7 +265,13 @@ table.h2h th.sorted{color:var(--accent-ink)}
 table.h2h th .arrow{font-size:9px}
 
 /* team overview grid */
-.tt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+/* No -webkit-overflow-scrolling:touch here. It is a WebKit-only legacy property (a no-op in
+   every browser shipping today, and removed from iOS Safari in 13) whose only remaining effect
+   is to force the scroller onto its own composited layer — which is where sticky children like
+   the pinned Player column are most likely to lose their paint. It was also the ONLY thing
+   separating this wrapper from .qt-wrap, which uses the same sticky-first-column pattern; the
+   two now match, so the blank-name report has one less place to hide. */
+.tt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.tt{border-collapse:collapse;font-size:13px;min-width:100%}
 table.tt th,table.tt td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
 table.tt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);
@@ -1627,6 +1645,16 @@ function renderTeamForm(out){
 
   // team results (record + recent matches)
   const res=(D.results||{})[String(tid)];
+  // A refresh that comes back with an empty results feed used to fail SILENTLY: the record
+  // card, the match list and the Rotation table all just stopped being appended, and the
+  // window chips quietly became no-ops (windowCutoff has nothing to count). Say so instead —
+  // a missing card is invisible, a missing-data notice is not.
+  if(!res)out.appendChild(el('div','card',
+    '<h2><span class="eyebrow">Match results missing from this build</span></h2>'+
+    '<p class="sub">The team record, the match list and the rotation tracker all read the '+
+    'results feed, and this data build shipped it empty — so all three are hidden and the '+
+    'window filter above has nothing to count. Player form below is unaffected (it reads the '+
+    'game logs). Re-run the weekly refresh to bring them back.</p>'));
   if(res){
     const cut=windowCutoff(teamState.window,tid);
     const ms=res.matches.filter(m=>m.date>=cut).slice().reverse();
@@ -2841,7 +2869,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 15, 9:11am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 16, 11:55am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
