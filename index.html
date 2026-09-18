@@ -378,6 +378,55 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt td.who,.qt th.who{max-width:34vw}
 .qt td.who .nm,.tt td.who .nm{min-width:0}
 .qt td.who .who-nm,.tt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* "Who's owed a game" strip on the Roster view. Chips wrap rather than scroll — three names is
+   the whole point, and a sideways scroll would hide the very thing being surfaced. */
+.card.owed{border-color:var(--accent)}
+.owed-strip{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0 7px}
+.owed-p{display:inline-flex;align-items:center;gap:7px;padding:6px 10px 6px 7px;
+  border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font-size:13px;font-weight:500}
+.owed-p .sl{width:19px;height:19px}.owed-p .sl i{font-size:10px}
+.owed-n{white-space:nowrap}
+.owed-i{font-family:Oswald;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-soft);padding-left:7px;border-left:1px solid var(--line)}
+.owed-p.cold{border-color:var(--bad)}.owed-p.cold .owed-i{color:var(--bad)}
+.owed-p.new{border-color:var(--warn)}.owed-p.new .owed-i{color:var(--warn)}
+.owed-go{display:inline-block;margin-top:2px;padding:0;border:0;background:none;cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--accent-ink);
+  text-decoration:underline;text-underline-offset:3px}
+.owed-go:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+/* Skill-level step chart. Percentage geometry so it rescales with the card; 2px marks and a
+   recessive grid per the chart spec; one hue, since there is one series. */
+.slt{position:relative;margin:10px 0 2px;padding-right:9px}
+.slt-grid{position:absolute;left:0;right:0;height:1px;background:var(--line-2);transform:translateY(-.5px)}
+.slt-ax{position:absolute;left:0;transform:translate(-2px,-50%);font-family:Oswald;font-size:10px;
+  font-weight:600;color:var(--ink-soft);background:var(--panel);padding-right:4px;line-height:1}
+.slt-seg{position:absolute;height:2px;background:var(--accent);border-radius:1px;transform:translateY(-1px)}
+.slt-jump{position:absolute;width:2px;background:var(--accent);opacity:.55;transform:translateX(-1px)}
+.slt-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--accent);
+  transform:translate(-4px,-4px);box-shadow:0 0 0 2px var(--panel)}
+.slt-dot.now{background:var(--accent-ink);width:9px;height:9px;transform:translate(0,-4.5px)}
+.slt-axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);
+  letter-spacing:.03em;margin-top:2px}
+.slt-list{margin-top:10px;border-top:1px solid var(--line-2)}
+.slt-row{display:grid;grid-template-columns:auto 14px 1fr;align-items:center;gap:9px;
+  padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--line-2)}
+.slt-row:last-child{border-bottom:0}
+.slt-d{color:var(--ink-soft);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.slt-mv{font-size:10px;text-align:center}
+.slt-mv.up{color:var(--good)}.slt-mv.dn{color:var(--bad)}
+.slt-t{font-family:Oswald;font-weight:600;letter-spacing:.02em}
+/* Season headline: three figures across the top of the this-session card. Wraps rather than
+   shrinking, so the numbers stay legible at 320px instead of crushing to slivers. */
+.season{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
+.season-fig{flex:1 1 84px;min-width:84px;padding:8px 10px;border:1px solid var(--line-2);
+  border-radius:10px;background:var(--panel-2)}
+.season-fig b{display:block;font-family:Oswald;font-size:22px;font-weight:700;line-height:1.05;
+  color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.season-fig span{display:block;margin-top:2px;font-size:10.5px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.sub.good{color:var(--good)}
+.sub code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:1px 4px}
 .rlist{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .rrow{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:9px;padding:6px 8px;
   border:1px solid var(--line-2);border-radius:9px;font-size:13px}
@@ -1656,6 +1705,51 @@ function logDate(iso,thisYear){
   return `${MON[m-1]} ${d}`+(y===thisYear?'':` '${String(y).slice(2)}`);
 }
 const WINDOWS=[['all','All time'],['m8','Last 8'],['m4','Last 4'],['m2','Last 2']];
+/* Where the session stands: nights left, points banked, what is still winnable, and where the
+   current pace lands. All of it derives from data we actually ship — the team's own results and
+   its remaining schedule.
+
+   The gap to FIRST cannot be derived: the bundle carries no standings. `teams` holds rosters
+   only and `results` covers our two teams, so nobody else's points exist anywhere in it. Rather
+   than invent a number, this reads an OPTIONAL hand-kept `league.standings[fmt]` (same spirit as
+   postseason.json — see data/league.json) and simply omits the chase line until it is there.
+
+   Points a team can win on a night = every matchup point in the pool plus its own bonus. The
+   pool is PMOM (15 in 8-ball, 100 in 9-ball); the bonus is taken from what this team has
+   actually been awarded rather than assumed, since it differs by format (2 vs 10). */
+function seasonPace(res,fmt,tid){
+  const M=PMOM[fmt]; if(!M||!res)return null;
+  const played=res.matches.length;
+  const bonuses=res.matches.map(m=>m.bonus).filter(b=>b!=null);
+  const bonus=bonuses.length?Math.max(...bonuses):0;
+  const perNight=M.total*M.matches+bonus;
+  const today=new Date().toISOString().slice(0,10);
+  const left=(D.schedule||[]).filter(m=>String(m.ourTeamId)===String(tid)&&m.date>=today);
+  const nights=left.length;
+  const pace=played?res.pointsFor/played:0;
+  return {played, nights, perNight, pace,
+    banked:res.pointsFor,
+    available:nights*perNight,
+    projected:Math.round(res.pointsFor+pace*nights),
+    ceiling:res.pointsFor+nights*perNight,
+    lastDate:nights?left[left.length-1].date:null,
+    standings:((D.league||{}).standings||{})[fmt]||null};
+}
+const ordinal=n=>n+(((n%100)-(n%10))===10?'th':({1:'st',2:'nd',3:'rd'})[n%10]||'th');
+/* The chase line, only when standings were supplied. Returns null when we are already top. */
+function chaseFirst(sp,teamName){
+  const rows=sp&&sp.standings; if(!rows||!rows.length)return null;
+  const sorted=rows.slice().sort((a,b)=>b.points-a.points);
+  const lead=sorted[0], mine=sorted.find(r=>r.team===teamName);
+  if(!mine)return {unknown:true, of:sorted.length};
+  const place=sorted.indexOf(mine)+1;
+  if(place===1)return {place, of:sorted.length, gap:0};
+  const gap=lead.points-mine.points;
+  // They are still playing too: catching up means out-earning them, not just matching the gap.
+  const need=gap+1;
+  return {place, leadName:lead.team, leadPts:lead.points, myPts:mine.points, gap, need,
+    reachable:sp.available>=need, perNight:sp.nights?need/sp.nights:null, of:sorted.length};
+}
 const TREND_N=8;   // games that count as "recent" when trending a player against their baseline
 /* The window is counted in MATCHES, not weeks. A league season has bye weeks, holidays and
    session gaps, so "last 8 weeks" quietly returned a different number of matches every time —
@@ -1707,7 +1801,50 @@ function renderTeamForm(out){
     const ms=res.matches.filter(m=>m.date>=cut).slice().reverse();
     const w=ms.filter(m=>m.won).length, c=el('div','card');
     c.appendChild(el('h2',null,`<span class="eyebrow">${esc(res.name)} · ${res.wins}-${res.losses} this session</span>`));
-    c.appendChild(el('p','sub',`${teamState.window==='all'?`Every match this session`:`Last ${ms.length} match${ms.length===1?'':'es'}: `+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    // Where the season actually stands, before the match list. Points for/against moved into
+    // the strip below so the headline is the thing you came for, not a trailing sentence.
+    const sp=seasonPace(res,fmt,tid);
+    if(sp){
+      const ch=chaseFirst(sp,res.name);
+      const box=el('div','season');
+      box.innerHTML=
+        `<div class="season-fig"><b>${sp.banked}</b><span>points banked</span></div>`+
+        `<div class="season-fig"><b>${sp.nights}</b><span>night${sp.nights===1?'':'s'} left</span></div>`+
+        `<div class="season-fig"><b>${sp.played?sp.pace.toFixed(1):'—'}</b><span>per night</span></div>`;
+      c.appendChild(box);
+      const bits=[];
+      if(sp.nights)bits.push(`<b>${sp.available}</b> still on the table`+
+        (sp.lastDate?` through ${niceDate(sp.lastDate).replace(/^\w+, /,'')}`:''));
+      if(sp.played&&sp.nights)bits.push(`this pace finishes near <b>${sp.projected}</b>`);
+      bits.push(`for ${res.pointsFor} · against ${res.pointsAgainst}`);
+      c.appendChild(el('p','sub',bits.join(' · ')+'.'));
+      if(ch&&!ch.unknown&&ch.place===1){
+        c.appendChild(el('p','sub good',`<b>1st of ${ch.of}.</b> Nobody to chase — the gap is yours to defend.`));
+      }else if(ch&&!ch.unknown){
+        c.appendChild(el('p','sub',
+          `<b>${ordinal(ch.place)} of ${ch.of}.</b> `+
+          `${esc(ch.leadName)} lead on ${ch.leadPts} to your ${ch.myPts} — <b>${ch.gap} back</b>. `+
+          (ch.reachable
+            ? `Catching them needs ${ch.need} more than they take over the last ${sp.nights} night${sp.nights===1?'':'s'}`+
+              (ch.perNight?`, about <b>${ch.perNight.toFixed(1)} a night</b> of the ${sp.perNight} available`:'')+`.`
+            : `Only ${sp.available} remain, so first is out of reach on points.`)));
+      }else if(ch&&ch.unknown){
+        // Standings WERE supplied but we are not in them — almost always a name that does not
+        // match teams{}. Saying "no standings" here would send you looking at the wrong thing.
+        c.appendChild(el('p','sub warn-ink',
+          `Standings list ${ch.of} team${ch.of===1?'':'s'} but not <b>${esc(res.name)}</b>, so the gap to first can't be shown. `+
+          `The names in league.json must match this team's name exactly.`));
+      }else{
+        // No standings shipped. Say so plainly rather than leaving a hole where the chase goes.
+        c.appendChild(el('p','sub muted',
+          `Standings aren't in this data build, so the gap to first can't be shown. `+
+          `Add a <code>standings</code> block to data/league.json and it appears here.`));
+      }
+    }else{
+      c.appendChild(el('p','sub',`Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    }
+    c.appendChild(el('p','sub',teamState.window==='all'?'Every match this session.'
+      :`Last ${ms.length} match${ms.length===1?'':'es'}: ${w}-${ms.length-w}.`));
     const list=el('div','rlist');
     (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
       const row=el('div','rrow'+(m.line&&m.line.length?' open':''));
@@ -1862,6 +1999,46 @@ function rotationInfo(fmt,tid,win){
   });
   return out;
 }
+/* The Roster view's "who's owed a game" strip — the headline of the Rotation table, surfaced on
+   the tab's default view. Returns null when there is nothing honest to say: no results feed, no
+   roster, or no match nights on record. Reads rotationInfo's default window on purpose (see the
+   caller), and never reports a player with no games at all as idle — they are new, not benched,
+   which is the distinction the Rotation table already makes. */
+function rosterOwedStrip(fmt){
+  const tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
+  if(tid==null||!(D.results||{})[String(tid)])return null;
+  const tm=activeRosterForFormat(fmt); if(!tm.length)return null;
+  const info=rotationInfo(fmt,tid); if(!info.dates.length)return null;
+
+  const rows=tm.map(p=>Object.assign({p},info.by[String(p.mid)]||{}))
+    .filter(r=>r.marks)
+    .sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
+  const sitting=rows.filter(r=>r.everPlayed&&r.idle>0).slice(0,3);
+  const fresh=rows.filter(r=>!r.everPlayed);
+
+  const card=el('div','card owed');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Who\'s owed a game</span>'));
+  if(!sitting.length&&!fresh.length){
+    card.appendChild(el('p','sub',`Everyone on the ${fmt}-ball roster played in the last ${info.dates.length} match${info.dates.length===1?'':'es'}.`));
+  }else{
+    const strip=el('div','owed-strip');
+    strip.innerHTML=sitting.map(r=>
+      `<span class="owed-p${r.idle>=3?' cold':''}">${sl(r.p.sl)}`+
+      `<span class="owed-n">${esc(shortName(r.p.name))}</span>`+
+      `<span class="owed-i">${r.idle} wk${r.idle===1?'':'s'}</span></span>`).join('')+
+      fresh.map(r=>
+      `<span class="owed-p new">${sl(r.p.sl)}`+
+      `<span class="owed-n">${esc(shortName(r.p.name))}</span>`+
+      `<span class="owed-i">new</span></span>`).join('');
+    card.appendChild(strip);
+    card.appendChild(el('p','sub muted',
+      `Longest sat out across the last ${info.dates.length} ${fmt}-ball match${info.dates.length===1?'':'es'}.`));
+  }
+  const go=el('button','owed-go','See the full rotation →');
+  go.onclick=()=>{teamState.view='form';renderTeamOverview();};
+  card.appendChild(go);
+  return card;
+}
 function renderRotation(fmt,tid,win){
   const res=(D.results||{})[String(tid)];
   const tm=activeRosterForFormat(fmt);
@@ -1916,6 +2093,14 @@ function renderTeamOverview(){
   teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
   const fmt=teamState.fmt;
   const tm=activeRosterForFormat(fmt);
+
+  // Who's owed a game, on the view the Team tab actually opens on. The full Rotation table
+  // lives two taps away under Form & results and kept reading as missing; this puts the answer
+  // it exists to give — who has been sitting — in front of you without a tap, and links through
+  // for the week-by-week grid. Uses rotationInfo's DEFAULT window, the same one the lineup
+  // optimiser's fair-rotation nudge uses, so the strip and the nudge can never disagree.
+  const owed=rosterOwedStrip(fmt);
+  if(owed)out.appendChild(owed);
 
   const allTime=teamState.scope==='all';
   const card=el('div','card');
@@ -2054,9 +2239,88 @@ function makePlayerView(outSel,opts){
     chips.appendChild(row);c.appendChild(chips);
     c.appendChild(el('div',null,vsGrid(cells)));
     out.appendChild(c);
+    const tl=slTimeline(pr,st.fmt); if(tl)out.appendChild(tl);
     drawH2H(out,pr,st.fmt,st.ownSL);
   }
   return {render};
+}
+/* Skill level over time — a step chart, because an SL is not a trend that glides between
+   values: it holds until the league moves it, then jumps. `trajectory` ships every change point
+   ({date, sl}) and, until now, nothing in the app read it.
+
+   One series, so sequential/single-hue rather than categorical, and no legend (the title names
+   it). The accent token's contrast against both card surfaces was checked, not eyeballed:
+   #d8b05a on the dark panel and #9a7414 on the light one each clear 3:1.
+
+   Built from positioned divs rather than SVG: the app has no SVG anywhere, and percentage
+   geometry rescales with the card for free — no measuring pass, no stroke-scaling problem.
+   The change list underneath is the table view, carrying the exact dates the plot cannot
+   label without collapsing on a phone. */
+function slTimeline(pr,fmt){
+  const tr=(pr.trajectory||[]).filter(p=>p&&p.date&&p.sl!=null);
+  if(!tr.length)return null;
+  const pts=tr.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const today=new Date().toISOString().slice(0,10);
+  const end=(pr.lastSeen&&pr.lastSeen>pts[pts.length-1].date)?pr.lastSeen:today;
+  const ms=d=>Date.parse(d+'T00:00:00Z');
+  const t0=ms(pts[0].date), t1=Math.max(ms(end),t0+864e5);
+  const x=d=>((ms(d)-t0)/(t1-t0))*100;
+  const levels=[...new Set(pts.map(p=>p.sl))].sort((a,b)=>a-b);
+  // 0 is the league's "not rated yet" marker, not a skill level — 1,030 profiles carry one,
+  // usually as their very first point. Calling it SL0 in the prose or on the axis would invent
+  // a rank that does not exist, so it is worded the way the rest of the app words it.
+  const slName=n=>n?('SL'+n):'unrated';
+  const rated=levels.filter(l=>l>0);
+  // One row per skill level held. A player who never moved still gets a (flat) line, which is
+  // itself the answer — so the card renders rather than vanishing.
+  const rowH=levels.length>1?30:34, H=levels.length*rowH;
+  const y=sl=>H-(levels.indexOf(sl)+0.5)*rowH;       // px from the top, centre of its row
+
+  const card=el('div','card');
+  card.appendChild(el('h2',null,`<span class="eyebrow">Skill level over time — ${fmt}-ball</span>`));
+  const n=pts.length-1;
+  const held=levels.length===1
+    ? `Has been ${slName(levels[0])} for the whole record.`
+    : `${n} change${n===1?'':'s'}`+
+      (rated.length>1?` between ${slName(rated[0])} and ${slName(rated[rated.length-1])}`:'')+
+      ` since ${fmtDate(pts[0].date)}. Currently <b>${slName(pts[pts.length-1].sl)}</b>.`;
+  card.appendChild(el('p','sub',held));
+
+  const plot=el('div','slt');plot.style.height=H+'px';
+  let html='';
+  levels.forEach(l=>{                                  // recessive gridline + axis label per SL
+    html+=`<i class="slt-grid" style="top:${y(l)}px"></i>`+
+          `<b class="slt-ax" style="top:${y(l)}px" title="${slName(l)}">${l||'–'}</b>`;
+  });
+  pts.forEach((p,i)=>{                                 // the step: hold, then jump
+    const x1=x(p.date), x2=i+1<pts.length?x(pts[i+1].date):100;
+    html+=`<i class="slt-seg" style="left:${x1}%;width:${Math.max(x2-x1,0)}%;top:${y(p.sl)}px"></i>`;
+    if(i+1<pts.length){
+      const nxt=pts[i+1], a=y(p.sl), b=y(nxt.sl);
+      html+=`<i class="slt-jump" style="left:${x2}%;top:${Math.min(a,b)}px;height:${Math.abs(a-b)}px"></i>`;
+      html+=`<i class="slt-dot" style="left:${x2}%;top:${b}px" title="${esc(fmtDate(nxt.date))} — ${slName(p.sl)} to ${slName(nxt.sl)}"></i>`;
+    }
+  });
+  // Anchored on `right` rather than left:100% — a dot centred on the right edge hangs half its
+  // width outside the plot box and widens the card's scrollWidth.
+  html+=`<i class="slt-dot now" style="right:0;top:${y(pts[pts.length-1].sl)}px" title="Now — ${slName(pts[pts.length-1].sl)}"></i>`;
+  plot.innerHTML=html;
+  card.appendChild(plot);
+  card.appendChild(el('div','slt-axis',
+    `<span>${fmtDate(pts[0].date)}</span><span>${end===today?'now':fmtDate(end)}</span>`));
+
+  if(pts.length>1){                                    // the table view: exact dates, newest first
+    const moves=pts.slice(1).map((p,i)=>({date:p.date, from:pts[i].sl, to:p.sl})).reverse();
+    const list=el('div','slt-list');
+    list.innerHTML=moves.map(m=>{
+      const up=m.to>m.from;
+      return `<div class="slt-row"><span class="slt-d">${fmtDate(m.date)}</span>`+
+        `<span class="slt-mv ${up?'up':'dn'}">${up?'▲':'▼'}</span>`+
+        `<span class="slt-t">${slName(m.from)} → <b>${slName(m.to)}</b></span></div>`;
+    }).join('');
+    card.appendChild(list);
+  }
+  return card;
 }
 function drawH2H(out,pr,fmt,ownSL){
   // The "As SL5" chips filter the vs-SL grid above, so head-to-head has to follow or the two
@@ -2952,7 +3216,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 9:40pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 10:52pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){

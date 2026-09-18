@@ -6,7 +6,19 @@
     "decide what the app checks, but they never invent a match or a win.",
     "",
     "Every rule below carries the bylaw text it came from so it can be re-checked when the",
-    "league reissues the bylaws. If a rule has no cite, it came from Casey verbally."
+    "league reissues the bylaws. If a rule has no cite, it came from Casey verbally.",
+    "",
+    "OPTIONAL: `standings` — current division points, hand-copied from the APA app's standings",
+    "screen. The bundle carries no standings of its own (teams{} is rosters only, results{} is",
+    "just our teams), so without this the Team > Form & results card cannot show the gap to",
+    "first. Keyed by format; each row is {team, points}. Use the team name EXACTLY as it appears",
+    "in data.json teams{} so the app can find us. Results are still never invented from this —",
+    "it only positions us against the others. Delete the block and the app quietly drops the",
+    "chase line rather than guessing.",
+    "",
+    "  \"standings\": { \"8\": [ {\"team\":\"Round Ball Flat Table\",\"points\":31},",
+    "                        {\"team\":\"8-Ball Scratchers\",\"points\":14} ],",
+    "                 \"9\": [ ... ] }"
   ],
   "bylaws": {
     "source": "Hudson County APA Bylaws, 2025",
