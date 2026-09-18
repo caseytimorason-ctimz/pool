@@ -378,6 +378,27 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt td.who,.qt th.who{max-width:34vw}
 .qt td.who .nm,.tt td.who .nm{min-width:0}
 .qt td.who .who-nm,.tt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Skill-level step chart. Percentage geometry so it rescales with the card; 2px marks and a
+   recessive grid per the chart spec; one hue, since there is one series. */
+.slt{position:relative;margin:10px 0 2px;padding-right:9px}
+.slt-grid{position:absolute;left:0;right:0;height:1px;background:var(--line-2);transform:translateY(-.5px)}
+.slt-ax{position:absolute;left:0;transform:translate(-2px,-50%);font-family:Oswald;font-size:10px;
+  font-weight:600;color:var(--ink-soft);background:var(--panel);padding-right:4px;line-height:1}
+.slt-seg{position:absolute;height:2px;background:var(--accent);border-radius:1px;transform:translateY(-1px)}
+.slt-jump{position:absolute;width:2px;background:var(--accent);opacity:.55;transform:translateX(-1px)}
+.slt-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--accent);
+  transform:translate(-4px,-4px);box-shadow:0 0 0 2px var(--panel)}
+.slt-dot.now{background:var(--accent-ink);width:9px;height:9px;transform:translate(0,-4.5px)}
+.slt-axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);
+  letter-spacing:.03em;margin-top:2px}
+.slt-list{margin-top:10px;border-top:1px solid var(--line-2)}
+.slt-row{display:grid;grid-template-columns:auto 14px 1fr;align-items:center;gap:9px;
+  padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--line-2)}
+.slt-row:last-child{border-bottom:0}
+.slt-d{color:var(--ink-soft);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.slt-mv{font-size:10px;text-align:center}
+.slt-mv.up{color:var(--good)}.slt-mv.dn{color:var(--bad)}
+.slt-t{font-family:Oswald;font-weight:600;letter-spacing:.02em}
 /* Season headline: three figures across the top of the this-session card. Wraps rather than
    shrinking, so the numbers stay legible at 320px instead of crushing to slivers. */
 .season{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
@@ -2154,9 +2175,88 @@ function makePlayerView(outSel,opts){
     chips.appendChild(row);c.appendChild(chips);
     c.appendChild(el('div',null,vsGrid(cells)));
     out.appendChild(c);
+    const tl=slTimeline(pr,st.fmt); if(tl)out.appendChild(tl);
     drawH2H(out,pr,st.fmt,st.ownSL);
   }
   return {render};
+}
+/* Skill level over time — a step chart, because an SL is not a trend that glides between
+   values: it holds until the league moves it, then jumps. `trajectory` ships every change point
+   ({date, sl}) and, until now, nothing in the app read it.
+
+   One series, so sequential/single-hue rather than categorical, and no legend (the title names
+   it). The accent token's contrast against both card surfaces was checked, not eyeballed:
+   #d8b05a on the dark panel and #9a7414 on the light one each clear 3:1.
+
+   Built from positioned divs rather than SVG: the app has no SVG anywhere, and percentage
+   geometry rescales with the card for free — no measuring pass, no stroke-scaling problem.
+   The change list underneath is the table view, carrying the exact dates the plot cannot
+   label without collapsing on a phone. */
+function slTimeline(pr,fmt){
+  const tr=(pr.trajectory||[]).filter(p=>p&&p.date&&p.sl!=null);
+  if(!tr.length)return null;
+  const pts=tr.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const today=new Date().toISOString().slice(0,10);
+  const end=(pr.lastSeen&&pr.lastSeen>pts[pts.length-1].date)?pr.lastSeen:today;
+  const ms=d=>Date.parse(d+'T00:00:00Z');
+  const t0=ms(pts[0].date), t1=Math.max(ms(end),t0+864e5);
+  const x=d=>((ms(d)-t0)/(t1-t0))*100;
+  const levels=[...new Set(pts.map(p=>p.sl))].sort((a,b)=>a-b);
+  // 0 is the league's "not rated yet" marker, not a skill level — 1,030 profiles carry one,
+  // usually as their very first point. Calling it SL0 in the prose or on the axis would invent
+  // a rank that does not exist, so it is worded the way the rest of the app words it.
+  const slName=n=>n?('SL'+n):'unrated';
+  const rated=levels.filter(l=>l>0);
+  // One row per skill level held. A player who never moved still gets a (flat) line, which is
+  // itself the answer — so the card renders rather than vanishing.
+  const rowH=levels.length>1?30:34, H=levels.length*rowH;
+  const y=sl=>H-(levels.indexOf(sl)+0.5)*rowH;       // px from the top, centre of its row
+
+  const card=el('div','card');
+  card.appendChild(el('h2',null,`<span class="eyebrow">Skill level over time — ${fmt}-ball</span>`));
+  const n=pts.length-1;
+  const held=levels.length===1
+    ? `Has been ${slName(levels[0])} for the whole record.`
+    : `${n} change${n===1?'':'s'}`+
+      (rated.length>1?` between ${slName(rated[0])} and ${slName(rated[rated.length-1])}`:'')+
+      ` since ${fmtDate(pts[0].date)}. Currently <b>${slName(pts[pts.length-1].sl)}</b>.`;
+  card.appendChild(el('p','sub',held));
+
+  const plot=el('div','slt');plot.style.height=H+'px';
+  let html='';
+  levels.forEach(l=>{                                  // recessive gridline + axis label per SL
+    html+=`<i class="slt-grid" style="top:${y(l)}px"></i>`+
+          `<b class="slt-ax" style="top:${y(l)}px" title="${slName(l)}">${l||'–'}</b>`;
+  });
+  pts.forEach((p,i)=>{                                 // the step: hold, then jump
+    const x1=x(p.date), x2=i+1<pts.length?x(pts[i+1].date):100;
+    html+=`<i class="slt-seg" style="left:${x1}%;width:${Math.max(x2-x1,0)}%;top:${y(p.sl)}px"></i>`;
+    if(i+1<pts.length){
+      const nxt=pts[i+1], a=y(p.sl), b=y(nxt.sl);
+      html+=`<i class="slt-jump" style="left:${x2}%;top:${Math.min(a,b)}px;height:${Math.abs(a-b)}px"></i>`;
+      html+=`<i class="slt-dot" style="left:${x2}%;top:${b}px" title="${esc(fmtDate(nxt.date))} — ${slName(p.sl)} to ${slName(nxt.sl)}"></i>`;
+    }
+  });
+  // Anchored on `right` rather than left:100% — a dot centred on the right edge hangs half its
+  // width outside the plot box and widens the card's scrollWidth.
+  html+=`<i class="slt-dot now" style="right:0;top:${y(pts[pts.length-1].sl)}px" title="Now — ${slName(pts[pts.length-1].sl)}"></i>`;
+  plot.innerHTML=html;
+  card.appendChild(plot);
+  card.appendChild(el('div','slt-axis',
+    `<span>${fmtDate(pts[0].date)}</span><span>${end===today?'now':fmtDate(end)}</span>`));
+
+  if(pts.length>1){                                    // the table view: exact dates, newest first
+    const moves=pts.slice(1).map((p,i)=>({date:p.date, from:pts[i].sl, to:p.sl})).reverse();
+    const list=el('div','slt-list');
+    list.innerHTML=moves.map(m=>{
+      const up=m.to>m.from;
+      return `<div class="slt-row"><span class="slt-d">${fmtDate(m.date)}</span>`+
+        `<span class="slt-mv ${up?'up':'dn'}">${up?'▲':'▼'}</span>`+
+        `<span class="slt-t">${slName(m.from)} → <b>${slName(m.to)}</b></span></div>`;
+    }).join('');
+    card.appendChild(list);
+  }
+  return card;
 }
 function drawH2H(out,pr,fmt,ownSL){
   // The "As SL5" chips filter the vs-SL grid above, so head-to-head has to follow or the two
@@ -3052,7 +3152,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 10:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 10:30pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
