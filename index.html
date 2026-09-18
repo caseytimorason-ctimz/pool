@@ -1375,7 +1375,18 @@ function renderMatch(m){
     b.onclick=()=>{scoutState.by=v;renderMatch(m);};byBar.appendChild(b);});
   head.appendChild(byBar);
   out.appendChild(head);
-  if(!theirs.length){out.appendChild(el('div','card','<p class="sub">No roster posted for this opponent yet.</p>'));return;}
+  // Two very different reasons this can be empty, and the old copy blamed the league for both.
+  // The opponent genuinely having no roster yet is one; the other is our own bundle shipping
+  // without their team — which is what the 09-15 refresh did to three 9-ball opponents, quietly
+  // killing the scout for five scheduled nights. Name which one it is, because only the second
+  // is ours to fix, and a message that points at the league sends you looking in the wrong place.
+  if(!theirs.length){
+    const known=!!(D.teams||{})[String(m.oppTeamId)];
+    out.appendChild(el('div','card',known
+      ? `<p class="sub">${esc(m.oppTeam)} is in this data build but their roster is empty — the league has not posted it yet.</p>`
+      : `<p class="sub"><b>${esc(m.oppTeam)} is missing from this data build.</b> They are on the schedule, but the bundle shipped without their team, so there is nothing to scout. This is our data, not the league's — re-run the weekly refresh to bring them back.</p>`));
+    return;
+  }
   const c=el('div','card');
   if(byUs){
     // The mirror: for each of OUR players, which of theirs we'd most want across the table.
@@ -2869,7 +2880,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 16, 8:58am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 9:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
