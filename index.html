@@ -143,6 +143,31 @@ table.qt td.cell{font-family:Oswald;font-weight:600;background:none;border:0;bor
 table.qt td.cell .n{display:block;font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
 table.qt th .of{display:block;font-family:Barlow;font-weight:400;font-size:9.5px;letter-spacing:0;text-transform:none;opacity:.75}
 table.qt .up,table.qt .dn{font-family:Oswald;font-weight:600;font-size:12px;white-space:nowrap}
+/* Form table: tap a player to expand the games behind their row (date, result, score, opponent).
+   The log row spans the whole table and is NOT sticky — it scrolls with the columns, because a
+   sticky game log would sit on top of the numbers it is explaining. */
+table.qt tr.pg-open{cursor:pointer}
+table.qt tr.pg-open td.who .caret{flex:0 0 auto;margin-left:auto;width:0;height:0;
+  border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink-soft);
+  transition:transform .12s ease}
+table.qt tr.pg-open.on td.who .caret{transform:rotate(180deg)}
+table.qt tr.pg-open.on td{background:var(--panel-2)}
+table.qt tr.pg-open.on td.who{background:var(--panel-2)}
+table.qt tr.pg-row>td{padding:0;white-space:normal;text-align:left;background:var(--panel-2)}
+/* sticky so the log stays put while the columns above it scroll sideways; JS sets the width to
+   the scroller's visible width so the whole log is readable without scrolling. */
+.pg-inner{position:sticky;left:0}
+.pg-head{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-soft);padding:8px 12px 5px}
+.pg{display:grid;grid-template-columns:auto 14px auto 1fr;align-items:center;gap:9px;
+  padding:5px 12px;font-size:12.5px;border-top:1px solid var(--line-2)}
+.pg-d{color:var(--ink-soft);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pg-r{font-family:Oswald;font-weight:700;font-size:11px}
+.pg.w .pg-r{color:var(--good)}.pg.l .pg-r{color:var(--bad)}
+.pg-s{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pg-s .dash{color:var(--ink-soft);margin:0 2px}
+.pg-o{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--ink)}
+table.qt tr.pg-row>td>.pg:last-child{padding-bottom:9px}
 .log .sc{font-family:Oswald;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent-ink);margin-left:4px}
 .icebreak{margin:-2px 0 4px;padding:9px 11px;border:1px dashed var(--line);border-left:3px solid var(--accent);
   border-radius:9px;background:var(--accent-wash);font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
@@ -1613,11 +1638,22 @@ function activeRosterForFormat(fmt){
 // A player's full game log (date, oppSL, won, pts), flattened from the head-to-head records,
 // newest first. This is what lets the app re-compute records over ANY time window client-side
 // without a heavier per-game feed.
+/* Every game on record for a player, newest first. Carries the whole row the log stores —
+   who they played, both skill levels and BOTH scores — not just the win flag, so the Form
+   table can expand a player into their actual match list without a second pass over P. */
 function playerGames(mid,fmt){
   const p=P[`${mid}:${fmt}`]; if(!p)return [];
   const out=[];
-  (p.headToHead||[]).forEach(h=>(h.games||[]).forEach(g=>out.push({date:g.date,oppSL:g.oppSL,won:g.won,pts:g.pts})));
+  (p.headToHead||[]).forEach(h=>(h.games||[]).forEach(g=>out.push({
+    date:g.date, oppSL:g.oppSL, won:g.won, pts:g.pts,
+    mySL:g.mySL, oppPts:g.oppPts, oppName:h.oppName, oppMid:h.oppMid})));
   return out.sort((a,b)=>b.date.localeCompare(a.date));
+}
+// "Sep 9" for this year, "Sep 9 '25" for anything older — a career log spans seasons, and a
+// bare "Sep 9" on a 2019 game reads as last week.
+function logDate(iso,thisYear){
+  const [y,m,d]=String(iso).split('-').map(Number);
+  return `${MON[m-1]} ${d}`+(y===thisYear?'':` '${String(y).slice(2)}`);
 }
 const WINDOWS=[['all','All time'],['m8','Last 8'],['m4','Last 4'],['m2','Last 2']];
 const TREND_N=8;   // games that count as "recent" when trending a player against their baseline
@@ -1740,10 +1776,12 @@ function renderTeamForm(out){
   const PM=PMOM[fmt];
   t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Avg pts<span class="of">of ${PM.total}</span></th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
+  const THIS_YEAR=new Date().getFullYear();
+  const LOG_CAP=30;   // an all-time window can be hundreds of games; show the recent ones
   rows.forEach(({p,n,w,avg,arrow,gs})=>{
     const tr=el('tr');
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
-    tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
+    tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span>${n?'<i class="caret"></i>':''}</td>`+
       `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
       `<td class="cell ${avg!=null?cls(avg/PM.total):''}">${avg!=null
         ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
@@ -1751,8 +1789,42 @@ function renderTeamForm(out){
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
       `<td>${arrow||'<span class="muted">—</span>'}</td>`;
     tb.appendChild(tr);
+    // Tap a player to see the games behind their numbers: date, result, score, who they played.
+    // Deliberately the SAME games the row is computed from (the window filter already applied),
+    // so the log always reconciles to the Win% and Avg pts sitting next to it.
+    if(!n)return;
+    const det=el('tr','pg-row hide');
+    const cell=el('td'); cell.colSpan=5;
+    const inner=el('div','pg-inner');
+    const shown=gs.slice(0,LOG_CAP);
+    inner.innerHTML=
+      `<div class="pg-head">${n} game${n===1?'':'s'} ${teamState.window==='all'?'on record':'in this window'}`+
+      (n>shown.length?` · showing the ${shown.length} most recent`:'')+`</div>`+
+      shown.map(g=>{
+        const score=(g.pts==null&&g.oppPts==null)?'<span class="muted">—</span>'
+          : `${g.pts==null?'–':g.pts}<span class="dash">–</span>${g.oppPts==null?'–':g.oppPts}`;
+        return `<div class="pg ${g.won?'w':'l'}">`+
+          `<span class="pg-d">${logDate(g.date,THIS_YEAR)}</span>`+
+          `<span class="pg-r">${g.won?'W':'L'}</span>`+
+          `<span class="pg-s">${score}</span>`+
+          `<span class="pg-o">${esc(g.oppName||'Unknown')}${g.oppSL?` <span class="muted">SL${g.oppSL}</span>`:''}</span>`+
+        `</div>`;
+      }).join('');
+    cell.appendChild(inner); det.appendChild(cell); tb.appendChild(det);
+    tr.classList.add('pg-open');
+    tr.onclick=()=>{det.classList.toggle('hide');tr.classList.toggle('on');};
   });
   t.appendChild(tb);wrap.appendChild(t);fc.appendChild(wrap);out.appendChild(fc);
+  // The log sits inside the table's horizontal scroller, so left alone it inherits the TABLE's
+  // width — at phone width that pushed the opponent names ~100px off-screen and made you scroll
+  // sideways to read a log you had just opened. Pin it to the left edge of the visible strip and
+  // size it to what is actually on screen. ResizeObserver rather than a window listener: this
+  // function re-renders on every filter chip, and window listeners would pile up one per render.
+  const sizeLogs=()=>{const w=wrap.clientWidth;
+    if(w)fc.querySelectorAll('.pg-inner').forEach(n=>{n.style.width=w+'px';});};
+  if(window.ResizeObserver)new ResizeObserver(sizeLogs).observe(wrap);
+  requestAnimationFrame(()=>{sizeLogs();requestAnimationFrame(sizeLogs);});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sizeLogs).catch(()=>{});
 
   // Who's actually been getting games — the rotation, not the form. Follows the window filter.
   const rot=renderRotation(fmt,tid,teamState.window);
@@ -2880,7 +2952,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 9:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 9:40pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
