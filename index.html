@@ -378,6 +378,22 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt td.who,.qt th.who{max-width:34vw}
 .qt td.who .nm,.tt td.who .nm{min-width:0}
 .qt td.who .who-nm,.tt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* "Who's owed a game" strip on the Roster view. Chips wrap rather than scroll — three names is
+   the whole point, and a sideways scroll would hide the very thing being surfaced. */
+.card.owed{border-color:var(--accent)}
+.owed-strip{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0 7px}
+.owed-p{display:inline-flex;align-items:center;gap:7px;padding:6px 10px 6px 7px;
+  border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font-size:13px;font-weight:500}
+.owed-p .sl{width:19px;height:19px}.owed-p .sl i{font-size:10px}
+.owed-n{white-space:nowrap}
+.owed-i{font-family:Oswald;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-soft);padding-left:7px;border-left:1px solid var(--line)}
+.owed-p.cold{border-color:var(--bad)}.owed-p.cold .owed-i{color:var(--bad)}
+.owed-p.new{border-color:var(--warn)}.owed-p.new .owed-i{color:var(--warn)}
+.owed-go{display:inline-block;margin-top:2px;padding:0;border:0;background:none;cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--accent-ink);
+  text-decoration:underline;text-underline-offset:3px}
+.owed-go:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 /* Skill-level step chart. Percentage geometry so it rescales with the card; 2px marks and a
    recessive grid per the chart spec; one hue, since there is one series. */
 .slt{position:relative;margin:10px 0 2px;padding-right:9px}
@@ -1983,6 +1999,46 @@ function rotationInfo(fmt,tid,win){
   });
   return out;
 }
+/* The Roster view's "who's owed a game" strip — the headline of the Rotation table, surfaced on
+   the tab's default view. Returns null when there is nothing honest to say: no results feed, no
+   roster, or no match nights on record. Reads rotationInfo's default window on purpose (see the
+   caller), and never reports a player with no games at all as idle — they are new, not benched,
+   which is the distinction the Rotation table already makes. */
+function rosterOwedStrip(fmt){
+  const tid=(D.myActiveTeams||[]).find(t=>(D.teams[t]||{}).fmt===fmt);
+  if(tid==null||!(D.results||{})[String(tid)])return null;
+  const tm=activeRosterForFormat(fmt); if(!tm.length)return null;
+  const info=rotationInfo(fmt,tid); if(!info.dates.length)return null;
+
+  const rows=tm.map(p=>Object.assign({p},info.by[String(p.mid)]||{}))
+    .filter(r=>r.marks)
+    .sort((a,b)=>a.n-b.n||b.idle-a.idle||a.p.name.localeCompare(b.p.name));
+  const sitting=rows.filter(r=>r.everPlayed&&r.idle>0).slice(0,3);
+  const fresh=rows.filter(r=>!r.everPlayed);
+
+  const card=el('div','card owed');
+  card.appendChild(el('h2',null,'<span class="eyebrow">Who\'s owed a game</span>'));
+  if(!sitting.length&&!fresh.length){
+    card.appendChild(el('p','sub',`Everyone on the ${fmt}-ball roster played in the last ${info.dates.length} match${info.dates.length===1?'':'es'}.`));
+  }else{
+    const strip=el('div','owed-strip');
+    strip.innerHTML=sitting.map(r=>
+      `<span class="owed-p${r.idle>=3?' cold':''}">${sl(r.p.sl)}`+
+      `<span class="owed-n">${esc(shortName(r.p.name))}</span>`+
+      `<span class="owed-i">${r.idle} wk${r.idle===1?'':'s'}</span></span>`).join('')+
+      fresh.map(r=>
+      `<span class="owed-p new">${sl(r.p.sl)}`+
+      `<span class="owed-n">${esc(shortName(r.p.name))}</span>`+
+      `<span class="owed-i">new</span></span>`).join('');
+    card.appendChild(strip);
+    card.appendChild(el('p','sub muted',
+      `Longest sat out across the last ${info.dates.length} ${fmt}-ball match${info.dates.length===1?'':'es'}.`));
+  }
+  const go=el('button','owed-go','See the full rotation →');
+  go.onclick=()=>{teamState.view='form';renderTeamOverview();};
+  card.appendChild(go);
+  return card;
+}
 function renderRotation(fmt,tid,win){
   const res=(D.results||{})[String(tid)];
   const tm=activeRosterForFormat(fmt);
@@ -2037,6 +2093,14 @@ function renderTeamOverview(){
   teamState.fmt=fmts.includes(teamState.fmt)?teamState.fmt:fmts[0];
   const fmt=teamState.fmt;
   const tm=activeRosterForFormat(fmt);
+
+  // Who's owed a game, on the view the Team tab actually opens on. The full Rotation table
+  // lives two taps away under Form & results and kept reading as missing; this puts the answer
+  // it exists to give — who has been sitting — in front of you without a tap, and links through
+  // for the week-by-week grid. Uses rotationInfo's DEFAULT window, the same one the lineup
+  // optimiser's fair-rotation nudge uses, so the strip and the nudge can never disagree.
+  const owed=rosterOwedStrip(fmt);
+  if(owed)out.appendChild(owed);
 
   const allTime=teamState.scope==='all';
   const card=el('div','card');
@@ -3152,7 +3216,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 10:30pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 10:52pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
