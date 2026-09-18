@@ -378,6 +378,18 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .qt td.who,.qt th.who{max-width:34vw}
 .qt td.who .nm,.tt td.who .nm{min-width:0}
 .qt td.who .who-nm,.tt td.who .who-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Season headline: three figures across the top of the this-session card. Wraps rather than
+   shrinking, so the numbers stay legible at 320px instead of crushing to slivers. */
+.season{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
+.season-fig{flex:1 1 84px;min-width:84px;padding:8px 10px;border:1px solid var(--line-2);
+  border-radius:10px;background:var(--panel-2)}
+.season-fig b{display:block;font-family:Oswald;font-size:22px;font-weight:700;line-height:1.05;
+  color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.season-fig span{display:block;margin-top:2px;font-size:10.5px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.sub.good{color:var(--good)}
+.sub code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:1px 4px}
 .rlist{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .rrow{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:9px;padding:6px 8px;
   border:1px solid var(--line-2);border-radius:9px;font-size:13px}
@@ -1656,6 +1668,51 @@ function logDate(iso,thisYear){
   return `${MON[m-1]} ${d}`+(y===thisYear?'':` '${String(y).slice(2)}`);
 }
 const WINDOWS=[['all','All time'],['m8','Last 8'],['m4','Last 4'],['m2','Last 2']];
+/* Where the session stands: nights left, points banked, what is still winnable, and where the
+   current pace lands. All of it derives from data we actually ship — the team's own results and
+   its remaining schedule.
+
+   The gap to FIRST cannot be derived: the bundle carries no standings. `teams` holds rosters
+   only and `results` covers our two teams, so nobody else's points exist anywhere in it. Rather
+   than invent a number, this reads an OPTIONAL hand-kept `league.standings[fmt]` (same spirit as
+   postseason.json — see data/league.json) and simply omits the chase line until it is there.
+
+   Points a team can win on a night = every matchup point in the pool plus its own bonus. The
+   pool is PMOM (15 in 8-ball, 100 in 9-ball); the bonus is taken from what this team has
+   actually been awarded rather than assumed, since it differs by format (2 vs 10). */
+function seasonPace(res,fmt,tid){
+  const M=PMOM[fmt]; if(!M||!res)return null;
+  const played=res.matches.length;
+  const bonuses=res.matches.map(m=>m.bonus).filter(b=>b!=null);
+  const bonus=bonuses.length?Math.max(...bonuses):0;
+  const perNight=M.total*M.matches+bonus;
+  const today=new Date().toISOString().slice(0,10);
+  const left=(D.schedule||[]).filter(m=>String(m.ourTeamId)===String(tid)&&m.date>=today);
+  const nights=left.length;
+  const pace=played?res.pointsFor/played:0;
+  return {played, nights, perNight, pace,
+    banked:res.pointsFor,
+    available:nights*perNight,
+    projected:Math.round(res.pointsFor+pace*nights),
+    ceiling:res.pointsFor+nights*perNight,
+    lastDate:nights?left[left.length-1].date:null,
+    standings:((D.league||{}).standings||{})[fmt]||null};
+}
+const ordinal=n=>n+(((n%100)-(n%10))===10?'th':({1:'st',2:'nd',3:'rd'})[n%10]||'th');
+/* The chase line, only when standings were supplied. Returns null when we are already top. */
+function chaseFirst(sp,teamName){
+  const rows=sp&&sp.standings; if(!rows||!rows.length)return null;
+  const sorted=rows.slice().sort((a,b)=>b.points-a.points);
+  const lead=sorted[0], mine=sorted.find(r=>r.team===teamName);
+  if(!mine)return {unknown:true, of:sorted.length};
+  const place=sorted.indexOf(mine)+1;
+  if(place===1)return {place, of:sorted.length, gap:0};
+  const gap=lead.points-mine.points;
+  // They are still playing too: catching up means out-earning them, not just matching the gap.
+  const need=gap+1;
+  return {place, leadName:lead.team, leadPts:lead.points, myPts:mine.points, gap, need,
+    reachable:sp.available>=need, perNight:sp.nights?need/sp.nights:null, of:sorted.length};
+}
 const TREND_N=8;   // games that count as "recent" when trending a player against their baseline
 /* The window is counted in MATCHES, not weeks. A league season has bye weeks, holidays and
    session gaps, so "last 8 weeks" quietly returned a different number of matches every time —
@@ -1707,7 +1764,50 @@ function renderTeamForm(out){
     const ms=res.matches.filter(m=>m.date>=cut).slice().reverse();
     const w=ms.filter(m=>m.won).length, c=el('div','card');
     c.appendChild(el('h2',null,`<span class="eyebrow">${esc(res.name)} · ${res.wins}-${res.losses} this session</span>`));
-    c.appendChild(el('p','sub',`${teamState.window==='all'?`Every match this session`:`Last ${ms.length} match${ms.length===1?'':'es'}: `+w+'-'+(ms.length-w)}. Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    // Where the season actually stands, before the match list. Points for/against moved into
+    // the strip below so the headline is the thing you came for, not a trailing sentence.
+    const sp=seasonPace(res,fmt,tid);
+    if(sp){
+      const ch=chaseFirst(sp,res.name);
+      const box=el('div','season');
+      box.innerHTML=
+        `<div class="season-fig"><b>${sp.banked}</b><span>points banked</span></div>`+
+        `<div class="season-fig"><b>${sp.nights}</b><span>night${sp.nights===1?'':'s'} left</span></div>`+
+        `<div class="season-fig"><b>${sp.played?sp.pace.toFixed(1):'—'}</b><span>per night</span></div>`;
+      c.appendChild(box);
+      const bits=[];
+      if(sp.nights)bits.push(`<b>${sp.available}</b> still on the table`+
+        (sp.lastDate?` through ${niceDate(sp.lastDate).replace(/^\w+, /,'')}`:''));
+      if(sp.played&&sp.nights)bits.push(`this pace finishes near <b>${sp.projected}</b>`);
+      bits.push(`for ${res.pointsFor} · against ${res.pointsAgainst}`);
+      c.appendChild(el('p','sub',bits.join(' · ')+'.'));
+      if(ch&&!ch.unknown&&ch.place===1){
+        c.appendChild(el('p','sub good',`<b>1st of ${ch.of}.</b> Nobody to chase — the gap is yours to defend.`));
+      }else if(ch&&!ch.unknown){
+        c.appendChild(el('p','sub',
+          `<b>${ordinal(ch.place)} of ${ch.of}.</b> `+
+          `${esc(ch.leadName)} lead on ${ch.leadPts} to your ${ch.myPts} — <b>${ch.gap} back</b>. `+
+          (ch.reachable
+            ? `Catching them needs ${ch.need} more than they take over the last ${sp.nights} night${sp.nights===1?'':'s'}`+
+              (ch.perNight?`, about <b>${ch.perNight.toFixed(1)} a night</b> of the ${sp.perNight} available`:'')+`.`
+            : `Only ${sp.available} remain, so first is out of reach on points.`)));
+      }else if(ch&&ch.unknown){
+        // Standings WERE supplied but we are not in them — almost always a name that does not
+        // match teams{}. Saying "no standings" here would send you looking at the wrong thing.
+        c.appendChild(el('p','sub warn-ink',
+          `Standings list ${ch.of} team${ch.of===1?'':'s'} but not <b>${esc(res.name)}</b>, so the gap to first can't be shown. `+
+          `The names in league.json must match this team's name exactly.`));
+      }else{
+        // No standings shipped. Say so plainly rather than leaving a hole where the chase goes.
+        c.appendChild(el('p','sub muted',
+          `Standings aren't in this data build, so the gap to first can't be shown. `+
+          `Add a <code>standings</code> block to data/league.json and it appears here.`));
+      }
+    }else{
+      c.appendChild(el('p','sub',`Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+    }
+    c.appendChild(el('p','sub',teamState.window==='all'?'Every match this session.'
+      :`Last ${ms.length} match${ms.length===1?'':'es'}: ${w}-${ms.length-w}.`));
     const list=el('div','rlist');
     (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
       const row=el('div','rrow'+(m.line&&m.line.length?' open':''));
@@ -2952,7 +3052,7 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 9:40pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build sep 17, 10:05pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
