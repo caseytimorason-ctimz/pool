@@ -2957,7 +2957,21 @@ function init(){
 }
 (function start(){
   function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();init();}
+  // Keep a failed download apart from a failed render: one catch for both used to report a
+  // code bug as "Could not load data.json", which sent every diagnosis the wrong way.
+  function fail(what,e){document.body.innerHTML=`<div style="padding:24px;font:15px/1.5 system-ui,sans-serif">
+    <p><b>${what}</b></p><p style="opacity:.75">${esc(String(e&&e.message||e))}</p>
+    <p><a href="" style="color:inherit">Reload</a></p></div>`;console.error(e);}
   if(window.APA_DATA){go(window.APA_DATA);}
-  else{fetch('./data.json').then(r=>r.json()).then(go).catch(()=>{document.body.innerHTML='<p style="padding:24px">Could not load data.json.</p>';});}
+  else{fetch('./data.json')
+    .then(r=>{
+      // The password gate answers an expired or missing cookie with its login page (401 HTML),
+      // which r.json() would misreport as a syntax error.
+      if(r.status===401){location.reload();throw new Error('Signed out — reloading to the password page.');}
+      if(!r.ok)throw new Error(`data.json: HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch(e=>{fail('Could not load data.json.',e);throw null;})
+    .then(data=>{try{go(data)}catch(e){fail('The app hit an error while starting.',e)}},()=>{});}
 })();
 </script>
