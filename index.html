@@ -1972,7 +1972,10 @@ function vsSLTable(roster,fmt,allTime,onName){
   if(!rows.length)return null;
 
   const slCols=[...new Set(rows.flatMap(r=>r.cells.map(c=>c.vsSL)))].sort((a,b)=>a-b);
-  rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
+  // The roster's SL is today's (API or the APA app); the profile's is as of the last game on
+  // record, which for a player idle since spring can be a level behind.
+  const slOf=r=>r.p.sl||r.pr.currentSL;
+  rows.sort((a,b)=>(slOf(b)-slOf(a))||a.p.name.localeCompare(b.p.name));
 
   const wrap=el('div','tt-wrap');
   const table=el('table','tt');
@@ -1981,7 +1984,7 @@ function vsSLTable(roster,fmt,allTime,onName){
   const tb=el('tbody');
   rows.forEach(({p,pr,cells})=>{
     const tr=el('tr');
-    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
+    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(p.sl||pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
     if(onName){ who.style.cursor='pointer'; who.onclick=()=>onName(p,pr); }
     tr.appendChild(who);
     const byVs={}; cells.forEach(c=>byVs[c.vsSL]=c);

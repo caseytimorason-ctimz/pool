@@ -377,7 +377,17 @@
           "date": "2026-09-26",
           "ourTeamId": 13139509,
           "opp": "Chalk O Holics",
-          "roster": [],
+          "roster": [
+            {"mid": 2801791, "name": "Lucretia Ford", "sl": 3},
+            {"mid": 3227961, "name": "Martins Ekpeh", "sl": 6},
+            {"mid": 2934088, "name": "Kisha Abernathy", "sl": 3},
+            {"mid": 2955940, "name": "Yakini Johnson", "sl": 3},
+            {"mid": 2391271, "name": "Ronald Brown", "sl": 4},
+            {"mid": 3012907, "name": "Kellie Stevenson", "sl": 3},
+            {"mid": 3079944, "name": "Kimara Gray", "sl": 4},
+            {"mid": 2900743, "name": "Andre Hixon", "sl": 5}
+          ],
+          "rosterSource": "APA app team roster, screenshotted 2026-09-25; mids matched by name",
           "source": "Told verbally, 2026-09-25 — not yet in the APA app"
         }
       ]
