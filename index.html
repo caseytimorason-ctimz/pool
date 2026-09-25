@@ -1238,6 +1238,18 @@ function pTeamWin(m, A, Q, restPool){
 
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
 function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
+/* Tri-Cup and playoff pairings are announced on paper and never reach the API schedule, so
+   league.json carries them by hand (events[].matches). Fold them in as ordinary schedule rows,
+   keyed to a synthetic team id so their hand-entered roster scouts like any other opponent. */
+function addEventMatches(){
+  D.schedule=D.schedule||[];D.teams=D.teams||{};
+  ((D.league||{}).events||[]).forEach(ev=>(ev.matches||[]).forEach((x,i)=>{
+    const tid=`event:${ev.id}:${x.round||i+1}`, our=D.teams[x.ourTeamId]||{};
+    D.teams[tid]={name:x.opp,fmt:ev.fmt,roster:x.roster||[],event:true};
+    D.schedule.push({date:x.date||ev.date,ourTeamId:x.ourTeamId,ourTeam:our.name||'',
+      oppTeamId:tid,oppTeam:x.opp,fmt:ev.fmt||our.fmt,event:ev.label,source:x.source});
+  }));
+}
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function niceDate(iso){                       // "2026-09-09" -> "Wed, Sep 9"
@@ -1256,11 +1268,11 @@ function fillSchedule(){
   const s=$('#schedSel');
   const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const today=new Date().toISOString().slice(0,10);
-  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.event?esc(m.event):m.fmt+'-ball'}</option>`).join('');
   const paint=()=>{
     const m=sched[s.value]; if(!m)return;
     if(live.matchIdx!==s.value){live.matchIdx=s.value;live.outOurs=new Set();live.outTheirs=new Set();live.played=[];live.theirPick=null;}
-    $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.fmt}-ball`;
+    $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.event||m.fmt+'-ball'}`;
     $('#schedVs').textContent=`vs ${m.oppTeam}`;
     renderMatch(m);
   };
@@ -1407,7 +1419,9 @@ function renderMatch(m){
   // is ours to fix, and a message that points at the league sends you looking in the wrong place.
   if(!theirs.length){
     const known=!!(D.teams||{})[String(m.oppTeamId)];
-    out.appendChild(el('div','card',known
+    out.appendChild(el('div','card',(D.teams[m.oppTeamId]||{}).event
+      ? `<p class="sub"><b>No roster for ${esc(m.oppTeam)} yet.</b> ${esc(m.event)} pairings are not in the APA schedule, so their players have to be added by hand in <code>data/league.json</code>. ${m.source?esc(m.source)+'.':''}</p>`
+      : known
       ? `<p class="sub">${esc(m.oppTeam)} is in this data build but their roster is empty — the league has not posted it yet.</p>`
       : `<p class="sub"><b>${esc(m.oppTeam)} is missing from this data build.</b> They are on the schedule, but the bundle shipped without their team, so there is nothing to scout. This is our data, not the league's — re-run the weekly refresh to bring them back.</p>`));
     return;
@@ -2956,8 +2970,22 @@ function init(){
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
-  function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();init();}
+  function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();addEventMatches();init();}
+  // Keep a failed download apart from a failed render: one catch for both used to report a
+  // code bug as "Could not load data.json", which sent every diagnosis the wrong way.
+  function fail(what,e){document.body.innerHTML=`<div style="padding:24px;font:15px/1.5 system-ui,sans-serif">
+    <p><b>${what}</b></p><p style="opacity:.75">${esc(String(e&&e.message||e))}</p>
+    <p><a href="" style="color:inherit">Reload</a></p></div>`;console.error(e);}
   if(window.APA_DATA){go(window.APA_DATA);}
-  else{fetch('./data.json').then(r=>r.json()).then(go).catch(()=>{document.body.innerHTML='<p style="padding:24px">Could not load data.json.</p>';});}
+  else{fetch('./data.json')
+    .then(r=>{
+      // The password gate answers an expired or missing cookie with its login page (401 HTML),
+      // which r.json() would misreport as a syntax error.
+      if(r.status===401){location.reload();throw new Error('Signed out — reloading to the password page.');}
+      if(!r.ok)throw new Error(`data.json: HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch(e=>{fail('Could not load data.json.',e);throw null;})
+    .then(data=>{try{go(data)}catch(e){fail('The app hit an error while starting.',e)}},()=>{});}
 })();
 </script>

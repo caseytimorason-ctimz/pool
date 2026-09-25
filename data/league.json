@@ -6,7 +6,12 @@
     "decide what the app checks, but they never invent a match or a win.",
     "",
     "Every rule below carries the bylaw text it came from so it can be re-checked when the",
-    "league reissues the bylaws. If a rule has no cite, it came from Casey verbally."
+    "league reissues the bylaws. If a rule has no cite, it came from Casey verbally.",
+    "",
+    "An event's \"matches\" puts tournament nights on the Match tab. Tri-Cup and playoff",
+    "pairings never appear in the API schedule, so this is the only way they get there.",
+    "\"roster\" is the opponent's players as {mid, name, sl} — take mid from the Find tab so",
+    "their real history scouts. Leave it empty until the lineup is known."
   ],
   "bylaws": {
     "source": "Hudson County APA Bylaws, 2025",
@@ -365,7 +370,17 @@
       "venue": "Hoboken Elks, 1005 Washington St, Hoboken NJ 07030",
       "teams": 8,
       "organizer": "Chris Blumberg",
-      "source": "APA app event listing, screenshotted 2026-09-02"
+      "source": "APA app event listing, screenshotted 2026-09-02",
+      "matches": [
+        {
+          "round": 1,
+          "date": "2026-09-26",
+          "ourTeamId": 13139509,
+          "opp": "Chalk O Holics",
+          "roster": [],
+          "source": "Told verbally, 2026-09-25 — not yet in the APA app"
+        }
+      ]
     }
   ]
 }
