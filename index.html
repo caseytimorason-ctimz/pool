@@ -1239,20 +1239,60 @@ function pTeamWin(m, A, Q, restPool){
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
 function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
 /* Tri-Cup and playoff pairings are announced on paper and never reach the API schedule, so
-   league.json carries them by hand (events[].matches). Fold them in as ordinary schedule rows,
-   keyed to a synthetic team id so their hand-entered roster scouts like any other opponent. */
+   league.json carries them by hand (events[].matches). Fold them in as ordinary schedule rows.
+   Both sides get tournament copies of their rosters (below), so a player's tournament SL never
+   leaks into league nights; rotTeamId keeps the rotation tracker on our real team. */
 function addEventMatches(){
   D.schedule=D.schedule||[];D.teams=D.teams||{};
   ((D.league||{}).events||[]).forEach(ev=>(ev.matches||[]).forEach((x,i)=>{
-    const our=D.teams[x.ourTeamId]||{};
+    const fmt=ev.fmt, our=D.teams[x.ourTeamId]||{}, from=ev.slFloorFrom;
     // An opponent from our own division is already in the build — scout its real roster.
-    let tid=x.oppTeamId;
-    if(!(tid&&D.teams[tid])){tid=`event:${ev.id}:${i}`;D.teams[tid]={name:x.opp,fmt:ev.fmt,roster:x.roster||[],event:true};}
+    const theirs=(x.oppTeamId&&D.teams[x.oppTeamId])?D.teams[x.oppTeamId].roster:(x.roster||[]);
+    const tid=`event:${ev.id}:${i}`, oid=`${tid}:ours`;
+    D.teams[tid]={name:x.opp,fmt,roster:tourneyRoster(theirs,fmt,from),event:true};
+    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(our.roster||[],fmt,from),event:true};
     const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
-    D.schedule.push({date:x.date||ev.date,ourTeamId:x.ourTeamId,ourTeam:our.name||'',
-      oppTeamId:tid,oppTeam:x.opp,fmt:ev.fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
-      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source});
+    D.schedule.push({date:x.date||ev.date,ourTeamId:oid,rotTeamId:x.ourTeamId,ourTeam:our.name||'',
+      oppTeamId:tid,oppTeam:x.opp,fmt:fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
+      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,slFrom:from});
   }));
+}
+/* Tournament skill levels. APA tournaments seat a player at the HIGHER of their current- and
+   previous-session SL, not whatever the posted roster says. At the Sep 2026 Tri-Cup the league
+   operator listed Kisha Abernathy as a 3 though she was a 4 that session, and nothing flagged it.
+   Two sources, highest wins: a correction recorded in league.json (playAs), and the SL history we
+   hold from ev.slFloorFrom (start of the previous session) on — counting the SL they carried into
+   that window only if they have played since. Our history for other divisions can trail by a
+   session, so a known correction must be recorded; the history check catches the rest. */
+function tourneySL(p,fmt,from){
+  const listed=p.sl||0, prof=P[`${p.mid}:${fmt}`];
+  let hist=0;
+  if(prof&&from&&(prof.lastSeen||'')>=from){
+    let carried=0;
+    (prof.trajectory||[]).forEach(t=>{if(t.date<from)carried=t.sl;else hist=Math.max(hist,t.sl);});
+    hist=Math.max(hist,carried);
+  }
+  const sl=Math.max(listed,hist,p.playAs||0);
+  const why=sl<=listed?'':(p.playAs===sl?(p.playAsNote||'recorded correction'):`SL${hist} in the current or previous session (our records from ${from})`);
+  return {sl,listed,why};
+}
+function tourneyRoster(list,fmt,from){
+  return list.map(p=>{const t=tourneySL(p,fmt,from);
+    return t.sl>t.listed?Object.assign({},p,{sl:t.sl,listedSL:t.listed,slWhy:t.why}):p;});
+}
+function slFlagCard(m){
+  if(!m.event)return null;
+  const rows=[['Ours',roster(m.ourTeamId)],['Theirs',roster(m.oppTeamId)]]
+    .flatMap(([side,list])=>list.filter(p=>p.listedSL).map(p=>({side,p})));
+  if(!rows.length)return null;
+  const c=el('div','card');
+  c.appendChild(el('h2',null,'<span class="eyebrow">Skill level check</span>'));
+  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of their current- and previous-session skill level. `+
+    `${rows.length===1?'This player is':'These players are'} listed below that. The odds here use the higher level; `+
+    `check the scoresheet before their rack, because it changes the race and the ${SL_CAP}-point cap.`));
+  rows.forEach(({side,p})=>c.appendChild(el('p',null,
+    `<b>${side} · ${esc(p.name)}</b> — listed SL${p.listedSL}, plays as <b>SL${p.sl}</b>. <span class="sub">${esc(p.slWhy)}</span>`)));
+  return c;
 }
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1397,6 +1437,7 @@ function renderMatch(m){
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
     b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
   out.appendChild(modeBar);
+  const flags=slFlagCard(m); if(flags)out.appendChild(flags);
   if(live.mode0==='live'||live.mode0==='lineup'){renderLive(m,out);return;}
 
   const sccard=scoutCard(m); if(sccard)out.appendChild(sccard);
@@ -2363,7 +2404,7 @@ function renderLive(m,host){
     if(Q){
       const memo={};
       const liveScore=(live.played||[]).some(x=>x.ourPts!=null);
-      const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.ourTeamId):null;
+      const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.rotTeamId||m.ourTeamId):null;
       // Is this their best player on the table? Only then is it worth spending ours to match.
       const theirTop=Math.max(...theirs.map(p=>p.sl));
       const ourLow=Math.min(...ours.map(p=>p.sl));
@@ -2560,7 +2601,7 @@ function bestFive(m,fmt){
   const memo={};
   // v stays the honest expected-wins number we display; t is what we rank by, so the fairness
   // nudge can reorder near-ties without ever inflating the figure shown to the captain.
-  const rot=live.fair?rotationInfo(fmt,m.ourTeamId):null;
+  const rot=live.fair?rotationInfo(fmt,m.rotTeamId||m.ourTeamId):null;
   const scored=legal.map(c=>{
     const v=lineupValue(c,their5,fmt,memo), f=fairBonus(c,rot);
     return {c,v,f,t:v+f};
