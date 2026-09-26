@@ -1244,10 +1244,14 @@ function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&
 function addEventMatches(){
   D.schedule=D.schedule||[];D.teams=D.teams||{};
   ((D.league||{}).events||[]).forEach(ev=>(ev.matches||[]).forEach((x,i)=>{
-    const tid=`event:${ev.id}:${x.round||i+1}`, our=D.teams[x.ourTeamId]||{};
-    D.teams[tid]={name:x.opp,fmt:ev.fmt,roster:x.roster||[],event:true};
+    const our=D.teams[x.ourTeamId]||{};
+    // An opponent from our own division is already in the build — scout its real roster.
+    let tid=x.oppTeamId;
+    if(!(tid&&D.teams[tid])){tid=`event:${ev.id}:${i}`;D.teams[tid]={name:x.opp,fmt:ev.fmt,roster:x.roster||[],event:true};}
+    const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
     D.schedule.push({date:x.date||ev.date,ourTeamId:x.ourTeamId,ourTeam:our.name||'',
-      oppTeamId:tid,oppTeam:x.opp,fmt:ev.fmt||our.fmt,event:ev.label,source:x.source});
+      oppTeamId:tid,oppTeam:x.opp,fmt:ev.fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
+      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source});
   }));
 }
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1273,7 +1277,7 @@ function fillSchedule(){
     const m=sched[s.value]; if(!m)return;
     if(live.matchIdx!==s.value){live.matchIdx=s.value;live.outOurs=new Set();live.outTheirs=new Set();live.played=[];live.theirPick=null;}
     $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.event||m.fmt+'-ball'}`;
-    $('#schedVs').textContent=`vs ${m.oppTeam}`;
+    $('#schedVs').textContent=`vs ${m.oppTeam}`+(m.detail?` — ${m.detail}`:'');
     renderMatch(m);
   };
   s.onchange=paint;

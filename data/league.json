@@ -11,7 +11,9 @@
     "An event's \"matches\" puts tournament nights on the Match tab. Tri-Cup and playoff",
     "pairings never appear in the API schedule, so this is the only way they get there.",
     "\"roster\" is the opponent's players as {mid, name, sl} — take mid from the Find tab so",
-    "their real history scouts. Leave it empty until the lineup is known."
+    "their real history scouts. Leave it empty until the lineup is known. An opponent already",
+    "in the data build (same division) takes \"oppTeamId\" instead and uses that roster.",
+    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given."
   ],
   "bylaws": {
     "source": "Hudson County APA Bylaws, 2025",
@@ -388,7 +390,28 @@
             {"mid": 2900743, "name": "Andre Hixon", "sl": 5}
           ],
           "rosterSource": "APA app team roster, screenshotted 2026-09-25; mids matched by name",
-          "source": "Told verbally, 2026-09-25 — not yet in the APA app"
+          "match": 4,
+          "time": "1:15 PM",
+          "table": 4,
+          "source": "APA app Tri-Cup bracket, 2026-09-26"
+        },
+        {
+          "round": 2,
+          "date": "2026-09-26",
+          "ourTeamId": 13139509,
+          "opp": "Team Meeting",
+          "oppTeamId": 13139508,
+          "note": "if we win #4 and they win #3 vs Moose Shooters",
+          "source": "APA app Tri-Cup bracket, 2026-09-26"
+        },
+        {
+          "round": 2,
+          "date": "2026-09-26",
+          "ourTeamId": 13139509,
+          "opp": "Moose Shooters",
+          "roster": [],
+          "note": "if we win #4 and they win #3 vs Team Meeting",
+          "source": "APA app Tri-Cup bracket, 2026-09-26"
         }
       ]
     }
