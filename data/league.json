@@ -409,15 +409,6 @@
           "round": 2,
           "date": "2026-09-26",
           "ourTeamId": 13139509,
-          "opp": "Team Meeting",
-          "oppTeamId": 13139508,
-          "note": "if they win #3 vs Moose Shooters · sudden death",
-          "source": "APA app Tri-Cup bracket, 2026-09-26"
-        },
-        {
-          "round": 2,
-          "date": "2026-09-26",
-          "ourTeamId": 13139509,
           "opp": "Moose Shooters",
           "roster": [
             {"mid": 2233806, "name": "Arty Archila", "sl": 4},
@@ -430,7 +421,7 @@
             {"mid": 880641, "name": "Edgar Borda", "sl": 7}
           ],
           "rosterSource": "APA app Tri-Cup roster, screenshotted 2026-09-26; mids matched by name",
-          "note": "if they win #3 vs Team Meeting · sudden death",
+          "note": "sudden death · they beat Team Meeting in #3",
           "source": "APA app Tri-Cup bracket, 2026-09-26"
         }
       ]
