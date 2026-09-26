@@ -1254,7 +1254,7 @@ function addEventMatches(){
     const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
     D.schedule.push({date:x.date||ev.date,ourTeamId:oid,rotTeamId:x.ourTeamId,ourTeam:our.name||'',
       oppTeamId:tid,oppTeam:x.opp,fmt:fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
-      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,slFrom:from});
+      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,slFrom:from,result:x.result});
   }));
 }
 /* Tournament skill levels. APA tournaments seat a player at the HIGHER of their current- and
@@ -1312,11 +1312,11 @@ function fillSchedule(){
   const s=$('#schedSel');
   const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const today=new Date().toISOString().slice(0,10);
-  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.event?esc(m.event):m.fmt+'-ball'}</option>`).join('');
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.event?esc(m.event):m.fmt+'-ball'}${m.result?' · '+esc(m.result):''}</option>`).join('');
   const paint=()=>{
     const m=sched[s.value]; if(!m)return;
     if(live.matchIdx!==s.value){live.matchIdx=s.value;live.outOurs=new Set();live.outTheirs=new Set();live.played=[];live.theirPick=null;}
-    $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.event||m.fmt+'-ball'}`;
+    $('#schedWhen').textContent=`${m.result||whenLabel(m.date,today)} · ${m.event||m.fmt+'-ball'}`;
     $('#schedVs').textContent=`vs ${m.oppTeam}`+(m.detail?` — ${m.detail}`:'');
     renderMatch(m);
   };
@@ -1324,7 +1324,8 @@ function fillSchedule(){
   if(!sched.length){$('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>';return;}
   // Default to the NEXT match, not the oldest one on the list — the schedule still contains
   // recently-played dates, and this tab's whole job is "who do we put up this week".
-  let idx=sched.findIndex(m=>m.date>=today);
+  // A tournament round with a recorded result is done even though its date is today.
+  let idx=sched.findIndex(m=>m.date>=today&&!m.result);
   if(idx<0)idx=sched.length-1;
   s.value=idx;
   paint();
@@ -2892,7 +2893,8 @@ function renderLog(host){
         return `${esc(who)} ${mark}${vs}${extra?` <span class="muted">(${extra})</span>`:''}`+
                (r.uncertain?' <span class="qchip unknown">unconfirmed</span>':'');
       }).join(' · ');
-      return `<div style="margin-top:4px">${ev.matches.length>1?`<span class="muted">Match ${mm.n}:</span> `:''}${parts}`+
+      const head=mm.opp?`Round ${mm.n} vs ${esc(mm.opp)}${mm.teamScore?' ('+esc(mm.teamScore)+')':''}:`:ev.matches.length>1?`Match ${mm.n}:`:'';
+      return `<div style="margin-top:4px">${head?`<span class="muted">${head}</span> `:''}${parts}`+
              (mm.uncertain?` <span class="qchip unknown">unconfirmed</span>`:'')+`</div>`;
     }).join('');
     b.innerHTML=`<h3>${esc(ev.label)} · ${esc(ev.date)} ${res}</h3>`+

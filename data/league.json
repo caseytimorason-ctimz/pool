@@ -13,7 +13,8 @@
     "\"roster\" is the opponent's players as {mid, name, sl} — take mid from the Find tab so",
     "their real history scouts. Leave it empty until the lineup is known. An opponent already",
     "in the data build (same division) takes \"oppTeamId\" instead and uses that roster.",
-    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given.",
+    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given. Set",
+    "\"result\" once a round is played; the Match tab then opens on the next unplayed round.",
     "",
     "TOURNAMENT SKILL LEVELS: players must play at the HIGHER of their current- and previous-",
     "session SL, whatever the posted roster says. Set the event's \"slFloorFrom\" to the start of",
@@ -401,6 +402,7 @@
           "match": 4,
           "time": "1:15 PM",
           "table": 4,
+          "result": "Won 7-3",
           "source": "APA app Tri-Cup bracket, 2026-09-26"
         },
         {
@@ -409,7 +411,7 @@
           "ourTeamId": 13139509,
           "opp": "Team Meeting",
           "oppTeamId": 13139508,
-          "note": "if we win #4 and they win #3 vs Moose Shooters",
+          "note": "if they win #3 vs Moose Shooters · sudden death",
           "source": "APA app Tri-Cup bracket, 2026-09-26"
         },
         {
@@ -428,7 +430,7 @@
             {"mid": 880641, "name": "Edgar Borda", "sl": 7}
           ],
           "rosterSource": "APA app Tri-Cup roster, screenshotted 2026-09-26; mids matched by name",
-          "note": "if we win #4 and they win #3 vs Team Meeting",
+          "note": "if they win #3 vs Team Meeting · sudden death",
           "source": "APA app Tri-Cup bracket, 2026-09-26"
         }
       ]

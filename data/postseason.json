@@ -463,6 +463,56 @@
           ]
         }
       ]
+    },
+    {
+      "id": "tricup-2026-09",
+      "type": "tricup",
+      "label": "8-Ball Tri-Cup #2",
+      "date": "2026-09-26",
+      "datePrecision": "day",
+      "note": "In progress. Round 1 won 7-3 on points over Chalk O Holics (match #4, table 4). Rounds after the first are sudden death. Source: APA app scoreboard, 2026-09-26.",
+      "matches": [
+        {
+          "n": 1,
+          "opp": "Chalk O Holics",
+          "teamScore": "7-3",
+          "results": [
+            {
+              "p": "stefano",
+              "result": "L",
+              "sl": 3,
+              "opp": "Kisha Abernathy",
+              "oppSl": 3,
+              "scoreRaw": "1-2",
+              "note": "she played as a 3 but was a 4 this session; listed wrong by the league operator"
+            },
+            {
+              "p": "amin",
+              "result": "W",
+              "sl": 5,
+              "opp": "Ronald Brown",
+              "oppSl": 4,
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "sl": 6,
+              "opp": "Martins Ekpeh",
+              "oppSl": 6,
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "mauricio",
+              "result": "W",
+              "sl": 6,
+              "opp": "Andre Hixon",
+              "oppSl": 5,
+              "scoreRaw": "2-1"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
