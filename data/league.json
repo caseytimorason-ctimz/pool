@@ -13,7 +13,13 @@
     "\"roster\" is the opponent's players as {mid, name, sl} — take mid from the Find tab so",
     "their real history scouts. Leave it empty until the lineup is known. An opponent already",
     "in the data build (same division) takes \"oppTeamId\" instead and uses that roster.",
-    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given."
+    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given.",
+    "",
+    "TOURNAMENT SKILL LEVELS: players must play at the HIGHER of their current- and previous-",
+    "session SL, whatever the posted roster says. Set the event's \"slFloorFrom\" to the start of",
+    "the previous session and the app raises anyone our history shows higher since then, and",
+    "flags them on the Match tab. Our history for other divisions can trail by a session, so",
+    "record a known correction on the player as \"playAs\" (+ \"playAsNote\")."
   ],
   "bylaws": {
     "source": "Hudson County APA Bylaws, 2025",
@@ -369,6 +375,8 @@
       "start": "13:00",
       "end": "21:00",
       "fmt": "8",
+      "slFloorFrom": "2026-01-01",
+      "slFloorNote": "Approximate start of the Spring 2026 session (the one before this Summer 2026 event). Tournament SL = highest SL since then.",
       "venue": "Hoboken Elks, 1005 Washington St, Hoboken NJ 07030",
       "teams": 8,
       "organizer": "Chris Blumberg",
@@ -382,7 +390,7 @@
           "roster": [
             {"mid": 2801791, "name": "Lucretia Ford", "sl": 3},
             {"mid": 3227961, "name": "Martins Ekpeh", "sl": 6},
-            {"mid": 2934088, "name": "Kisha Abernathy", "sl": 3},
+            {"mid": 2934088, "name": "Kisha Abernathy", "sl": 3, "playAs": 4, "playAsNote": "SL4 this session; the league operator listed her as a 3 for round 1 in error (Casey, 2026-09-26)"},
             {"mid": 2955940, "name": "Yakini Johnson", "sl": 3},
             {"mid": 2391271, "name": "Ronald Brown", "sl": 4},
             {"mid": 3012907, "name": "Kellie Stevenson", "sl": 3},
@@ -409,7 +417,17 @@
           "date": "2026-09-26",
           "ourTeamId": 13139509,
           "opp": "Moose Shooters",
-          "roster": [],
+          "roster": [
+            {"mid": 2233806, "name": "Arty Archila", "sl": 4},
+            {"mid": 1603443, "name": "David Rumph", "sl": 3},
+            {"mid": 2406227, "name": "Jose Silverio", "sl": 5},
+            {"mid": 3254921, "name": "Samuel Salazar", "sl": 3},
+            {"mid": 2980459, "name": "Kumar Harrybans", "sl": 5},
+            {"mid": 3183993, "name": "Troy Plant", "sl": 6},
+            {"mid": 3232198, "name": "Pierre Harris", "sl": 4},
+            {"mid": 880641, "name": "Edgar Borda", "sl": 7}
+          ],
+          "rosterSource": "APA app Tri-Cup roster, screenshotted 2026-09-26; mids matched by name",
           "note": "if we win #4 and they win #3 vs Team Meeting",
           "source": "APA app Tri-Cup bracket, 2026-09-26"
         }
