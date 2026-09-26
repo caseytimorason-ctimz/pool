@@ -1245,39 +1245,39 @@ function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&
 function addEventMatches(){
   D.schedule=D.schedule||[];D.teams=D.teams||{};
   ((D.league||{}).events||[]).forEach(ev=>(ev.matches||[]).forEach((x,i)=>{
-    const fmt=ev.fmt, our=D.teams[x.ourTeamId]||{}, from=ev.slFloorFrom;
+    const fmt=ev.fmt, our=D.teams[x.ourTeamId]||{}, prev=ev.prevSession;
     // An opponent from our own division is already in the build — scout its real roster.
     const theirs=(x.oppTeamId&&D.teams[x.oppTeamId])?D.teams[x.oppTeamId].roster:(x.roster||[]);
     const tid=`event:${ev.id}:${i}`, oid=`${tid}:ours`;
-    D.teams[tid]={name:x.opp,fmt,roster:tourneyRoster(theirs,fmt,from),event:true};
-    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(our.roster||[],fmt,from),event:true};
+    D.teams[tid]={name:x.opp,fmt,roster:tourneyRoster(theirs,fmt,prev),event:true};
+    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(our.roster||[],fmt,prev),event:true};
     const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
     D.schedule.push({date:x.date||ev.date,ourTeamId:oid,rotTeamId:x.ourTeamId,ourTeam:our.name||'',
       oppTeamId:tid,oppTeam:x.opp,fmt:fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
-      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,slFrom:from,result:x.result});
+      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,result:x.result});
   }));
 }
-/* Tournament skill levels. APA tournaments seat a player at the HIGHER of their current- and
-   previous-session SL, not whatever the posted roster says. At the Sep 2026 Tri-Cup the league
-   operator listed Kisha Abernathy as a 3 though she was a 4 that session, and nothing flagged it.
-   Two sources, highest wins: a correction recorded in league.json (playAs), and the SL history we
-   hold from ev.slFloorFrom (start of the previous session) on — counting the SL they carried into
-   that window only if they have played since. Our history for other divisions can trail by a
-   session, so a known correction must be recorded; the history check catches the rest. */
-function tourneySL(p,fmt,from){
+/* Tournament skill levels. A player plays at the HIGHER of their current SL (the posted
+   roster) and the SL they ended the last session at. The Sep 2026 Tri-Cup had Kisha Abernathy
+   listed as a 3 though she was a 4, and nothing flagged it. Sources, highest wins: the listed
+   SL; a correction recorded in league.json (playAs); and our history's SL at the end of the
+   event's prevSession. That last one counts ONLY when we hold games of theirs inside that
+   session. Our data for other divisions often stops a session early, and a spring SL is not
+   a summer-ending one: reading it as one flagged two correctly-rated 3s. Unknown means no flag. */
+function tourneySL(p,fmt,prev){
   const listed=p.sl||0, prof=P[`${p.mid}:${fmt}`];
-  let hist=0;
-  if(prof&&from&&(prof.lastSeen||'')>=from){
-    let carried=0;
-    (prof.trajectory||[]).forEach(t=>{if(t.date<from)carried=t.sl;else hist=Math.max(hist,t.sl);});
-    hist=Math.max(hist,carried);
+  let ended=0;
+  if(prof&&prev&&prev.from&&prev.to&&(prof.lastSeen||'')>=prev.from&&(prof.firstSeen||'')<=prev.to){
+    const asOf=prof.lastSeen<prev.to?prof.lastSeen:prev.to;
+    (prof.trajectory||[]).forEach(t=>{if(t.date<=asOf&&t.sl)ended=t.sl;});
   }
-  const sl=Math.max(listed,hist,p.playAs||0);
-  const why=sl<=listed?'':(p.playAs===sl?(p.playAsNote||'recorded correction'):`SL${hist} in the current or previous session (our records from ${from})`);
+  const sl=Math.max(listed,ended,p.playAs||0);
+  const why=sl<=listed?'':(p.playAs===sl?(p.playAsNote||'recorded correction')
+    :`ended ${prev.label||'last session'} at SL${ended} (our records)`);
   return {sl,listed,why};
 }
-function tourneyRoster(list,fmt,from){
-  return list.map(p=>{const t=tourneySL(p,fmt,from);
+function tourneyRoster(list,fmt,prev){
+  return list.map(p=>{const t=tourneySL(p,fmt,prev);
     return t.sl>t.listed?Object.assign({},p,{sl:t.sl,listedSL:t.listed,slWhy:t.why}):p;});
 }
 function slFlagCard(m){
@@ -1287,7 +1287,7 @@ function slFlagCard(m){
   if(!rows.length)return null;
   const c=el('div','card');
   c.appendChild(el('h2',null,'<span class="eyebrow">Skill level check</span>'));
-  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of their current- and previous-session skill level. `+
+  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of their current skill level and the one they ended last session at. `+
     `${rows.length===1?'This player is':'These players are'} listed below that. The odds here use the higher level; `+
     `check the scoresheet before their rack, because it changes the race and the ${SL_CAP}-point cap.`));
   rows.forEach(({side,p})=>c.appendChild(el('p',null,
