@@ -60,8 +60,9 @@ def members_from_events(league, site):
             continue
         fmt = ev.get("fmt") or "8"
         for m in ev.get("matches") or []:
-            rosters = [m.get("roster") or []]
-            for tid in (m.get("oppTeamId"), m.get("ourTeamId")):
+            rosters = [m.get("roster") or [], ev.get("ourRoster") or []]
+            ours = None if ev.get("ourRoster") else m.get("ourTeamId")  # qualifying roster wins
+            for tid in (m.get("oppTeamId"), ours):
                 if tid is not None:
                     rosters.append((teams.get(str(tid)) or {}).get("roster") or [])
             for r in rosters:

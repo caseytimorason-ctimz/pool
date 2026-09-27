@@ -132,7 +132,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .pick-vs .fmt{font-family:Barlow;font-size:11px;font-weight:600;color:var(--ink-soft);margin-left:7px}
 /* qualification tracker */
 .qt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
-table.qt{border-collapse:collapse;min-width:100%;font-size:13px}
+table.qt{border-collapse:separate;border-spacing:0;min-width:100%;font-size:13px}
 table.qt th,table.qt td{padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center;white-space:nowrap}
 table.qt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink-soft);background:var(--panel-2);position:sticky;top:0}
@@ -301,7 +301,7 @@ table.h2h th .arrow{font-size:9px}
    separating this wrapper from .qt-wrap, which uses the same sticky-first-column pattern; the
    two now match, so the blank-name report has one less place to hide. */
 .tt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-table.tt{border-collapse:collapse;font-size:13px;min-width:100%}
+table.tt{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
 table.tt th,table.tt td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
 table.tt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);
   font-weight:600;background:var(--panel-2);position:sticky;top:0}
@@ -419,6 +419,13 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .scout-line .good{color:var(--good);font-weight:700}.scout-line .bad{color:var(--bad);font-weight:700}
 .build{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);opacity:.6;margin-bottom:4px}
 .qt-wrap,.tt-wrap{margin-left:-15px;margin-right:-15px;border-left:0;border-right:0;border-radius:0}
+/* BLANK NAMES, for good. Mobile Chrome intermittently skips painting position:sticky table
+   cells (worst in collapsed-border tables): the same rows lose their name and SL badge on every
+   load (Jan and Mauricio in Team > Form, Sep 2026). Earlier fixes kept the pin and tried to
+   coax the paint back. On a phone the pin buys little, so the names simply scroll with the
+   table here, and a cell that is not sticky cannot be left unpainted. */
+@media(max-width:600px){table.qt td.who,table.qt th.who,table.tt td.who,table.tt th.who,
+  table.rot-tbl td.pin,table.rot-tbl th.pin{position:static;box-shadow:none}}
 .qt td.who,.qt th.who,.tt td.who,.tt th.who{max-width:38vw;padding-left:15px}
 /* the wrap is full-bleed here, so mirror the who column's gutter on the pinned status column */
 .tt td.pin,.tt th.pin{padding-right:15px}
@@ -1254,7 +1261,9 @@ function addEventMatches(){
     const theirs=(x.oppTeamId&&D.teams[x.oppTeamId])?D.teams[x.oppTeamId].roster:(x.roster||[]);
     const tid=`event:${ev.id}:${i}`, oid=`${tid}:ours`;
     D.teams[tid]={name:x.opp,fmt,roster:tourneyRoster(theirs,fmt,prev),event:true};
-    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(our.roster||[],fmt,prev),event:true};
+    // A tournament is played with the roster that qualified for it (ev.ourRoster), not the
+    // new session's: at the Sep 2026 Tri-Cup that was Christian Sosa, not Fall's Taylor Barnes.
+    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(ev.ourRoster||our.roster||[],fmt,prev),event:true};
     const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
     D.schedule.push({date:x.date||ev.date,ourTeamId:oid,rotTeamId:x.ourTeamId,ourTeam:our.name||'',
       oppTeamId:tid,oppTeam:x.opp,fmt:fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
