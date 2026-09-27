@@ -16,7 +16,11 @@
     "reading rather than converting scores into any derived stat.",
     "",
     "OPEN: 0-2 and 0-3 are both described as losses short of the hill, so the two do not",
-    "separate cleanly. Left as written rather than reconciled by guesswork."
+    "separate cleanly. Left as written rather than reconciled by guesswork.",
+    "",
+    "STREAKS: an event counts toward the hot/cold streak on the Team tab only when it has an",
+    "exact date (datePrecision \"day\") and a \"fmt\" (\"8\" or \"9\"); month- or year-dated",
+    "events cannot be placed among league games. Nothing here feeds records or the engine."
   ],
   "players": {
     "casey": {
@@ -470,6 +474,7 @@
       "label": "8-Ball Tri-Cup #2",
       "date": "2026-09-26",
       "datePrecision": "day",
+      "fmt": "8",
       "note": "In progress. Round 1 won 7-3 on points over Chalk O Holics (match #4, table 4). Rounds after the first are sudden death. Source: APA app scoreboard, 2026-09-26.",
       "matches": [
         {

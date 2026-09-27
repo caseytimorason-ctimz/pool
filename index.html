@@ -232,6 +232,9 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .pip{width:15px;height:15px;border-radius:4px;display:grid;place-items:center;
   font-family:Oswald;font-size:9px;font-weight:700;color:#fff}
 .pip.w{background:var(--good)} .pip.l{background:var(--bad);opacity:.85}
+/* tournament result: a small trophy riding the pip's corner */
+.pip.t{position:relative;overflow:visible}
+.pip.t::after{content:'\1F3C6';position:absolute;top:-8px;right:-7px;font-size:10px;line-height:1;filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
 @media(max-width:430px){.strk{grid-template-columns:auto 1fr}.pips{grid-column:1/-1;margin-top:2px}}
 /* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
 .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
@@ -1609,14 +1612,33 @@ function gameLog(pr){
   return g.sort((a,b)=>a.date.localeCompare(b.date));
 }
 const STREAK_FRESH_DAYS=75;   // beyond this a run is history, not form
+/* Tournament games for the streak only. They are paper-scored and never feed records or the
+   engine, but a run that carries on through a Tri-Cup is still a run. Only events with an exact
+   date and a format can be placed among league nights; same-day rounds keep their order. */
+function tourneyGames(mid,fmt){
+  const ps=D.postseason; if(!ps||!ps.events)return [];
+  const key=Object.keys(ps.players||{}).find(k=>String(ps.players[k].mid)===String(mid));
+  if(!key)return [];
+  const out=[];
+  ps.events.forEach(ev=>{
+    if(ev.datePrecision!=='day'||ev.fmt!==fmt)return;
+    (ev.matches||[]).forEach(mm=>(mm.results||[]).forEach(r=>{
+      if(r.p===key&&(r.result==='W'||r.result==='L'))
+        out.push({date:ev.date,won:r.result==='W',tourney:ev.label+(mm.opp?` R${mm.n} vs ${mm.opp}`:''),n:mm.n||0});
+    }));
+  });
+  return out;
+}
 function formOf(pr){
-  const g=gameLog(pr);
+  const t=tourneyGames(pr.mid,pr.format);
+  const g=gameLog(pr).concat(t).sort((a,b)=>a.date.localeCompare(b.date)||(!!a.tourney-!!b.tourney)||((a.n||0)-(b.n||0)));
   if(!g.length)return null;
   const last=g[g.length-1];
   let run=1; const won=last.won;
   for(let i=g.length-2;i>=0&&g[i].won===won;i--)run++;
   const daysSince=Math.round((Date.now()-new Date(last.date))/864e5);
-  return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length};
+  return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length,
+          tourneyInRun:g.slice(g.length-run).filter(x=>x.tourney).length};
 }
 function renderStreaks(rows,fmt){
   const items=[];
@@ -1636,16 +1658,17 @@ function renderStreaks(rows,fmt){
   items.sort((a,b)=>b.rank-a.rank);
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Hot streak</span>'));
-  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it.`));
+  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it. A 🏆 marks a tournament game — those count toward the run too.`));
   const wrap=el('div','streaks');
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
-    const when=stale?`${f.run} straight, but last played ${f.lastDate}`
-                    :`${f.run} straight · last played ${f.lastDate}`;
+    const tt=f.tourneyInRun?` · incl. ${f.tourneyInRun} tournament`:'';
+    const when=stale?`${f.run} straight${tt}, but last played ${f.lastDate}`
+                    :`${f.run} straight${tt} · last played ${f.lastDate}`;
     row.innerHTML=`<span class="strk-badge">${stale?'Cooled off':badge}</span>`+
       `<span class="strk-nm"><span class="strk-top">${sl(p.sl)}<span class="who">${esc(p.name)}</span></span>`+
       `<span class="strk-sub">${when}</span></span>`+
-      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}">${g.won?'W':'L'}</span>`).join('')}</span>`;
+      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}${g.tourney?' t':''}"${g.tourney?` title="${esc(g.tourney)}"`:''}>${g.won?'W':'L'}</span>`).join('')}</span>`;
     wrap.appendChild(row);
     // A cold run is usually a scheduling problem, not a talent problem — find the softest
     // matchup actually on the calendar and hand them a game they should win.
@@ -2851,7 +2874,7 @@ function renderLog(host){
   banner.style.borderColor='var(--warn)';
   banner.innerHTML='<div class="eyebrow" style="color:var(--warn)">Hand-recorded</div>'+
     '<p class="sub" style="margin-top:4px">Playoffs and tournaments are scored on paper, so none of this comes from APA. '+
-    'It is kept separate on purpose and never counts toward records, streaks or the matchup engine.</p>';
+    'It is kept separate on purpose and never counts toward records or the matchup engine. Exactly-dated events do count toward hot/cold streaks, marked with a trophy.</p>';
   out.appendChild(banner);
 
   const pc=el('div','card');
