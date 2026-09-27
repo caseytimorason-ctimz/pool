@@ -58,6 +58,41 @@ def norm_roster(team):
     return out
 
 
+Q_MY_PLAYERS = ("query($id:Int!){ member(id:$id){ players(current:false){ __typename "
+                "team{ id name } session{ name } } } }")
+PLAYER_FMT = {"EightBallPlayer": "8", "NineBallPlayer": "9"}
+
+
+def fill_qualifying_rosters(league, tok):
+    """A tournament is played with the roster that QUALIFIED for it: our team in the event's
+    qualifying session (its prevSession), not the new session's. At Tri-Cup #2 that meant
+    Christian Sosa, not Fall's Taylor Barnes. Fill each event's ourRoster from APA; a roster set
+    by hand in league.json always wins."""
+    from tourney_sl import sess_key  # same session-name reader the SL check uses
+    evs = [e for e in (league.get("events") or []) if e.get("prevSession") and not e.get("ourRoster")]
+    if not evs:
+        return
+    d = post(Q_MY_PLAYERS, {"id": MEMBER_ID}, tok)
+    players = (((d.get("data") or {}).get("member") or {}).get("players")) or []
+    for ev in evs:
+        ps = ev["prevSession"]
+        label = ps.get("label") if isinstance(ps, dict) else ps
+        want, fmt = sess_key(label), ev.get("fmt") or "8"
+        tids = [p["team"]["id"] for p in players if p.get("team")
+                and PLAYER_FMT.get(p.get("__typename")) == fmt
+                and sess_key((p.get("session") or {}).get("name")) == want]
+        if not tids:
+            print("WARNING: no %s-ball team of ours in %s for %s; roster left to league.json"
+                  % (fmt, label, ev.get("id")))
+            continue
+        t = roster(tids[0], tok)
+        if t and norm_roster(t):
+            ev["ourRoster"] = norm_roster(t)
+            ev["ourRosterSource"] = "APA: %s, %s" % (t.get("name"), label)
+            print("%s: qualifying roster from %s (%s), %d players"
+                  % (ev.get("id"), t.get("name"), label, len(ev["ourRoster"])))
+
+
 def baselines():
     tabs = {"8": defaultdict(lambda: {"g": 0, "w": 0}), "9": defaultdict(lambda: {"g": 0, "w": 0})}
     with open(DATA / "games.csv") as f:
@@ -207,6 +242,8 @@ def main():
             league.pop("_README", None)
         except Exception as e:
             print("WARNING: league.json unreadable (%s) — skipping" % e)
+    if league:
+        fill_qualifying_rosters(league, tok)
 
     # Tournament skill levels from APA (pipeline/tourney_sl.py): what each tournament player
     # ended last session at and holds this session. Optional; carried forward when present.
