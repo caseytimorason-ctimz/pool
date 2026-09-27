@@ -16,12 +16,13 @@
     "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given. Set",
     "\"result\" once a round is played; the Match tab then opens on the next unplayed round.",
     "",
-    "TOURNAMENT SKILL LEVELS: a player plays at the HIGHER of their current SL (the posted",
-    "roster) and the SL they ENDED the last session at. Set the event's \"prevSession\" to that",
-    "session's dates and the app raises anyone whose SL at its end, in our history, is higher, and",
-    "flags them on the Match tab. It only counts when we hold games of theirs in that session:",
-    "our data for other divisions can stop a session early, and no data means no flag. Record a",
-    "known correction on the player as \"playAs\" (+ \"playAsNote\")."
+    "TOURNAMENT SKILL LEVELS (anti-sandbagging): a player plays at the HIGHER of the SL they",
+    "ENDED the last session at and their SL in the CURRENT session, whatever the posted roster",
+    "says. Name both sessions on the event (\"prevSession\".label, \"currentSession\") and run",
+    "python3 pipeline/tourney_sl.py: it asks APA for every player on both sides and writes",
+    "data/tourney_sl.json (+ data.json \"tourneySL\"). Without that pull the app falls back to our",
+    "game history, which only counts when it holds games in prevSession's dates, and lists",
+    "everyone it could not verify. A known correction still goes on the player as \"playAs\"."
   ],
   "bylaws": {
     "source": "Hudson County APA Bylaws, 2025",
@@ -377,6 +378,7 @@
       "start": "13:00",
       "end": "21:00",
       "fmt": "8",
+      "currentSession": "Fall 2026",
       "prevSession": {"label": "Summer 2026", "from": "2026-04-29", "to": "2026-08-31",
         "note": "Approximate: the Wednesday 8-ball schedule runs Jan 7-Apr 22 (spring), then Apr 29-Aug 26, with Fall starting Sep 2. Correct if the league's dates differ."},
       "venue": "Hoboken Elks, 1005 Washington St, Hoboken NJ 07030",
