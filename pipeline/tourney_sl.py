@@ -86,7 +86,8 @@ def main():
     if not (prev_k and cur_k):
         sys.exit("Could not read session names %r / %r" % (prev_label, cur_label))
 
-    wanted = members_from_events(league, site)
+    # data.json's copy of the events carries the qualifying roster the build filled from APA
+    wanted = members_from_events(site.get("league") or league, site)
     if sys.argv[1:]:
         wanted = {int(a): wanted.get(int(a), ev.get("fmt") or "8") for a in sys.argv[1:]}
     print("Checking %d member(s): last session %s, current %s" % (len(wanted), prev_label, cur_label))
