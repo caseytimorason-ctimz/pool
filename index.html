@@ -2943,7 +2943,8 @@ function renderLog(host){
     const lines=ev.matches.map(mm=>{
       const parts=mm.results.map(r=>{
         const who=r.p?((ps.players||{})[r.p]||{name:r.p}).name:'(forfeit)';
-        const mark=r.result==='W'?'<b class="win">W</b>':r.result==='L'?'<b class="lose">L</b>':'<span class="muted">F</span>';
+        const mark=r.result==='W'?'<b class="win">W</b>':r.result==='L'?'<b class="lose">L</b>'
+          :r.result==='NC'?'<span class="muted">not finished</span>':'<span class="muted">F</span>';
         const vs=r.opp?` <span class="muted">vs ${esc(r.opp)}${r.oppSl?' ('+r.oppSl+')':''}</span>`:'';
         const extra=[r.scoreRaw?esc(r.scoreRaw):null, r.note?esc(r.note):null].filter(Boolean).join(', ');
         return `${esc(who)} ${mark}${vs}${extra?` <span class="muted">(${extra})</span>`:''}`+
