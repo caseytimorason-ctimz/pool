@@ -408,6 +408,24 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .rline .rl-opp{grid-column:3/5;font-size:11.5px;color:var(--ink-soft);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;margin-top:-3px}
 .rline .sl{width:19px;height:19px}.rline .sl i{font-size:10px}
+.evyear{font-family:Oswald;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--ink-soft);
+  margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
+.evyear:first-of-type{margin-top:8px}
+.evcard{border:1px solid var(--line-2);border-left:3px solid var(--line);border-radius:10px;
+  background:var(--panel-2);padding:10px 11px;margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.evcard.won{border-left-color:var(--good)}.evcard.lost{border-left-color:var(--bad)}
+.evhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.evname{font-family:Oswald;font-size:14px;font-weight:600;letter-spacing:.03em}
+.evmeta{font-size:11.5px;color:var(--ink-soft)}.evmeta b{color:var(--ink);font-family:Oswald;font-weight:600}
+.evnote{font-size:11.5px;line-height:1.4;color:var(--ink-soft);margin:0}
+.evround{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:5px;
+  padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.evround .evts{font-family:Oswald;font-size:13px;color:var(--ink);letter-spacing:0}
+.rline.nc .rl-res{color:var(--ink-soft)}
+.evcard .rline .rl-opp{white-space:normal;margin-top:-2px;line-height:1.35}
+.rline .rl-opp .muted{color:var(--ink-soft);opacity:.8}
+
 .fpips{display:inline-flex;gap:3px}
 .fp{width:9px;height:9px;border-radius:2px;display:inline-block}.fp.w{background:var(--good)}.fp.l{background:var(--bad)}
 .up{color:var(--good);font-weight:700}.dn{color:var(--bad);font-weight:700}.flat{color:var(--ink-soft)}
@@ -2907,7 +2925,7 @@ function renderLog(host){
   banner.style.borderColor='var(--warn)';
   banner.innerHTML='<div class="eyebrow" style="color:var(--warn)">Hand-recorded</div>'+
     '<p class="sub" style="margin-top:4px">Playoffs and tournaments are scored on paper, so none of this comes from APA. '+
-    'It is kept separate on purpose and never counts toward records or the matchup engine. Exactly-dated events do count toward hot/cold streaks, marked with a trophy.</p>';
+    'It is kept separate on purpose and never counts toward records or the matchup engine. Tournament matches do count toward hot/cold streaks, marked with a trophy.</p>';
   out.appendChild(banner);
 
   const pc=el('div','card');
@@ -2935,31 +2953,50 @@ function renderLog(host){
   });
   tt.appendChild(tbody);tw.appendChild(tt);pc.appendChild(tw);
 
-  const log=el('div');log.style.marginTop='14px';
-  log.appendChild(el('div','eyebrow','Events'));
-  ps.events.slice().reverse().forEach(ev=>{
-    const b=el('div','rulebox');
-    const res=ev.outcome?`<span class="qchip ${ev.outcome==='won'?'yes':'no'}">${esc(ev.outcome)}</span>`:'';
-    const lines=ev.matches.map(mm=>{
-      const parts=mm.results.map(r=>{
-        const who=r.p?((ps.players||{})[r.p]||{name:r.p}).name:'(forfeit)';
-        const mark=r.result==='W'?'<b class="win">W</b>':r.result==='L'?'<b class="lose">L</b>'
-          :r.result==='NC'?'<span class="muted">not finished</span>':'<span class="muted">F</span>';
-        const vs=r.opp?` <span class="muted">vs ${esc(r.opp)}${r.oppSl?' ('+r.oppSl+')':''}</span>`:'';
-        const extra=[r.scoreRaw?esc(r.scoreRaw):null, r.note?esc(r.note):null].filter(Boolean).join(', ');
-        return `${esc(who)} ${mark}${vs}${extra?` <span class="muted">(${extra})</span>`:''}`+
-               (r.uncertain?' <span class="qchip unknown">unconfirmed</span>':'');
-      }).join(' · ');
-      const head=mm.opp?`Round ${mm.n} vs ${esc(mm.opp)}${mm.teamScore?' ('+esc(mm.teamScore)+')':''}:`:ev.matches.length>1?`Match ${mm.n}:`:'';
-      return `<div style="margin-top:4px">${head?`<span class="muted">${head}</span> `:''}${parts}`+
-             (mm.uncertain?` <span class="qchip unknown">unconfirmed</span>`:'')+`</div>`;
-    }).join('');
-    b.innerHTML=`<h3>${esc(ev.label)} · ${esc(ev.date)} ${res}</h3>`+
-      (ev.note?`<p>${esc(ev.note)}</p>`:'')+lines;
-    log.appendChild(b);
-  });
-  pc.appendChild(log);
   out.appendChild(pc);
+
+  // Events: one card each, newest first, grouped by year. A round reads like the match list on
+  // the Results view (one row per player: result, SL, name, score; opponent and note beneath)
+  // rather than one run-on sentence per round.
+  const ec=el('div','card');
+  ec.appendChild(el('h2',null,'<span class="eyebrow">Events</span>'));
+  const who=k=>k?((ps.players||{})[k]||{name:k}).name:'(forfeit)';
+  const when=ev=>{
+    if(ev.datePrecision==='day')return niceDate(ev.date)+', '+ev.date.slice(0,4);
+    if(ev.datePrecision==='month'){const [y,m]=ev.date.split('-');return `${MON[+m-1]} ${y}`;}
+    return ev.date+' · date not recorded';
+  };
+  let year=null;
+  ps.events.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(ev=>{
+    const y=String(ev.date).slice(0,4);
+    if(y!==year){year=y;ec.appendChild(el('div','evyear',esc(y)));}
+    const rs=ev.matches.flatMap(mm=>mm.results||[]);
+    const w=rs.filter(r=>r.result==='W').length, l=rs.filter(r=>r.result==='L').length;
+    const b=el('div','evcard'+(ev.outcome==='won'?' won':ev.outcome==='lost'?' lost':''));
+    const chip=ev.outcome?`<span class="qchip ${ev.outcome==='won'?'yes':'no'}">${esc(ev.outcome)}</span>`:'';
+    b.appendChild(el('div','evhead',`<span class="evname">${esc(ev.label)}</span>${chip}`));
+    b.appendChild(el('div','evmeta',`${esc(when(ev))}${w+l?` · <b>${w}–${l}</b> in individual matches`:''}`));
+    if(ev.note)b.appendChild(el('p','evnote',esc(ev.note)));
+    ev.matches.forEach(mm=>{
+      const title=mm.opp?`Round ${mm.n} · vs ${esc(mm.opp)}`:ev.matches.length>1?`Match ${mm.n}`:'';
+      if(title||mm.teamScore)b.appendChild(el('div','evround',
+        `<span>${title}${mm.uncertain?' <span class="qchip unknown">unconfirmed</span>':''}</span>`+
+        (mm.teamScore?`<span class="evts">${esc(mm.teamScore)}</span>`:'')));
+      (mm.results||[]).forEach(r=>{
+        const res=r.result==='W'?'w':r.result==='L'?'l':'nc';
+        const row=el('div','rline '+res);
+        const opp=[r.opp?`vs ${esc(r.opp)}${r.oppSl?` <span class="muted">SL${r.oppSl}</span>`:''}`:'',
+                   r.note?`<span class="muted">${esc(r.note)}</span>`:''].filter(Boolean).join(' · ');
+        row.innerHTML=`<span class="rl-res">${r.result==='W'?'W':r.result==='L'?'L':r.p?'—':'F'}</span>`+
+          `${r.sl?sl(r.sl):'<span class="sl"><i>–</i></span>'}<span class="rl-who">${esc(who(r.p))}`+
+          `${r.uncertain?' <span class="qchip unknown">unconfirmed</span>':''}</span>`+
+          `<span class="rl-sc">${esc(r.scoreRaw||'')}</span>`+(opp?`<span class="rl-opp">${opp}</span>`:'');
+        b.appendChild(row);
+      });
+    });
+    ec.appendChild(b);
+  });
+  out.appendChild(ec);
 }
 
 /* ---------- shell ---------- */
