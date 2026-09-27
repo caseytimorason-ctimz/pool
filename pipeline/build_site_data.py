@@ -208,10 +208,21 @@ def main():
         except Exception as e:
             print("WARNING: league.json unreadable (%s) — skipping" % e)
 
+    # Tournament skill levels from APA (pipeline/tourney_sl.py): what each tournament player
+    # ended last session at and holds this session. Optional; carried forward when present.
+    tourney_sl = None
+    tf = DATA / "tourney_sl.json"
+    if tf.exists():
+        try:
+            tourney_sl = json.loads(tf.read_text())
+        except Exception as e:
+            print("WARNING: tourney_sl.json unreadable (%s) — skipping" % e)
+
     base = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
             "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
             "sessionStats": sess, "sessionSource": session_source,
-            "postseason": postseason, "league": league, "baselines": baselines()}
+            "postseason": postseason, "league": league, "baselines": baselines(),
+            "tourneySL": tourney_sl}
 
     # site/data.json: SCOPED, for the artifact (hard single-file size ceiling).
     scoped = dict(base, players=players)

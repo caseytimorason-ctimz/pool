@@ -18,9 +18,12 @@
     "OPEN: 0-2 and 0-3 are both described as losses short of the hill, so the two do not",
     "separate cleanly. Left as written rather than reconciled by guesswork.",
     "",
-    "STREAKS: an event counts toward the hot/cold streak on the Team tab only when it has an",
-    "exact date (datePrecision \"day\") and a \"fmt\" (\"8\" or \"9\"); month- or year-dated",
-    "events cannot be placed among league games. Nothing here feeds records or the engine."
+    "STREAKS: every event with a \"fmt\" counts toward the hot/cold streak on the Team tab,",
+    "merged with league nights in date order. A \"day\" date is placed exactly; a \"month\" date",
+    "goes after that month's league nights and is marked approximate (tournaments and playoffs",
+    "fall at session end); a \"year\" date cannot be placed and stays out until a month is known.",
+    "Every event here is an 8-Ball Scratchers event, hence fmt \"8\". Nothing here feeds records",
+    "or the matchup engine."
   ],
   "players": {
     "casey": {
@@ -88,6 +91,7 @@
       "label": "Tri-Cup",
       "date": "2023-09",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -123,6 +127,7 @@
       "label": "Championship decider",
       "date": "2024-04",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -158,6 +163,7 @@
       "label": "Tri-Cup",
       "date": "2024-05",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -216,6 +222,7 @@
       "label": "Tri-Cup",
       "date": "2026-01",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "won",
       "note": "Scratchers advance to Gold Cup.",
       "matches": [
@@ -278,6 +285,7 @@
       "label": "Gold Cup",
       "date": "2026-06",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "won",
       "note": "Scratchers advance to Vegas.",
       "matches": [
@@ -366,7 +374,9 @@
       "label": "Summer 8-Ball Playoffs",
       "date": "2026-08",
       "datePrecision": "month",
-      "note": "Summer session 8-ball playoffs. Partial record — only three of the five individual matches are on hand; the other two and the final team result aren't recorded yet.",
+      "fmt": "8",
+      "note": "Won the summer session 8-ball playoffs. Clinched after three straight — Patrick's wildcard win over their 7, then Stefano and Jorge — so with the match mathematically decided the last two individual matches weren't played. Advances to the Tri-Cup on Sep 26.",
+      "outcome": "won",
       "matches": [
         {
           "n": 1,
@@ -404,6 +414,7 @@
       "label": "Vegas",
       "date": "2026",
       "datePrecision": "year",
+      "fmt": "8",
       "note": "Earned by winning Gold Cup June 2026. Exact dates not recorded.",
       "matches": [
         {

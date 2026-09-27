@@ -235,6 +235,7 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 /* tournament result: a small trophy riding the pip's corner */
 .pip.t{position:relative;overflow:visible}
 .pip.t::after{content:'\1F3C6';position:absolute;top:-8px;right:-7px;font-size:10px;line-height:1;filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
+.pip.t.a::after{opacity:.55}
 @media(max-width:430px){.strk{grid-template-columns:auto 1fr}.pips{grid-column:1/-1;margin-top:2px}}
 /* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
 .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
@@ -1260,41 +1261,57 @@ function addEventMatches(){
       detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,result:x.result});
   }));
 }
-/* Tournament skill levels. A player plays at the HIGHER of their current SL (the posted
-   roster) and the SL they ended the last session at. The Sep 2026 Tri-Cup had Kisha Abernathy
-   listed as a 3 though she was a 4, and nothing flagged it. Sources, highest wins: the listed
-   SL; a correction recorded in league.json (playAs); and our history's SL at the end of the
-   event's prevSession. That last one counts ONLY when we hold games of theirs inside that
-   session. Our data for other divisions often stops a session early, and a spring SL is not
-   a summer-ending one: reading it as one flagged two correctly-rated 3s. Unknown means no flag. */
+/* Tournament skill levels (anti-sandbagging). A player plays at the HIGHER of the SL they ENDED
+   the last session at and their SL in the CURRENT session, whatever the posted roster says. At
+   the Sep 2026 Tri-Cup the league listed Kisha Abernathy as a 3 though she was a 4.
+   Sources, highest wins:
+   1. APA's own session records (D.tourneySL, from pipeline/tourney_sl.py): last and current.
+   2. Failing that, our game history's SL at the end of prevSession, but only when we hold games
+      of theirs inside it. Our data for other divisions can trail a session; reading a spring 4
+      as a summer-ending SL once flagged two correctly-rated 3s. Unknown means unverified, not 4.
+   3. A correction recorded in league.json (playAs).
+   Anyone with neither 1 nor 2 is listed as unverified, so a gap is never silent. */
 function tourneySL(p,fmt,prev){
   const listed=p.sl||0, prof=P[`${p.mid}:${fmt}`];
-  let ended=0;
-  if(prof&&prev&&prev.from&&prev.to&&(prof.lastSeen||'')>=prev.from&&(prof.firstSeen||'')<=prev.to){
+  const apa=((D.tourneySL||{}).members||{})[String(p.mid)];
+  let ended=0,cur=0,src='';
+  if(apa&&(apa.last||apa.current)){ended=apa.last||0;cur=apa.current||0;src='apa';}
+  else if(prof&&prev&&prev.from&&prev.to&&(prof.lastSeen||'')>=prev.from&&(prof.firstSeen||'')<=prev.to){
     const asOf=prof.lastSeen<prev.to?prof.lastSeen:prev.to;
     (prof.trajectory||[]).forEach(t=>{if(t.date<=asOf&&t.sl)ended=t.sl;});
+    src='history';
   }
-  const sl=Math.max(listed,ended,p.playAs||0);
-  const why=sl<=listed?'':(p.playAs===sl?(p.playAsNote||'recorded correction')
-    :`ended ${prev.label||'last session'} at SL${ended} (our records)`);
-  return {sl,listed,why};
+  const sl=Math.max(listed,ended,cur,p.playAs||0);
+  const last=prev&&prev.label||'last session', now=(D.tourneySL||{}).currentSession||'this session';
+  const why=sl<=listed?'':p.playAs===sl?(p.playAsNote||'recorded correction')
+    :ended===sl?`ended ${last} at SL${ended} (${src==='apa'?'APA':'our records'})`
+    :`SL${cur} in ${now} (APA)`;
+  return {sl,listed,why,checked:!!src||!!p.playAs};
 }
 function tourneyRoster(list,fmt,prev){
   return list.map(p=>{const t=tourneySL(p,fmt,prev);
-    return t.sl>t.listed?Object.assign({},p,{sl:t.sl,listedSL:t.listed,slWhy:t.why}):p;});
+    const q=t.sl>t.listed?Object.assign({},p,{sl:t.sl,listedSL:t.listed,slWhy:t.why}):Object.assign({},p);
+    q.slChecked=t.checked; return q;});
 }
 function slFlagCard(m){
   if(!m.event)return null;
-  const rows=[['Ours',roster(m.ourTeamId)],['Theirs',roster(m.oppTeamId)]]
-    .flatMap(([side,list])=>list.filter(p=>p.listedSL).map(p=>({side,p})));
-  if(!rows.length)return null;
+  const sides=[['Ours',roster(m.ourTeamId)],['Theirs',roster(m.oppTeamId)]];
+  const rows=sides.flatMap(([side,list])=>list.filter(p=>p.listedSL).map(p=>({side,p})));
+  const unchecked=sides.flatMap(([side,list])=>list.filter(p=>!p.slChecked).map(p=>({side,p})));
+  if(!rows.length&&!unchecked.length)return null;
+  const ts=D.tourneySL, prev=((D.league||{}).events||[]).map(e=>e.prevSession).find(Boolean)||{};
   const c=el('div','card');
   c.appendChild(el('h2',null,'<span class="eyebrow">Skill level check</span>'));
-  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of their current skill level and the one they ended last session at. `+
-    `${rows.length===1?'This player is':'These players are'} listed below that. The odds here use the higher level; `+
-    `check the scoresheet before their rack, because it changes the race and the ${SL_CAP}-point cap.`));
+  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of the skill level they ended last session at and their skill level this session. `+
+    `Anyone listed below that is raised here — the odds, their likely five and the ${SL_CAP}-point cap all use it. Check the scoresheet before their rack.`));
   rows.forEach(({side,p})=>c.appendChild(el('p',null,
     `<b>${side} · ${esc(p.name)}</b> — listed SL${p.listedSL}, plays as <b>SL${p.sl}</b>. <span class="sub">${esc(p.slWhy)}</span>`)));
+  if(unchecked.length){
+    const names=side=>unchecked.filter(x=>x.side===side).map(x=>esc(shortName(x.p.name)));
+    const parts=['Theirs','Ours'].filter(sd=>names(sd).length).map(sd=>`<b>${sd}:</b> ${names(sd).join(', ')}`);
+    c.appendChild(el('p','sub',`<b>Not verified</b> — no ${esc(prev.label||'last-session')} record on file, so a higher skill level can't be ruled out. `+
+      (parts.join(' · ')+'.').replace(/\.\.$/,'.')+' '+(ts?`APA check last run ${esc((ts.generatedAt||'').slice(0,10))}.`:`Run <code>python3 pipeline/tourney_sl.py</code> on the Mac to check them against APA.`)));
+  }
   return c;
 }
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1612,19 +1629,26 @@ function gameLog(pr){
   return g.sort((a,b)=>a.date.localeCompare(b.date));
 }
 const STREAK_FRESH_DAYS=75;   // beyond this a run is history, not form
-/* Tournament games for the streak only. They are paper-scored and never feed records or the
-   engine, but a run that carries on through a Tri-Cup is still a run. Only events with an exact
-   date and a format can be placed among league nights; same-day rounds keep their order. */
+/* Tournament games, merged into the streak with league nights in date order: a run that
+   carries on through a Tri-Cup is still a run. Paper-scored, so they never feed records or the
+   engine. A day-dated event is placed exactly. A month-dated one goes after that month's league
+   nights (tournaments and playoffs fall at session end) and is flagged approximate. A year-only
+   date cannot be placed at all and is left out. Same-day rounds keep their order. */
 function tourneyGames(mid,fmt){
   const ps=D.postseason; if(!ps||!ps.events)return [];
   const key=Object.keys(ps.players||{}).find(k=>String(ps.players[k].mid)===String(mid));
   if(!key)return [];
   const out=[];
   ps.events.forEach(ev=>{
-    if(ev.datePrecision!=='day'||ev.fmt!==fmt)return;
+    if(ev.fmt!==fmt)return;
+    let date=ev.date,approx=false;
+    if(ev.datePrecision==='month'){const [y,m]=ev.date.split('-').map(Number);
+      date=`${ev.date}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`;approx=true;}
+    else if(ev.datePrecision!=='day')return;
     (ev.matches||[]).forEach(mm=>(mm.results||[]).forEach(r=>{
       if(r.p===key&&(r.result==='W'||r.result==='L'))
-        out.push({date:ev.date,won:r.result==='W',tourney:ev.label+(mm.opp?` R${mm.n} vs ${mm.opp}`:''),n:mm.n||0});
+        out.push({date,won:r.result==='W',approx,n:mm.n||0,
+          tourney:ev.label+(mm.opp?` R${mm.n} vs ${mm.opp}`:'')+(r.opp?` · vs ${r.opp}`:'')+(approx?` · ${ev.date}, day not recorded`:` · ${ev.date}`)});
     }));
   });
   return out;
@@ -1658,7 +1682,7 @@ function renderStreaks(rows,fmt){
   items.sort((a,b)=>b.rank-a.rank);
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Hot streak</span>'));
-  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it. A 🏆 marks a tournament game — those count toward the run too.`));
+  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it. League nights and tournament matches run together in date order; a 🏆 marks a tournament match (faded when only the month is on record).`));
   const wrap=el('div','streaks');
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
@@ -1668,7 +1692,7 @@ function renderStreaks(rows,fmt){
     row.innerHTML=`<span class="strk-badge">${stale?'Cooled off':badge}</span>`+
       `<span class="strk-nm"><span class="strk-top">${sl(p.sl)}<span class="who">${esc(p.name)}</span></span>`+
       `<span class="strk-sub">${when}</span></span>`+
-      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}${g.tourney?' t':''}"${g.tourney?` title="${esc(g.tourney)}"`:''}>${g.won?'W':'L'}</span>`).join('')}</span>`;
+      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}${g.tourney?' t':''}${g.approx?' a':''}"${g.tourney?` title="${esc(g.tourney)}"`:''}>${g.won?'W':'L'}</span>`).join('')}</span>`;
     wrap.appendChild(row);
     // A cold run is usually a scheduling problem, not a talent problem — find the softest
     // matchup actually on the calendar and hand them a game they should win.
