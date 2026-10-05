@@ -8,6 +8,27 @@
     "Every rule below carries the bylaw text it came from so it can be re-checked when the",
     "league reissues the bylaws. If a rule has no cite, it came from Casey verbally.",
     "",
+    "An event's \"matches\" puts tournament nights on the Match tab. Tri-Cup and playoff",
+    "pairings never appear in the API schedule, so this is the only way they get there.",
+    "\"roster\" is the opponent's players as {mid, name, sl} — take mid from the Find tab so",
+    "their real history scouts. Leave it empty until the lineup is known. An opponent already",
+    "in the data build (same division) takes \"oppTeamId\" instead and uses that roster.",
+    "\"match\", \"time\", \"table\" and \"note\" are shown on the Match tab as given. Set",
+    "\"result\" once a round is played; the Match tab then opens on the next unplayed round.",
+    "",
+    "OUR ROSTER: a tournament is played with the roster from the season that QUALIFIED for it,",
+    "not the new session's. That is the event's \"prevSession\": build_site_data.py looks up our",
+    "team from that session in APA and fills \"ourRoster\" in data.json on every refresh. Set",
+    "\"ourRoster\" ({mid, name, sl}) here only to override it; a hand-set roster always wins.",
+    "",
+    "TOURNAMENT SKILL LEVELS (anti-sandbagging): a player plays at the HIGHER of the SL they",
+    "ENDED the last session at and their SL in the CURRENT session, whatever the posted roster",
+    "says. Name both sessions on the event (\"prevSession\".label, \"currentSession\") and run",
+    "python3 pipeline/tourney_sl.py: it asks APA for every player on both sides and writes",
+    "data/tourney_sl.json (+ data.json \"tourneySL\"). Without that pull the app falls back to our",
+    "game history, which only counts when it holds games in prevSession's dates, and lists",
+    "everyone it could not verify. A known correction still goes on the player as \"playAs\".",
+    "",
     "OPTIONAL: `standings` — current division points, hand-copied from the APA app's standings",
     "screen. The bundle carries no standings of its own (teams{} is rosters only, results{} is",
     "just our teams), so without this the Team > Form & results card cannot show the gap to",
@@ -374,10 +395,68 @@
       "start": "13:00",
       "end": "21:00",
       "fmt": "8",
+      "ourRoster": [
+        {"mid": 3088065, "name": "Patrick Conlon", "sl": 5},
+        {"mid": 3310773, "name": "Mauricio Alvarez", "sl": 6},
+        {"mid": 2991455, "name": "Stefano Cabrini", "sl": 3},
+        {"mid": 3041011, "name": "Casey Timorason", "sl": 6},
+        {"mid": 3086725, "name": "Jan Timorason", "sl": 4},
+        {"mid": 3391253, "name": "Amin Rahmani-Bouzina", "sl": 5},
+        {"mid": 3194878, "name": "Jorge Suaso", "sl": 4},
+        {"mid": 2990699, "name": "Christian Sosa", "sl": 3}
+      ],
+      "ourRosterNote": "A Tri-Cup is played with the roster that QUALIFIED (Summer 2026 session): Christian Sosa, not Taylor Barnes, who joined for Fall 2026 (Casey, 2026-09-27).",
+      "currentSession": "Fall 2026",
+      "prevSession": {"label": "Summer 2026", "from": "2026-04-29", "to": "2026-08-31",
+        "note": "Approximate: the Wednesday 8-ball schedule runs Jan 7-Apr 22 (spring), then Apr 29-Aug 26, with Fall starting Sep 2. Correct if the league's dates differ."},
       "venue": "Hoboken Elks, 1005 Washington St, Hoboken NJ 07030",
       "teams": 8,
       "organizer": "Chris Blumberg",
-      "source": "APA app event listing, screenshotted 2026-09-02"
+      "source": "APA app event listing, screenshotted 2026-09-02",
+      "matches": [
+        {
+          "round": 1,
+          "date": "2026-09-26",
+          "ourTeamId": 13139509,
+          "opp": "Chalk O Holics",
+          "roster": [
+            {"mid": 2801791, "name": "Lucretia Ford", "sl": 3},
+            {"mid": 3227961, "name": "Martins Ekpeh", "sl": 6},
+            {"mid": 2934088, "name": "Kisha Abernathy", "sl": 3, "playAs": 4, "playAsNote": "SL4 this session; the league operator listed her as a 3 for round 1 in error (Casey, 2026-09-26)"},
+            {"mid": 2955940, "name": "Yakini Johnson", "sl": 3},
+            {"mid": 2391271, "name": "Ronald Brown", "sl": 4},
+            {"mid": 3012907, "name": "Kellie Stevenson", "sl": 3},
+            {"mid": 3079944, "name": "Kimara Gray", "sl": 4},
+            {"mid": 2900743, "name": "Andre Hixon", "sl": 5}
+          ],
+          "rosterSource": "APA app team roster, screenshotted 2026-09-25; mids matched by name",
+          "match": 4,
+          "time": "1:15 PM",
+          "table": 4,
+          "result": "Won 7-3",
+          "source": "APA app Tri-Cup bracket, 2026-09-26"
+        },
+        {
+          "round": 2,
+          "date": "2026-09-26",
+          "ourTeamId": 13139509,
+          "opp": "Moose Shooters",
+          "roster": [
+            {"mid": 2233806, "name": "Arty Archila", "sl": 4},
+            {"mid": 1603443, "name": "David Rumph", "sl": 3},
+            {"mid": 2406227, "name": "Jose Silverio", "sl": 5},
+            {"mid": 3254921, "name": "Samuel Salazar", "sl": 3},
+            {"mid": 2980459, "name": "Kumar Harrybans", "sl": 5},
+            {"mid": 3183993, "name": "Troy Plant", "sl": 6},
+            {"mid": 3232198, "name": "Pierre Harris", "sl": 4},
+            {"mid": 880641, "name": "Edgar Borda", "sl": 7}
+          ],
+          "rosterSource": "APA app Tri-Cup roster, screenshotted 2026-09-26; mids matched by name",
+          "note": "sudden death · they beat Team Meeting in #3",
+          "result": "Lost 4-7",
+          "source": "APA app Tri-Cup bracket, 2026-09-26"
+        }
+      ]
     }
   ]
 }

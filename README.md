@@ -30,6 +30,18 @@ git add -A && git commit -m "weekly refresh" && git push
 ```
 There is no HTML rebuild step — see the warning above.
 
+### Before a tournament (Tri-Cup, playoffs)
+Tournaments play everyone at the **higher of the SL they ended last session at and their SL
+this session**. The posted roster can be wrong, and our game history for other divisions can
+be a whole session behind, so check it against APA directly:
+```
+python3 pipeline/tourney_sl.py
+git add data/tourney_sl.json data.json && git commit -m "tournament SL check" && git push
+```
+It reads the tournament event in `data/league.json` (set `prevSession.label` and
+`currentSession` on it) and checks every player on both sides. The Match tab then raises anyone
+listed too low and names anyone it still couldn't verify.
+
 ### Check the bundle before you push
 Every refresh since 09-11 has shipped a damaged `data.json` — 09-12 (`teams` 0, `results` 0),
 09-15 (`teams` 7, `results` 0), 09-16 (`teams` 19, `results` 0) — and the app fails quietly when

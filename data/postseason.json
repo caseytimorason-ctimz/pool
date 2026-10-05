@@ -16,7 +16,14 @@
     "reading rather than converting scores into any derived stat.",
     "",
     "OPEN: 0-2 and 0-3 are both described as losses short of the hill, so the two do not",
-    "separate cleanly. Left as written rather than reconciled by guesswork."
+    "separate cleanly. Left as written rather than reconciled by guesswork.",
+    "",
+    "STREAKS: every event with a \"fmt\" counts toward the hot/cold streak on the Team tab,",
+    "merged with league nights in date order. A \"day\" date is placed exactly; a \"month\" date",
+    "goes after that month's league nights and is marked approximate (tournaments and playoffs",
+    "fall at session end); a \"year\" date cannot be placed and stays out until a month is known.",
+    "Every event here is an 8-Ball Scratchers event, hence fmt \"8\". Nothing here feeds records",
+    "or the matchup engine."
   ],
   "players": {
     "casey": {
@@ -84,6 +91,7 @@
       "label": "Tri-Cup",
       "date": "2023-09",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -119,6 +127,7 @@
       "label": "Championship decider",
       "date": "2024-04",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -154,6 +163,7 @@
       "label": "Tri-Cup",
       "date": "2024-05",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "lost",
       "matches": [
         {
@@ -212,6 +222,7 @@
       "label": "Tri-Cup",
       "date": "2026-01",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "won",
       "note": "Scratchers advance to Gold Cup.",
       "matches": [
@@ -274,6 +285,7 @@
       "label": "Gold Cup",
       "date": "2026-06",
       "datePrecision": "month",
+      "fmt": "8",
       "outcome": "won",
       "note": "Scratchers advance to Vegas.",
       "matches": [
@@ -362,7 +374,9 @@
       "label": "Summer 8-Ball Playoffs",
       "date": "2026-08",
       "datePrecision": "month",
-      "note": "Summer session 8-ball playoffs. Partial record — only three of the five individual matches are on hand; the other two and the final team result aren't recorded yet.",
+      "fmt": "8",
+      "note": "Won the summer session 8-ball playoffs. Clinched after three straight — Patrick's wildcard win over their 7, then Stefano and Jorge — so with the match mathematically decided the last two individual matches weren't played. Advances to the Tri-Cup on Sep 26.",
+      "outcome": "won",
       "matches": [
         {
           "n": 1,
@@ -400,6 +414,7 @@
       "label": "Vegas",
       "date": "2026",
       "datePrecision": "year",
+      "fmt": "8",
       "note": "Earned by winning Gold Cup June 2026. Exact dates not recorded.",
       "matches": [
         {
@@ -459,6 +474,106 @@
               "p": "christian",
               "result": "L",
               "scoreRaw": "0-3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tricup-2026-09",
+      "type": "tricup",
+      "label": "8-Ball Tri-Cup #2",
+      "date": "2026-09-26",
+      "datePrecision": "day",
+      "fmt": "8",
+      "note": "Won round 1 7-3 over Chalk O Holics (match #4, table 4), then lost round 2 4-7 to Moose Shooters (table 2, sudden death), which ended the run. Round 2 was decided on points before match 5 finished. Source: APA app scoreboards, 2026-09-26.",
+      "outcome": "lost",
+      "matches": [
+        {
+          "n": 1,
+          "opp": "Chalk O Holics",
+          "teamScore": "7-3",
+          "results": [
+            {
+              "p": "stefano",
+              "result": "L",
+              "sl": 3,
+              "opp": "Kisha Abernathy",
+              "oppSl": 3,
+              "scoreRaw": "1-2",
+              "note": "she played as a 3 but was a 4 this session; listed wrong by the league operator"
+            },
+            {
+              "p": "amin",
+              "result": "W",
+              "sl": 5,
+              "opp": "Ronald Brown",
+              "oppSl": 4,
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "sl": 6,
+              "opp": "Martins Ekpeh",
+              "oppSl": 6,
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "mauricio",
+              "result": "W",
+              "sl": 6,
+              "opp": "Andre Hixon",
+              "oppSl": 5,
+              "scoreRaw": "2-1"
+            }
+          ]
+        },
+        {
+          "n": 2,
+          "opp": "Moose Shooters",
+          "teamScore": "4-7",
+          "results": [
+            {
+              "p": "christian",
+              "result": "L",
+              "sl": 3,
+              "opp": "Samuel Salazar",
+              "oppSl": 3,
+              "scoreRaw": "0-3"
+            },
+            {
+              "p": "casey",
+              "result": "W",
+              "sl": 6,
+              "opp": "Kumar Harrybans",
+              "oppSl": 5,
+              "scoreRaw": "2-0"
+            },
+            {
+              "p": "patrick",
+              "result": "L",
+              "sl": 5,
+              "opp": "Troy Plant",
+              "oppSl": 6,
+              "scoreRaw": "0-3"
+            },
+            {
+              "p": "mauricio",
+              "result": "W",
+              "sl": 6,
+              "opp": "Jose Silverio",
+              "oppSl": 5,
+              "scoreRaw": "2-1"
+            },
+            {
+              "p": "stefano",
+              "result": "NC",
+              "sl": 3,
+              "opp": "Arty Archila",
+              "oppSl": 4,
+              "scoreRaw": "0-0",
+              "note": "not finished; the team match was already decided on points"
             }
           ]
         }

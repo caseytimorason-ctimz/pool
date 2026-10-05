@@ -132,7 +132,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .pick-vs .fmt{font-family:Barlow;font-size:11px;font-weight:600;color:var(--ink-soft);margin-left:7px}
 /* qualification tracker */
 .qt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
-table.qt{border-collapse:collapse;min-width:100%;font-size:13px}
+table.qt{border-collapse:separate;border-spacing:0;min-width:100%;font-size:13px}
 table.qt th,table.qt td{padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center;white-space:nowrap}
 table.qt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink-soft);background:var(--panel-2);position:sticky;top:0}
@@ -224,6 +224,8 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .strk.fire .strk-badge{background:linear-gradient(135deg,#f0913a,#d8412a)}
 .strk.warm .strk-badge{background:var(--warn)}
 .strk.cold .strk-badge{background:#4a7fa8}
+.lagnote{margin:10px 0 0;padding:8px 10px;border-radius:9px;border:1px solid var(--warn);color:var(--ink);font-size:12.5px;line-height:1.4;background:rgba(184,121,31,.12)}
+.lagnote b{color:var(--warn)}
 .strk-nm{display:flex;flex-direction:column;gap:2px;min-width:0;font-weight:600}
 .strk-top{display:flex;align-items:center;gap:8px;min-width:0}
 .strk-top .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -232,6 +234,10 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .pip{width:15px;height:15px;border-radius:4px;display:grid;place-items:center;
   font-family:Oswald;font-size:9px;font-weight:700;color:#fff}
 .pip.w{background:var(--good)} .pip.l{background:var(--bad);opacity:.85}
+/* tournament result: a small trophy riding the pip's corner */
+.pip.t{position:relative;overflow:visible}
+.pip.t::after{content:'\1F3C6';position:absolute;top:-8px;right:-7px;font-size:10px;line-height:1;filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
+.pip.t.a::after{opacity:.55}
 @media(max-width:430px){.strk{grid-template-columns:auto 1fr}.pips{grid-column:1/-1;margin-top:2px}}
 /* first-run "who are you" roster picker — tappable names, not a dropdown to discover */
 .whogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
@@ -297,7 +303,7 @@ table.h2h th .arrow{font-size:9px}
    separating this wrapper from .qt-wrap, which uses the same sticky-first-column pattern; the
    two now match, so the blank-name report has one less place to hide. */
 .tt-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-table.tt{border-collapse:collapse;font-size:13px;min-width:100%}
+table.tt{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
 table.tt th,table.tt td{padding:9px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-2)}
 table.tt th{font-family:Oswald;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);
   font-weight:600;background:var(--panel-2);position:sticky;top:0}
@@ -453,6 +459,24 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .rline .rl-opp{grid-column:3/5;font-size:11.5px;color:var(--ink-soft);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;margin-top:-3px}
 .rline .sl{width:19px;height:19px}.rline .sl i{font-size:10px}
+.evyear{font-family:Oswald;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--ink-soft);
+  margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
+.evyear:first-of-type{margin-top:8px}
+.evcard{border:1px solid var(--line-2);border-left:3px solid var(--line);border-radius:10px;
+  background:var(--panel-2);padding:10px 11px;margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.evcard.won{border-left-color:var(--good)}.evcard.lost{border-left-color:var(--bad)}
+.evhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.evname{font-family:Oswald;font-size:14px;font-weight:600;letter-spacing:.03em}
+.evmeta{font-size:11.5px;color:var(--ink-soft)}.evmeta b{color:var(--ink);font-family:Oswald;font-weight:600}
+.evnote{font-size:11.5px;line-height:1.4;color:var(--ink-soft);margin:0}
+.evround{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:5px;
+  padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.evround .evts{font-family:Oswald;font-size:13px;color:var(--ink);letter-spacing:0}
+.rline.nc .rl-res{color:var(--ink-soft)}
+.evcard .rline .rl-opp{white-space:normal;margin-top:-2px;line-height:1.35}
+.rline .rl-opp .muted{color:var(--ink-soft);opacity:.8}
+
 .fpips{display:inline-flex;gap:3px}
 .fp{width:9px;height:9px;border-radius:2px;display:inline-block}.fp.w{background:var(--good)}.fp.l{background:var(--bad)}
 .up{color:var(--good);font-weight:700}.dn{color:var(--bad);font-weight:700}.flat{color:var(--ink-soft)}
@@ -464,6 +488,13 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .scout-line .good{color:var(--good);font-weight:700}.scout-line .bad{color:var(--bad);font-weight:700}
 .build{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);opacity:.6;margin-bottom:4px}
 .qt-wrap,.tt-wrap{margin-left:-15px;margin-right:-15px;border-left:0;border-right:0;border-radius:0}
+/* BLANK NAMES, for good. Mobile Chrome intermittently skips painting position:sticky table
+   cells (worst in collapsed-border tables): the same rows lose their name and SL badge on every
+   load (Jan and Mauricio in Team > Form, Sep 2026). Earlier fixes kept the pin and tried to
+   coax the paint back. On a phone the pin buys little, so the names simply scroll with the
+   table here, and a cell that is not sticky cannot be left unpainted. */
+@media(max-width:600px){table.qt td.who,table.qt th.who,table.tt td.who,table.tt th.who,
+  table.rot-tbl td.pin,table.rot-tbl th.pin{position:static;box-shadow:none}}
 .qt td.who,.qt th.who,.tt td.who,.tt th.who{max-width:38vw;padding-left:15px}
 /* the wrap is full-bleed here, so mirror the who column's gutter on the pinned status column */
 .tt td.pin,.tt th.pin{padding-right:15px}
@@ -1287,6 +1318,80 @@ function pTeamWin(m, A, Q, restPool){
 
 /* ---------- MATCHUP: stack-rank all our players vs each of theirs ---------- */
 function roster(tid){return (D.teams[tid]||{roster:[]}).roster.filter(p=>p.mid&&p.sl);}
+/* Tri-Cup and playoff pairings are announced on paper and never reach the API schedule, so
+   league.json carries them by hand (events[].matches). Fold them in as ordinary schedule rows.
+   Both sides get tournament copies of their rosters (below), so a player's tournament SL never
+   leaks into league nights; rotTeamId keeps the rotation tracker on our real team. */
+function addEventMatches(){
+  D.schedule=D.schedule||[];D.teams=D.teams||{};
+  ((D.league||{}).events||[]).forEach(ev=>(ev.matches||[]).forEach((x,i)=>{
+    const fmt=ev.fmt, our=D.teams[x.ourTeamId]||{}, prev=ev.prevSession;
+    // An opponent from our own division is already in the build — scout its real roster.
+    const theirs=(x.oppTeamId&&D.teams[x.oppTeamId])?D.teams[x.oppTeamId].roster:(x.roster||[]);
+    const tid=`event:${ev.id}:${i}`, oid=`${tid}:ours`;
+    D.teams[tid]={name:x.opp,fmt,roster:tourneyRoster(theirs,fmt,prev),event:true};
+    // A tournament is played with the roster that qualified for it (ev.ourRoster), not the
+    // new session's: at the Sep 2026 Tri-Cup that was Christian Sosa, not Fall's Taylor Barnes.
+    D.teams[oid]={name:our.name||'',fmt,roster:tourneyRoster(ev.ourRoster||our.roster||[],fmt,prev),event:true};
+    const at=[x.match&&`match #${x.match}`,x.time,x.table&&`table ${x.table}`].filter(Boolean).join(', ');
+    D.schedule.push({date:x.date||ev.date,ourTeamId:oid,rotTeamId:x.ourTeamId,ourTeam:our.name||'',
+      oppTeamId:tid,oppTeam:x.opp,fmt:fmt||our.fmt,event:ev.label+(x.round?` R${x.round}`:''),
+      detail:[at,x.note].filter(Boolean).join(' · '),source:x.source,result:x.result});
+  }));
+}
+/* Tournament skill levels (anti-sandbagging). A player plays at the HIGHER of the SL they ENDED
+   the last session at and their SL in the CURRENT session, whatever the posted roster says. At
+   the Sep 2026 Tri-Cup the league listed Kisha Abernathy as a 3 though she was a 4.
+   Sources, highest wins:
+   1. APA's own session records (D.tourneySL, from pipeline/tourney_sl.py): last and current.
+   2. Failing that, our game history's SL at the end of prevSession, but only when we hold games
+      of theirs inside it. Our data for other divisions can trail a session; reading a spring 4
+      as a summer-ending SL once flagged two correctly-rated 3s. Unknown means unverified, not 4.
+   3. A correction recorded in league.json (playAs).
+   Anyone with neither 1 nor 2 is listed as unverified, so a gap is never silent. */
+function tourneySL(p,fmt,prev){
+  const listed=p.sl||0, prof=P[`${p.mid}:${fmt}`];
+  const apa=((D.tourneySL||{}).members||{})[String(p.mid)];
+  let ended=0,cur=0,src='';
+  if(apa&&(apa.last||apa.current)){ended=apa.last||0;cur=apa.current||0;src='apa';}
+  else if(prof&&prev&&prev.from&&prev.to&&(prof.lastSeen||'')>=prev.from&&(prof.firstSeen||'')<=prev.to){
+    const asOf=prof.lastSeen<prev.to?prof.lastSeen:prev.to;
+    (prof.trajectory||[]).forEach(t=>{if(t.date<=asOf&&t.sl)ended=t.sl;});
+    src='history';
+  }
+  const sl=Math.max(listed,ended,cur,p.playAs||0);
+  const last=prev&&prev.label||'last session', now=(D.tourneySL||{}).currentSession||'this session';
+  const why=sl<=listed?'':p.playAs===sl?(p.playAsNote||'recorded correction')
+    :ended===sl?`ended ${last} at SL${ended} (${src==='apa'?'APA':'our records'})`
+    :`SL${cur} in ${now} (APA)`;
+  return {sl,listed,why,checked:!!src||!!p.playAs};
+}
+function tourneyRoster(list,fmt,prev){
+  return list.map(p=>{const t=tourneySL(p,fmt,prev);
+    const q=t.sl>t.listed?Object.assign({},p,{sl:t.sl,listedSL:t.listed,slWhy:t.why}):Object.assign({},p);
+    q.slChecked=t.checked; return q;});
+}
+function slFlagCard(m){
+  if(!m.event)return null;
+  const sides=[['Ours',roster(m.ourTeamId)],['Theirs',roster(m.oppTeamId)]];
+  const rows=sides.flatMap(([side,list])=>list.filter(p=>p.listedSL).map(p=>({side,p})));
+  const unchecked=sides.flatMap(([side,list])=>list.filter(p=>!p.slChecked).map(p=>({side,p})));
+  if(!rows.length&&!unchecked.length)return null;
+  const ts=D.tourneySL, prev=((D.league||{}).events||[]).map(e=>e.prevSession).find(Boolean)||{};
+  const c=el('div','card');
+  c.appendChild(el('h2',null,'<span class="eyebrow">Skill level check</span>'));
+  c.appendChild(el('p','sub',`Tournaments play everyone at the higher of the skill level they ended last session at and their skill level this session. `+
+    `Anyone listed below that is raised here — the odds, their likely five and the ${SL_CAP}-point cap all use it. Check the scoresheet before their rack.`));
+  rows.forEach(({side,p})=>c.appendChild(el('p',null,
+    `<b>${side} · ${esc(p.name)}</b> — listed SL${p.listedSL}, plays as <b>SL${p.sl}</b>. <span class="sub">${esc(p.slWhy)}</span>`)));
+  if(unchecked.length){
+    const names=side=>unchecked.filter(x=>x.side===side).map(x=>esc(shortName(x.p.name)));
+    const parts=['Theirs','Ours'].filter(sd=>names(sd).length).map(sd=>`<b>${sd}:</b> ${names(sd).join(', ')}`);
+    c.appendChild(el('p','sub',`<b>Not verified</b> — no ${esc(prev.label||'last-session')} record on file, so a higher skill level can't be ruled out. `+
+      (parts.join(' · ')+'.').replace(/\.\.$/,'.')+' '+(ts?`APA check last run ${esc((ts.generatedAt||'').slice(0,10))}.`:`Run <code>python3 pipeline/tourney_sl.py</code> on the Mac to check them against APA.`)));
+  }
+  return c;
+}
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function niceDate(iso){                       // "2026-09-09" -> "Wed, Sep 9"
@@ -1305,19 +1410,20 @@ function fillSchedule(){
   const s=$('#schedSel');
   const sched=D.schedule.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const today=new Date().toISOString().slice(0,10);
-  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.fmt}-ball</option>`).join('');
+  s.innerHTML=sched.map((m,i)=>`<option value="${i}">${niceDate(m.date)} · vs ${esc(m.oppTeam)} · ${m.event?esc(m.event):m.fmt+'-ball'}${m.result?' · '+esc(m.result):''}</option>`).join('');
   const paint=()=>{
     const m=sched[s.value]; if(!m)return;
     if(live.matchIdx!==s.value){live.matchIdx=s.value;live.outOurs=new Set();live.outTheirs=new Set();live.played=[];live.theirPick=null;}
-    $('#schedWhen').textContent=`${whenLabel(m.date,today)} · ${m.fmt}-ball`;
-    $('#schedVs').textContent=`vs ${m.oppTeam}`;
+    $('#schedWhen').textContent=`${m.result||whenLabel(m.date,today)} · ${m.event||m.fmt+'-ball'}`;
+    $('#schedVs').textContent=`vs ${m.oppTeam}`+(m.detail?` — ${m.detail}`:'');
     renderMatch(m);
   };
   s.onchange=paint;
   if(!sched.length){$('#matchOut').innerHTML='<div class="card"><p class="sub">No upcoming matches.</p></div>';return;}
   // Default to the NEXT match, not the oldest one on the list — the schedule still contains
   // recently-played dates, and this tab's whole job is "who do we put up this week".
-  let idx=sched.findIndex(m=>m.date>=today);
+  // A tournament round with a recorded result is done even though its date is today.
+  let idx=sched.findIndex(m=>m.date>=today&&!m.result);
   if(idx<0)idx=sched.length-1;
   s.value=idx;
   paint();
@@ -1430,6 +1536,7 @@ function renderMatch(m){
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',(live.mode0||'plan')===v);
     b.onclick=()=>{live.mode0=v;renderMatch(m);};modeBar.appendChild(b);});
   out.appendChild(modeBar);
+  const flags=slFlagCard(m); if(flags)out.appendChild(flags);
   if(live.mode0==='live'||live.mode0==='lineup'){renderLive(m,out);return;}
 
   const sccard=scoutCard(m); if(sccard)out.appendChild(sccard);
@@ -1456,7 +1563,9 @@ function renderMatch(m){
   // is ours to fix, and a message that points at the league sends you looking in the wrong place.
   if(!theirs.length){
     const known=!!(D.teams||{})[String(m.oppTeamId)];
-    out.appendChild(el('div','card',known
+    out.appendChild(el('div','card',(D.teams[m.oppTeamId]||{}).event
+      ? `<p class="sub"><b>No roster for ${esc(m.oppTeam)} yet.</b> ${esc(m.event)} pairings are not in the APA schedule, so their players have to be added by hand in <code>data/league.json</code>. ${m.source?esc(m.source)+'.':''}</p>`
+      : known
       ? `<p class="sub">${esc(m.oppTeam)} is in this data build but their roster is empty — the league has not posted it yet.</p>`
       : `<p class="sub"><b>${esc(m.oppTeam)} is missing from this data build.</b> They are on the schedule, but the bundle shipped without their team, so there is nothing to scout. This is our data, not the league's — re-run the weekly refresh to bring them back.</p>`));
     return;
@@ -1598,14 +1707,52 @@ function gameLog(pr){
   return g.sort((a,b)=>a.date.localeCompare(b.date));
 }
 const STREAK_FRESH_DAYS=75;   // beyond this a run is history, not form
+/* Tournament games, merged into the streak with league nights in date order: a run that
+   carries on through a Tri-Cup is still a run. Paper-scored, so they never feed records or the
+   engine. A day-dated event is placed exactly. A month-dated one goes after that month's league
+   nights (tournaments and playoffs fall at session end) and is flagged approximate. A year-only
+   date cannot be placed at all and is left out. Same-day rounds keep their order. */
+function tourneyGames(mid,fmt){
+  const ps=D.postseason; if(!ps||!ps.events)return [];
+  const key=Object.keys(ps.players||{}).find(k=>String(ps.players[k].mid)===String(mid));
+  if(!key)return [];
+  const out=[];
+  ps.events.forEach(ev=>{
+    if(ev.fmt!==fmt)return;
+    let date=ev.date,approx=false;
+    if(ev.datePrecision==='month'){const [y,m]=ev.date.split('-').map(Number);
+      date=`${ev.date}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`;approx=true;}
+    else if(ev.datePrecision!=='day')return;
+    (ev.matches||[]).forEach(mm=>(mm.results||[]).forEach(r=>{
+      if(r.p===key&&(r.result==='W'||r.result==='L'))
+        out.push({date,won:r.result==='W',approx,n:mm.n||0,
+          tourney:ev.label+(mm.opp?` R${mm.n} vs ${mm.opp}`:'')+(r.opp?` · vs ${r.opp}`:'')+(approx?` · ${ev.date}, day not recorded`:` · ${ev.date}`)});
+    }));
+  });
+  return out;
+}
 function formOf(pr){
-  const g=gameLog(pr);
+  const t=tourneyGames(pr.mid,pr.format);
+  const g=gameLog(pr).concat(t).sort((a,b)=>a.date.localeCompare(b.date)||(!!a.tourney-!!b.tourney)||((a.n||0)-(b.n||0)));
   if(!g.length)return null;
   const last=g[g.length-1];
   let run=1; const won=last.won;
   for(let i=g.length-2;i>=0&&g[i].won===won;i--)run++;
   const daysSince=Math.round((Date.now()-new Date(last.date))/864e5);
-  return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length};
+  return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length,
+          tourneyInRun:g.slice(g.length-run).filter(x=>x.tourney).length};
+}
+/* How far the data trails the calendar for one format: the last match night in the results feed,
+   and the scheduled league nights since then that have already been played but aren't loaded.
+   A streak can only be as current as the last refresh; Oct 2026 showed Dan Delaney "Heat check"
+   on a run ending Aug 31 while three 9-ball nights had been played since. */
+function dataLag(fmt){
+  const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const last=Object.values(D.results||{}).filter(r=>r.fmt===fmt)
+    .flatMap(r=>(r.matches||[]).map(m=>m.date)).sort().pop()||'';
+  const missed=[...new Set((D.schedule||[]).filter(m=>m.fmt===fmt&&!m.event&&last&&m.date>last&&m.date<today)
+    .map(m=>m.date))].sort();
+  return {last,missed};
 }
 function renderStreaks(rows,fmt){
   const items=[];
@@ -1625,16 +1772,24 @@ function renderStreaks(rows,fmt){
   items.sort((a,b)=>b.rank-a.rank);
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Hot streak</span>'));
-  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it.`));
+  card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it. League nights and tournament matches run together in date order; a 🏆 marks a tournament match (faded when only the month is on record).`));
+  const lag=dataLag(fmt);
+  if(lag.missed.length){
+    const ds=lag.missed.map(d=>{const [,m,dd]=d.split('-');return `${MON[+m-1]} ${+dd}`;}).join(', ');
+    card.appendChild(el('p','lagnote',`<b>Out of date.</b> Results end ${esc(niceDate(lag.last))}. `+
+      `${lag.missed.length} ${fmt}-ball match night${lag.missed.length>1?'s':''} since (${ds}) `+
+      `${lag.missed.length>1?"aren't":"isn't"} loaded yet, so a run below may already be over. Run the weekly refresh to bring them in.`));
+  }
   const wrap=el('div','streaks');
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
-    const when=stale?`${f.run} straight, but last played ${f.lastDate}`
-                    :`${f.run} straight · last played ${f.lastDate}`;
+    const tt=f.tourneyInRun?` · incl. ${f.tourneyInRun} tournament`:'';
+    const when=stale?`${f.run} straight${tt}, but last played ${f.lastDate}`
+                    :`${f.run} straight${tt} · last played ${f.lastDate}`;
     row.innerHTML=`<span class="strk-badge">${stale?'Cooled off':badge}</span>`+
       `<span class="strk-nm"><span class="strk-top">${sl(p.sl)}<span class="who">${esc(p.name)}</span></span>`+
       `<span class="strk-sub">${when}</span></span>`+
-      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}">${g.won?'W':'L'}</span>`).join('')}</span>`;
+      `<span class="pips">${f.recent.map(g=>`<span class="pip ${g.won?'w':'l'}${g.tourney?' t':''}${g.approx?' a':''}"${g.tourney?` title="${esc(g.tourney)}"`:''}>${g.won?'W':'L'}</span>`).join('')}</span>`;
     wrap.appendChild(row);
     // A cold run is usually a scheduling problem, not a talent problem — find the softest
     // matchup actually on the calendar and hand them a game they should win.
@@ -2143,7 +2298,10 @@ function vsSLTable(roster,fmt,allTime,onName){
   if(!rows.length)return null;
 
   const slCols=[...new Set(rows.flatMap(r=>r.cells.map(c=>c.vsSL)))].sort((a,b)=>a-b);
-  rows.sort((a,b)=>(b.pr.currentSL-a.pr.currentSL)||a.p.name.localeCompare(b.p.name));
+  // The roster's SL is today's (API or the APA app); the profile's is as of the last game on
+  // record, which for a player idle since spring can be a level behind.
+  const slOf=r=>r.p.sl||r.pr.currentSL;
+  rows.sort((a,b)=>(slOf(b)-slOf(a))||a.p.name.localeCompare(b.p.name));
 
   const wrap=el('div','tt-wrap');
   const table=el('table','tt');
@@ -2152,7 +2310,7 @@ function vsSLTable(roster,fmt,allTime,onName){
   const tb=el('tbody');
   rows.forEach(({p,pr,cells})=>{
     const tr=el('tr');
-    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
+    const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(p.sl||pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
     if(onName){ who.style.cursor='pointer'; who.onclick=()=>onName(p,pr); }
     tr.appendChild(who);
     const byVs={}; cells.forEach(c=>byVs[c.vsSL]=c);
@@ -2606,7 +2764,7 @@ function renderLive(m,host){
     if(Q){
       const memo={};
       const liveScore=(live.played||[]).some(x=>x.ourPts!=null);
-      const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.ourTeamId):null;
+      const rotLive=(live.fair&&!liveScore)?rotationInfo(fmt,m.rotTeamId||m.ourTeamId):null;
       // Is this their best player on the table? Only then is it worth spending ours to match.
       const theirTop=Math.max(...theirs.map(p=>p.sl));
       const ourLow=Math.min(...ours.map(p=>p.sl));
@@ -2803,7 +2961,7 @@ function bestFive(m,fmt){
   const memo={};
   // v stays the honest expected-wins number we display; t is what we rank by, so the fairness
   // nudge can reorder near-ties without ever inflating the figure shown to the captain.
-  const rot=live.fair?rotationInfo(fmt,m.ourTeamId):null;
+  const rot=live.fair?rotationInfo(fmt,m.rotTeamId||m.ourTeamId):null;
   const scored=legal.map(c=>{
     const v=lineupValue(c,their5,fmt,memo), f=fairBonus(c,rot);
     return {c,v,f,t:v+f};
@@ -3052,7 +3210,7 @@ function renderLog(host){
   banner.style.borderColor='var(--warn)';
   banner.innerHTML='<div class="eyebrow" style="color:var(--warn)">Hand-recorded</div>'+
     '<p class="sub" style="margin-top:4px">Playoffs and tournaments are scored on paper, so none of this comes from APA. '+
-    'It is kept separate on purpose and never counts toward records, streaks or the matchup engine.</p>';
+    'It is kept separate on purpose and never counts toward records or the matchup engine. Tournament matches do count toward hot/cold streaks, marked with a trophy.</p>';
   out.appendChild(banner);
 
   const pc=el('div','card');
@@ -3080,29 +3238,50 @@ function renderLog(host){
   });
   tt.appendChild(tbody);tw.appendChild(tt);pc.appendChild(tw);
 
-  const log=el('div');log.style.marginTop='14px';
-  log.appendChild(el('div','eyebrow','Events'));
-  ps.events.slice().reverse().forEach(ev=>{
-    const b=el('div','rulebox');
-    const res=ev.outcome?`<span class="qchip ${ev.outcome==='won'?'yes':'no'}">${esc(ev.outcome)}</span>`:'';
-    const lines=ev.matches.map(mm=>{
-      const parts=mm.results.map(r=>{
-        const who=r.p?((ps.players||{})[r.p]||{name:r.p}).name:'(forfeit)';
-        const mark=r.result==='W'?'<b class="win">W</b>':r.result==='L'?'<b class="lose">L</b>':'<span class="muted">F</span>';
-        const vs=r.opp?` <span class="muted">vs ${esc(r.opp)}${r.oppSl?' ('+r.oppSl+')':''}</span>`:'';
-        const extra=[r.scoreRaw?esc(r.scoreRaw):null, r.note?esc(r.note):null].filter(Boolean).join(', ');
-        return `${esc(who)} ${mark}${vs}${extra?` <span class="muted">(${extra})</span>`:''}`+
-               (r.uncertain?' <span class="qchip unknown">unconfirmed</span>':'');
-      }).join(' · ');
-      return `<div style="margin-top:4px">${ev.matches.length>1?`<span class="muted">Match ${mm.n}:</span> `:''}${parts}`+
-             (mm.uncertain?` <span class="qchip unknown">unconfirmed</span>`:'')+`</div>`;
-    }).join('');
-    b.innerHTML=`<h3>${esc(ev.label)} · ${esc(ev.date)} ${res}</h3>`+
-      (ev.note?`<p>${esc(ev.note)}</p>`:'')+lines;
-    log.appendChild(b);
-  });
-  pc.appendChild(log);
   out.appendChild(pc);
+
+  // Events: one card each, newest first, grouped by year. A round reads like the match list on
+  // the Results view (one row per player: result, SL, name, score; opponent and note beneath)
+  // rather than one run-on sentence per round.
+  const ec=el('div','card');
+  ec.appendChild(el('h2',null,'<span class="eyebrow">Events</span>'));
+  const who=k=>k?((ps.players||{})[k]||{name:k}).name:'(forfeit)';
+  const when=ev=>{
+    if(ev.datePrecision==='day')return niceDate(ev.date)+', '+ev.date.slice(0,4);
+    if(ev.datePrecision==='month'){const [y,m]=ev.date.split('-');return `${MON[+m-1]} ${y}`;}
+    return ev.date+' · date not recorded';
+  };
+  let year=null;
+  ps.events.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(ev=>{
+    const y=String(ev.date).slice(0,4);
+    if(y!==year){year=y;ec.appendChild(el('div','evyear',esc(y)));}
+    const rs=ev.matches.flatMap(mm=>mm.results||[]);
+    const w=rs.filter(r=>r.result==='W').length, l=rs.filter(r=>r.result==='L').length;
+    const b=el('div','evcard'+(ev.outcome==='won'?' won':ev.outcome==='lost'?' lost':''));
+    const chip=ev.outcome?`<span class="qchip ${ev.outcome==='won'?'yes':'no'}">${esc(ev.outcome)}</span>`:'';
+    b.appendChild(el('div','evhead',`<span class="evname">${esc(ev.label)}</span>${chip}`));
+    b.appendChild(el('div','evmeta',`${esc(when(ev))}${w+l?` · <b>${w}–${l}</b> in individual matches`:''}`));
+    if(ev.note)b.appendChild(el('p','evnote',esc(ev.note)));
+    ev.matches.forEach(mm=>{
+      const title=mm.opp?`Round ${mm.n} · vs ${esc(mm.opp)}`:ev.matches.length>1?`Match ${mm.n}`:'';
+      if(title||mm.teamScore)b.appendChild(el('div','evround',
+        `<span>${title}${mm.uncertain?' <span class="qchip unknown">unconfirmed</span>':''}</span>`+
+        (mm.teamScore?`<span class="evts">${esc(mm.teamScore)}</span>`:'')));
+      (mm.results||[]).forEach(r=>{
+        const res=r.result==='W'?'w':r.result==='L'?'l':'nc';
+        const row=el('div','rline '+res);
+        const opp=[r.opp?`vs ${esc(r.opp)}${r.oppSl?` <span class="muted">SL${r.oppSl}</span>`:''}`:'',
+                   r.note?`<span class="muted">${esc(r.note)}</span>`:''].filter(Boolean).join(' · ');
+        row.innerHTML=`<span class="rl-res">${r.result==='W'?'W':r.result==='L'?'L':r.p?'—':'F'}</span>`+
+          `${r.sl?sl(r.sl):'<span class="sl"><i>–</i></span>'}<span class="rl-who">${esc(who(r.p))}`+
+          `${r.uncertain?' <span class="qchip unknown">unconfirmed</span>':''}</span>`+
+          `<span class="rl-sc">${esc(r.scoreRaw||'')}</span>`+(opp?`<span class="rl-opp">${opp}</span>`:'');
+        b.appendChild(row);
+      });
+    });
+    ec.appendChild(b);
+  });
+  out.appendChild(ec);
 }
 
 /* ---------- shell ---------- */
@@ -3216,12 +3395,26 @@ function init(){
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');
       const nx=now==='dark'?'light':now==='light'?'dark':(matchMedia('(prefers-color-scheme:dark)').matches?'light':'dark');
       r.setAttribute('data-theme',nx);try{localStorage.setItem('rs-theme',nx)}catch(e){}};})();
-  $('#foot').innerHTML=`<span class="build">build sep 17, 10:52pm</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
+  $('#foot').innerHTML=`<span class="build">build oct 5, 11:37am</span>Data through ${(D.generatedAt||'').slice(0,10)} · ${PL.length.toLocaleString()} players, 8 & 9-ball. Percentages are handicap-adjusted — APA races sit near 50%, so the spread is the signal.`;
   fillMe();fillSchedule();fillPlayers('');initTrain();
 }
 (function start(){
-  function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();init();}
+  function go(data){D=data;P=D.players;B=D.baselines;GAP=buildGapPriors(B);PL=playerList();addEventMatches();init();}
+  // Keep a failed download apart from a failed render: one catch for both used to report a
+  // code bug as "Could not load data.json", which sent every diagnosis the wrong way.
+  function fail(what,e){document.body.innerHTML=`<div style="padding:24px;font:15px/1.5 system-ui,sans-serif">
+    <p><b>${what}</b></p><p style="opacity:.75">${esc(String(e&&e.message||e))}</p>
+    <p><a href="" style="color:inherit">Reload</a></p></div>`;console.error(e);}
   if(window.APA_DATA){go(window.APA_DATA);}
-  else{fetch('./data.json').then(r=>r.json()).then(go).catch(()=>{document.body.innerHTML='<p style="padding:24px">Could not load data.json.</p>';});}
+  else{fetch('./data.json')
+    .then(r=>{
+      // The password gate answers an expired or missing cookie with its login page (401 HTML),
+      // which r.json() would misreport as a syntax error.
+      if(r.status===401){location.reload();throw new Error('Signed out — reloading to the password page.');}
+      if(!r.ok)throw new Error(`data.json: HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch(e=>{fail('Could not load data.json.',e);throw null;})
+    .then(data=>{try{go(data)}catch(e){fail('The app hit an error while starting.',e)}},()=>{});}
 })();
 </script>
