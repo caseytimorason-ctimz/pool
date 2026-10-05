@@ -23,7 +23,9 @@ Thin evidence falls back to baseline and is flagged low-confidence. Full spec: A
 
 ## Weekly refresh (laptop)
 Data via APA's GraphQL API, headless auth with a refresh token in macOS Keychain
-(service `apa-refresh-token`) — no secrets in this repo.
+(service `apa-refresh-token`) — no secrets in this repo. A cloud session reads the token from
+the `APA_REFRESH_TOKEN` environment variable instead and needs `gql.poolplayers.com` in its
+allowed domains.
 ```
 python3 pipeline/apa_pull.py && python3 pipeline/analyze.py && python3 pipeline/build_site_data.py
 git add -A && git commit -m "weekly refresh" && git push

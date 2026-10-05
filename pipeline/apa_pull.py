@@ -53,16 +53,21 @@ Q_MATCH = """query($id:Int!){ match(id:$id){
 
 
 def keychain_refresh_token():
+    # Cloud sessions have no Keychain: they get the token from the environment instead.
+    env = os.environ.get("APA_REFRESH_TOKEN", "").strip()
+    if env:
+        return env
     try:
         out = subprocess.run(
             ["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
             capture_output=True, text=True, check=True)
         return out.stdout.strip()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         sys.exit(
-            "No refresh token in Keychain. One-time setup:\n"
+            "No refresh token in APA_REFRESH_TOKEN or Keychain. One-time setup:\n"
             "  1) Chrome console on league.poolplayers.com:  copy(localStorage.refreshToken)\n"
             "  2) security add-generic-password -a \"$USER\" -s %s -w   (paste, then Ctrl-D)\n"
+            "     or, in a cloud environment, set APA_REFRESH_TOKEN to it\n"
             % KEYCHAIN_SERVICE)
 
 
