@@ -8,7 +8,7 @@ Refuses to overwrite data.json with a bundle that lost data the last one had (se
 check_bundle); pass --force to write it anyway.
 """
 import csv as _csv0
-import csv, json, os, sqlite3, sys, urllib.request, urllib.error
+import csv, json, os, sqlite3, sys, time, urllib.request, urllib.error
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,11 +27,18 @@ def post(q, v=None, tok=None):
         h["Authorization"] = tok
     r = urllib.request.Request("https://gql.poolplayers.com/graphql",
                                data=json.dumps({"query": q, "variables": v or {}}).encode(), headers=h)
-    try:
-        with urllib.request.urlopen(r, timeout=30) as x:
-            return json.load(x)
-    except urllib.error.HTTPError as e:
-        return json.load(e)
+    # A transient reset is routine through this egress proxy (it is what emptied the 09-14
+    # bundle), so retry with backoff instead of letting one request kill the build.
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(r, timeout=30) as x:
+                return json.load(x)
+        except urllib.error.HTTPError as e:
+            return json.load(e)
+        except Exception:
+            if attempt == 3:
+                raise
+            time.sleep(0.5 * (2 ** attempt))
 
 
 def token():
