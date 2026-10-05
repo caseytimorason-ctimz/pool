@@ -159,6 +159,32 @@ def results_feed(tid, team, tok):
     return out
 
 
+def standings(tid, since):
+    """Division standings this session for our team `tid`, from the match corpus: every team in
+    our division, total match points (bonuses and penalties included, as APA scores them) from
+    its finalized matches. A division id is one session, so the division alone scopes it;
+    `since` only picks out our current division. backfill.py --current keeps the division's
+    matches in the corpus. -> [{"team", "points", "played"}], best first, or None if there is nothing to show."""
+    mp = DATA / "matches.json"
+    if not mp.exists() or not since:
+        return None
+    metas = [v["meta"] for v in json.loads(mp.read_text()).values()]
+    divs = {m.get("div") for m in metas if (m.get("start") or "")[:10] >= since and m.get("div")
+            and tid in (m.get("homeTeam"), m.get("awayTeam"))}
+    if not divs:
+        return None
+    rows = {}
+    for m in metas:
+        if m.get("div") not in divs or not m.get("finalized"):
+            continue
+        for side in ("home", "away"):
+            t = m.get(side + "Team")
+            r = rows.setdefault(t, {"team": m.get(side + "Name"), "points": 0, "played": 0})
+            r["points"] += m.get(side + "Points") or 0
+            r["played"] += 1
+    return sorted(rows.values(), key=lambda r: -r["points"]) or None
+
+
 def check_bundle(new, old):
     """Every refresh from 09-12 to 09-16 shipped a damaged bundle (empty results, missing
     teams) and the app failed quietly. Compare against the bundle being replaced and list
@@ -356,6 +382,18 @@ def main():
                              "losses": sum(1 for m in ms if not m["won"]),
                              "pointsFor": sum(m["us"] for m in ms),
                              "pointsAgainst": sum(m["them"] for m in ms)}
+
+    # Division standings for the Team tab's chase-first line. A standings block kept by hand in
+    # league.json wins; otherwise compute it from the corpus.
+    if league is not None:
+        st = dict(league.get("standings") or {})
+        for fmt, src in session_source.items():
+            if fmt not in st:
+                rows = standings(int(src["teamId"]), src.get("first"))
+                if rows:
+                    st[fmt] = rows
+        if st:
+            league["standings"] = st
 
     of = DATA / "official_rules.json"
     if league is not None and of.exists():
