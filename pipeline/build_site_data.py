@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Assemble site/data.json for the dashboard: analysis + league baselines + current-season
-rosters + schedule + opponent rosters. Runs headless (Keychain refresh token).
+Assemble data.json (repo root, what index.html fetches) for the dashboard: analysis + league
+baselines + current-season rosters + schedule + opponent rosters + this session's results.
+Runs headless (Keychain refresh token on the Mac, APA_REFRESH_TOKEN in a cloud session).
+
+Refuses to overwrite data.json with a bundle that lost data the last one had (see
+check_bundle); pass --force to write it anyway.
 """
 import csv as _csv0
 import csv, json, os, sqlite3, sys, urllib.request, urllib.error
@@ -9,7 +13,8 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data"; SITE = ROOT / "site"; SITE.mkdir(exist_ok=True)
+DATA = ROOT / "data"
+OUT = ROOT / "data.json"
 LS = (Path.home() / "Library/Containers/league.poolplayers.com/Data/Library/WebKit/WebsiteData"
       "/Default/ORyOecTgL3hb22UNOIkn7DC33SbJKxT_s3tjRtJIy4A"
       "/ORyOecTgL3hb22UNOIkn7DC33SbJKxT_s3tjRtJIy4A/LocalStorage/localstorage.sqlite3")
@@ -111,6 +116,71 @@ def baselines():
                 continue
             c = tabs[r["fmt"]][(a, b)]; c["g"] += 1; c["w"] += 1 if r["win"] == "True" else 0
     return {fmt: {"%d-%d" % k: [round(v["w"] / v["g"], 4), v["g"]] for k, v in t.items()} for fmt, t in tabs.items()}
+
+
+def results_feed(tid, team, tok):
+    """This session's played matches for one of our teams, as the Team tab's results feed
+    (rotation tracker, team record, match list, Last 8/4/2 windows)."""
+    from apa_pull import Q_MATCH
+    out = []
+    for mm in sorted(team.get("matches") or [], key=lambda x: x.get("startTime") or ""):
+        if not (mm.get("isFinalized") or mm.get("isScored")):
+            continue
+        m = (post(Q_MATCH, {"id": mm["id"]}, tok).get("data") or {}).get("match")
+        if not m:
+            continue
+        home = (m.get("home") or {}).get("id") == tid
+        res = {r["homeAway"]: r for r in (m.get("results") or [])}
+        mine, theirs = res.get("HOME" if home else "AWAY"), res.get("AWAY" if home else "HOME")
+        if not mine or not theirs:
+            continue
+        pm, pt = mine.get("points") or {}, theirs.get("points") or {}
+        adj = lambda p: (p.get("total") or 0) - (p.get("won") or 0) - (p.get("bonus") or 0) + (p.get("penalty") or 0)
+        pts = lambda sc: (sc.get("nineBallMatchPointsEarned") if sc.get("nineBallMatchPointsEarned") is not None
+                          else sc.get("eightBallMatchPointsEarned"))
+        opp_by_pos = {}
+        for sc in theirs.get("scores") or []:
+            opp_by_pos.setdefault(sc.get("matchPositionNumber"), []).append(sc)
+        line = []
+        for sc in sorted(mine.get("scores") or [], key=lambda x: (-(x.get("skillLevel") or 0), x.get("matchPositionNumber") or 0)):
+            q = opp_by_pos.get(sc.get("matchPositionNumber")) or []
+            o = q.pop(0) if q else {}
+            line.append({"who": (sc.get("player") or {}).get("displayName"), "sl": sc.get("skillLevel"),
+                         "pts": pts(sc), "opp": (o.get("player") or {}).get("displayName"),
+                         "oppSL": o.get("skillLevel"), "oppPts": pts(o) if o else None,
+                         "won": sc.get("winLoss") == "W"})
+        us, them = pm.get("total") or 0, pt.get("total") or 0
+        out.append({"date": (m.get("startTime") or "")[:10], "week": m.get("week"),
+                    "opp": ((m.get("away") if home else m.get("home")) or {}).get("name"),
+                    "us": us, "them": them, "won": us > them,
+                    "bonus": pm.get("bonus") or 0, "oppBonus": pt.get("bonus") or 0,
+                    "pen": pm.get("penalty") or 0, "oppPen": pt.get("penalty") or 0,
+                    "adj": adj(pm), "oppAdj": adj(pt), "line": line})
+    return out
+
+
+def check_bundle(new, old):
+    """Every refresh from 09-12 to 09-16 shipped a damaged bundle (empty results, missing
+    teams) and the app failed quietly. Compare against the bundle being replaced and list
+    anything lost. The schedule shrinking is normal (played matches leave it), so is a past
+    opponent's team dropping out; what is not normal is a feed going empty or shrinking, or a
+    scheduled opponent without a roster."""
+    problems = []
+    if not new.get("myActiveTeams"):
+        problems.append("myActiveTeams is empty")
+    for k in ("players", "results"):
+        a, b = len(old.get(k) or {}), len(new.get(k) or {})
+        if b < a:
+            problems.append("%s shrank %d -> %d" % (k, a, b))
+    for tid, r in (old.get("results") or {}).items():
+        nr = (new.get("results") or {}).get(tid)
+        if nr is not None and len(nr["matches"]) < len(r["matches"]):
+            problems.append("results for %s lost matches %d -> %d" % (r.get("name"), len(r["matches"]), len(nr["matches"])))
+    missing = sorted({m["oppTeam"] for m in new.get("schedule") or []
+                      if not ((new.get("teams") or {}).get(str(m["oppTeamId"])) or {}).get("roster")})
+    if missing:
+        problems.append("scheduled opponents with no roster: " + ", ".join(missing))
+    return problems
 
 
 def main():
@@ -261,37 +331,72 @@ def main():
         except Exception as e:
             print("WARNING: tourney_sl.json unreadable (%s) — skipping" % e)
 
+    # Unrated players come through APA as SL 0. Show the level they actually play at, from
+    # whichever current roster lists them, rather than "SL 0".
+    roster_sl = {}
+    for t in teams.values():
+        for p in t.get("roster") or []:
+            if p.get("mid") and p.get("sl"):
+                roster_sl.setdefault((str(p["mid"]), t["fmt"]), p["sl"])
+    for k, v in analysis["players"].items():
+        if not v.get("currentSL"):
+            sl = roster_sl.get((str(v["mid"]), v["format"]))
+            if sl:
+                v["currentSL"] = sl
+
+    # This session's results for the team counted in each format (same choice as sessionStats).
+    results = {}
+    for fmt, tid in chosen.items():
+        ft = fetched.get(int(tid))
+        if not ft:
+            continue
+        ms = results_feed(int(tid), ft, tok)
+        results[str(tid)] = {"name": ft["name"], "fmt": fmt, "matches": ms,
+                             "wins": sum(1 for m in ms if m["won"]),
+                             "losses": sum(1 for m in ms if not m["won"]),
+                             "pointsFor": sum(m["us"] for m in ms),
+                             "pointsAgainst": sum(m["them"] for m in ms)}
+
+    of = DATA / "official_rules.json"
+    if league is not None and of.exists():
+        official = json.loads(of.read_text())
+        official.pop("_README", None)
+        league["official"] = official
+
     base = {"generatedAt": analysis.get("generatedFrom"), "memberId": MEMBER_ID,
             "myActiveTeams": my_active, "teams": teams, "schedule": schedule,
             "sessionStats": sess, "sessionSource": session_source,
             "postseason": postseason, "league": league, "baselines": baselines(),
-            "tourneySL": tourney_sl}
+            "tourneySL": tourney_sl, "results": results}
 
-    # site/data.json: SCOPED, for the artifact (hard single-file size ceiling).
-    scoped = dict(base, players=players)
-    (SITE / "data.json").write_text(json.dumps(scoped, separators=(",", ":")))
-    print("site/data.json (artifact, scoped): %d/%d player profiles, %.2f MB" % (
-        len(players), len(analysis["players"]), (SITE / "data.json").stat().st_size / 1024 / 1024))
-
-    # site/data.full.json: EVERY player in the league, but tiered by depth. Head-to-head is
-    # 85% of the payload and its per-meeting game logs alone are ~11MB. Those logs only matter
-    # for people we'd actually scout, so keep them for the relevant set and drop them for the
-    # rest — everyone still keeps their vs-SL records, trajectory and H2H win/loss totals, so
-    # you can still look up any player in the league. Keeps the file inside GitHub's ~25MB
-    # web-upload ceiling with real headroom.
+    # data.json: EVERY player in the league, but tiered by depth. Head-to-head is 85% of the
+    # payload and its per-meeting game logs alone are ~11MB. Those logs only matter for people
+    # we'd actually scout, so keep them for the relevant set and drop them for the rest —
+    # everyone still keeps their vs-SL records, trajectory and H2H totals, so you can still
+    # look up any player in the league.
     full_players = {}
     for k, v in analysis["players"].items():
         if k.split(":")[0] in relevant_mids:
             full_players[k] = v
         else:
             trimmed = dict(v)
-            trimmed["headToHead"] = [{kk: o[kk] for kk in ("oppMid", "oppName", "meetings", "wins") if kk in o}
+            trimmed["headToHead"] = [{kk: o[kk] for kk in ("oppMid", "oppName", "meetings", "wins", "avgPts", "ptsN") if kk in o}
                                      for o in v.get("headToHead", [])]
             full_players[k] = trimmed
     full = dict(base, players=full_players)
-    (SITE / "data.full.json").write_text(json.dumps(full, separators=(",", ":")))
-    print("site/data.full.json (deploy, full): %d player profiles, %.2f MB" % (
-        len(analysis["players"]), (SITE / "data.full.json").stat().st_size / 1024 / 1024))
+    # JSON object keys are strings; match what index.html reads (teams["13139509"]).
+    full["teams"] = {str(k): v for k, v in full["teams"].items()}
+
+    old = json.loads(OUT.read_text()) if OUT.exists() else {}
+    problems = check_bundle(full, old)
+    for p in problems:
+        print("FAIL  " + p)
+    if problems and "--force" not in sys.argv[1:]:
+        sys.exit("Not writing %s: the new bundle lost data the current one has (above). "
+                 "Re-run the pull, or pass --force if the loss is real." % OUT.name)
+    OUT.write_text(json.dumps(full, separators=(",", ":")))
+    print("%s: %d player profiles (%d with full head-to-head), %d results feeds, %.2f MB" % (
+        OUT.name, len(full_players), len(players), len(results), OUT.stat().st_size / 1024 / 1024))
     print("active teams:", [(teams[t]["name"], teams[t]["fmt"]) for t in my_active])
 
 
