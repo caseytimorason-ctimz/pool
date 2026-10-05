@@ -224,6 +224,8 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .strk.fire .strk-badge{background:linear-gradient(135deg,#f0913a,#d8412a)}
 .strk.warm .strk-badge{background:var(--warn)}
 .strk.cold .strk-badge{background:#4a7fa8}
+.lagnote{margin:10px 0 0;padding:8px 10px;border-radius:9px;border:1px solid var(--warn);color:var(--ink);font-size:12.5px;line-height:1.4;background:rgba(184,121,31,.12)}
+.lagnote b{color:var(--warn)}
 .strk-nm{display:flex;flex-direction:column;gap:2px;min-width:0;font-weight:600}
 .strk-top{display:flex;align-items:center;gap:8px;min-width:0}
 .strk-top .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1691,6 +1693,18 @@ function formOf(pr){
   return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length,
           tourneyInRun:g.slice(g.length-run).filter(x=>x.tourney).length};
 }
+/* How far the data trails the calendar for one format: the last match night in the results feed,
+   and the scheduled league nights since then that have already been played but aren't loaded.
+   A streak can only be as current as the last refresh; Oct 2026 showed Dan Delaney "Heat check"
+   on a run ending Aug 31 while three 9-ball nights had been played since. */
+function dataLag(fmt){
+  const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const last=Object.values(D.results||{}).filter(r=>r.fmt===fmt)
+    .flatMap(r=>(r.matches||[]).map(m=>m.date)).sort().pop()||'';
+  const missed=[...new Set((D.schedule||[]).filter(m=>m.fmt===fmt&&!m.event&&last&&m.date>last&&m.date<today)
+    .map(m=>m.date))].sort();
+  return {last,missed};
+}
 function renderStreaks(rows,fmt){
   const items=[];
   rows.forEach(({p,pr})=>{
@@ -1710,6 +1724,13 @@ function renderStreaks(rows,fmt){
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Hot streak</span>'));
   card.appendChild(el('p','sub',`Current runs on the ${fmt}-ball roster — most recent games first, oldest result on the left. These ignore the window above on purpose: a streak is where a player stands right now, and clipping it to two weeks would just hide it. League nights and tournament matches run together in date order; a 🏆 marks a tournament match (faded when only the month is on record).`));
+  const lag=dataLag(fmt);
+  if(lag.missed.length){
+    const ds=lag.missed.map(d=>{const [,m,dd]=d.split('-');return `${MON[+m-1]} ${+dd}`;}).join(', ');
+    card.appendChild(el('p','lagnote',`<b>Out of date.</b> Results end ${esc(niceDate(lag.last))}. `+
+      `${lag.missed.length} ${fmt}-ball match night${lag.missed.length>1?'s':''} since (${ds}) `+
+      `${lag.missed.length>1?"aren't":"isn't"} loaded yet, so a run below may already be over. Run the weekly refresh to bring them in.`));
+  }
   const wrap=el('div','streaks');
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
