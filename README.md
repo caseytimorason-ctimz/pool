@@ -32,6 +32,11 @@ git add -A && git commit -m "weekly refresh" && git push
 ```
 There is no HTML rebuild step — see the warning above.
 
+`build_site_data.py` writes `site/data.json` and `site/data.full.json`. It does **not** rebuild the
+root `data.json` the app loads; that file is the 09-03 snapshot with later league nights merged
+in (the 2026-10-05 refresh merged Sep 14–30 from the fresh `data/games.csv`, league teams only,
+since tournament games come from `data/postseason.json`).
+
 ### Before a tournament (Tri-Cup, playoffs)
 Tournaments play everyone at the **higher of the SL they ended last session at and their SL
 this session**. The posted roster can be wrong, and our game history for other divisions can
