@@ -4,7 +4,7 @@ Assemble site/data.json for the dashboard: analysis + league baselines + current
 rosters + schedule + opponent rosters. Runs headless (Keychain refresh token).
 """
 import csv as _csv0
-import csv, json, sqlite3, urllib.request, urllib.error
+import csv, json, os, sqlite3, sys, urllib.request, urllib.error
 from collections import defaultdict
 from pathlib import Path
 
@@ -30,6 +30,12 @@ def post(q, v=None, tok=None):
 
 
 def token():
+    # Cloud sessions have no Mac localStorage: mint from APA_REFRESH_TOKEN the way apa_pull does.
+    if os.environ.get("APA_REFRESH_TOKEN", "").strip():
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from apa_pull import APA
+        apa = APA(); apa.mint()
+        return apa.token
     rt = sqlite3.connect(str(LS)).execute("SELECT value FROM ItemTable WHERE key='refreshToken'").fetchone()[0]
     rt = (rt.decode("utf-16-le") if isinstance(rt, (bytes, bytearray)) else str(rt)).strip().strip('"')
     return post("mutation($rt:String!){generateAccessToken(refreshToken:$rt){accessToken}}", {"rt": rt})["data"]["generateAccessToken"]["accessToken"]

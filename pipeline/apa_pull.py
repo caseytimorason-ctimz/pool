@@ -54,7 +54,9 @@ Q_MATCH = """query($id:Int!){ match(id:$id){
 
 def keychain_refresh_token():
     # Cloud sessions have no Keychain: they get the token from the environment instead.
-    env = os.environ.get("APA_REFRESH_TOKEN", "").strip()
+    # Strip wrapping a pasted value can pick up — quotes from copy(), or the <> of a
+    # "<token>" placeholder — which APA rejects as "Failed to decode token".
+    env = os.environ.get("APA_REFRESH_TOKEN", "").strip().strip("<>\"'").strip()
     if env:
         return env
     try:
