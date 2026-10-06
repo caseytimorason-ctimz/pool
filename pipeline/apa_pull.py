@@ -152,7 +152,12 @@ def normalize_match(m):
                          "w8": s.get("eightBallWins"), "mpe8": s.get("eightBallMatchPointsEarned"),
                          "br8": s.get("eightBallBreakAndRun"), "eob": s.get("eightOnBreak")})
     # pair opponents by matchPositionNumber -> perspective rows (both directions)
-    fmt = "9" if (sides["HOME"] and sides["HOME"][0].get("nineBallPoints") is not None) else "8"
+    # Format from the players' types; an empty forfeit slot has no player, so don't trust slot 0.
+    types = {(sc.get("player") or {}).get("__typename") for side in sides.values() for sc in side}
+    if "NineBallPlayer" in types or "EightBallPlayer" in types:
+        fmt = "9" if "NineBallPlayer" in types else "8"
+    else:
+        fmt = "9" if any(sc.get("nineBallPoints") is not None for side in sides.values() for sc in side) else "8"
     byp = {"HOME": {}, "AWAY": {}}
     for side in ("HOME", "AWAY"):
         for s in sides[side]:
@@ -165,9 +170,9 @@ def normalize_match(m):
             h, a = H[i], A[i]; hp = h.get("player") or {}; ap = a.get("player") or {}
             hmid = (hp.get("member") or {}).get("id"); amid = (ap.get("member") or {}).get("id")
             date = (m.get("startTime") or "")[:10]
-            pts = lambda sc: (sc.get("nineBallMatchPointsEarned")
-                              if sc.get("nineBallMatchPointsEarned") is not None
-                              else sc.get("eightBallMatchPointsEarned"))
+            # Read the format's own field: APA leaves a stray nineBallMatchPointsEarned (15) on an
+            # 8-ball forfeit slot.
+            pts = lambda sc: sc.get("nineBallMatchPointsEarned" if fmt == "9" else "eightBallMatchPointsEarned")
             persp.append({"mid": hmid, "pid": hp.get("id"), "name": hp.get("displayName"),
                           "team": home.get("id"), "sl": h.get("skillLevel"),
                           "oppMid": amid, "oppPid": ap.get("id"), "oppName": ap.get("displayName"),

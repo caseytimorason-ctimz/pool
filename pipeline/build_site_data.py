@@ -125,10 +125,11 @@ def baselines():
     return {fmt: {"%d-%d" % k: [round(v["w"] / v["g"], 4), v["g"]] for k, v in t.items()} for fmt, t in tabs.items()}
 
 
-def results_feed(tid, team, tok):
+def results_feed(tid, team, tok, rename=None):
     """This session's played matches for one of our teams, as the Team tab's results feed
     (rotation tracker, team record, match list, Last 8/4/2 windows)."""
     from apa_pull import Q_MATCH
+    fmt = fmt_of(team)
     out = []
     for mm in sorted(team.get("matches") or [], key=lambda x: x.get("startTime") or ""):
         if not (mm.get("isFinalized") or mm.get("isScored")):
@@ -143,8 +144,14 @@ def results_feed(tid, team, tok):
             continue
         pm, pt = mine.get("points") or {}, theirs.get("points") or {}
         adj = lambda p: (p.get("total") or 0) - (p.get("won") or 0) - (p.get("bonus") or 0) + (p.get("penalty") or 0)
-        pts = lambda sc: (sc.get("nineBallMatchPointsEarned") if sc.get("nineBallMatchPointsEarned") is not None
-                          else sc.get("eightBallMatchPointsEarned"))
+        # The format's own field: an 8-ball forfeit slot carries a stray nineBallMatchPointsEarned.
+        pts = lambda sc: sc.get("nineBallMatchPointsEarned" if fmt == "9" else "eightBallMatchPointsEarned")
+        rename = rename or {}
+
+        def name(sc):  # an empty slot has no player: it was forfeited
+            p = sc.get("player") or {}
+            mid = str((p.get("member") or {}).get("id"))
+            return rename.get(mid) or p.get("displayName") or "Forfeit"
         opp_by_pos = {}
         for sc in theirs.get("scores") or []:
             opp_by_pos.setdefault(sc.get("matchPositionNumber"), []).append(sc)
@@ -152,8 +159,8 @@ def results_feed(tid, team, tok):
         for sc in sorted(mine.get("scores") or [], key=lambda x: (-(x.get("skillLevel") or 0), x.get("matchPositionNumber") or 0)):
             q = opp_by_pos.get(sc.get("matchPositionNumber")) or []
             o = q.pop(0) if q else {}
-            line.append({"who": (sc.get("player") or {}).get("displayName"), "sl": sc.get("skillLevel"),
-                         "pts": pts(sc), "opp": (o.get("player") or {}).get("displayName"),
+            line.append({"who": name(sc), "sl": sc.get("skillLevel"),
+                         "pts": pts(sc), "opp": name(o),
                          "oppSL": o.get("skillLevel"), "oppPts": pts(o) if o else None,
                          "won": sc.get("winLoss") == "W"})
         us, them = pm.get("total") or 0, pt.get("total") or 0
@@ -190,6 +197,41 @@ def standings(tid, since):
             r["points"] += m.get(side + "Points") or 0
             r["played"] += 1
     return sorted(rows.values(), key=lambda r: -r["points"]) or None
+
+
+def load_overrides():
+    """data/roster_overrides.json: {"add": {teamId: [roster entries]}, "rename": {memberId: name}}."""
+    f = DATA / "roster_overrides.json"
+    if not f.exists():
+        return {}, {}
+    o = json.loads(f.read_text())
+    return o.get("add") or {}, {str(k): v for k, v in (o.get("rename") or {}).items()}
+
+
+def apply_overrides(bundle, add, rename):
+    """Rename people everywhere the app shows a member's name, and inject known-but-not-yet-entered
+    players into a team's roster, as roster_overrides.json's README promises."""
+    for tid, extra in add.items():
+        t = bundle["teams"].get(str(tid))
+        if t is not None:
+            have = {str(p.get("mid")) for p in t["roster"]}
+            t["roster"].extend(p for p in extra if str(p.get("mid")) not in have)
+    if not rename:
+        return
+    for t in bundle["teams"].values():
+        for p in t.get("roster") or []:
+            if str(p.get("mid")) in rename:
+                p["name"] = rename[str(p["mid"])]
+    for v in bundle["players"].values():
+        if str(v.get("mid")) in rename:
+            v["name"] = rename[str(v["mid"])]
+        for o in v.get("headToHead") or []:
+            if str(o.get("oppMid")) in rename:
+                o["oppName"] = rename[str(o["oppMid"])]
+    for ev in (bundle.get("league") or {}).get("events") or []:
+        for p in ev.get("ourRoster") or []:
+            if str(p.get("mid")) in rename:
+                p["name"] = rename[str(p["mid"])]
 
 
 def check_bundle(new, old):
@@ -377,13 +419,15 @@ def main():
             if sl:
                 v["currentSL"] = sl
 
+    add, rename = load_overrides()
+
     # This session's results for the team counted in each format (same choice as sessionStats).
     results = {}
     for fmt, tid in chosen.items():
         ft = fetched.get(int(tid))
         if not ft:
             continue
-        ms = results_feed(int(tid), ft, tok)
+        ms = results_feed(int(tid), ft, tok, rename)
         results[str(tid)] = {"name": ft["name"], "fmt": fmt, "matches": ms,
                              "wins": sum(1 for m in ms if m["won"]),
                              "losses": sum(1 for m in ms if not m["won"]),
@@ -431,6 +475,7 @@ def main():
     full = dict(base, players=full_players)
     # JSON object keys are strings; match what index.html reads (teams["13139509"]).
     full["teams"] = {str(k): v for k, v in full["teams"].items()}
+    apply_overrides(full, add, rename)
 
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
     problems = check_bundle(full, old)
