@@ -26,8 +26,9 @@ from apa_pull import (APA, Q_TEAM_MATCHES, Q_MATCH, DATA,  # noqa: E402
 
 CONCURRENCY = 6
 CHECKPOINT = 1000
+# current:false is past sessions ONLY (it omits the session in play), so ask for both.
 Q_MEMBER_PLAYERS = """query($id:Int!){ member(id:$id){ id firstName lastName
-  players(current:false){ team{ id } } } }"""
+  past: players(current:false){ team{ id } } now: players(current:true){ team{ id } } } }"""
 
 
 def all_known_member_ids():
@@ -75,7 +76,7 @@ def main():
         m = (d.get("data") or {}).get("member")
         if not m:
             return mid, [], (None, None)
-        tids = [p["team"]["id"] for p in (m.get("players") or []) if p.get("team")]
+        tids = [p["team"]["id"] for p in (m.get("past") or []) + (m.get("now") or []) if p.get("team")]
         return mid, tids, (m.get("firstName"), m.get("lastName"))
 
     new_team_ids = set()

@@ -256,6 +256,10 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .phd .nm{font-family:Oswald;font-size:22px;font-weight:600}
 .phd .stat{font-size:14px;color:var(--ink-soft)}
 .ftabs{display:flex;gap:4px;margin:10px 0 2px}
+/* Groups the tabs of one control inside an .ftabs row. min-width:0 lets the group trade
+   away padding under pressure, which loose buttons can't do — each of those stops at its
+   own text width, and on a full row the leftover pushes the page sideways. */
+.ftab-grp{display:flex;gap:4px;min-width:0}
 .ftab{font-family:Oswald;text-transform:uppercase;font-size:12px;letter-spacing:.05em;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);padding:5px 12px;border-radius:7px;cursor:pointer}
 .ftab[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
 
@@ -2263,15 +2267,23 @@ function renderTeamOverview(){
   card.appendChild(el('p','sub', allTime
     ? 'Every game of their career. Tap a name for their full record.'
     : 'Only games played at their current skill level — what the Matchup engine uses to pick lineups. Tap a name for their full record.'));
+  // Five loose buttons here each bottomed out at its own text width, 7px past the 244px row
+  // at 320px, and the surplus pushed the whole page sideways. Grouped into the two controls
+  // they actually are, the row gives up padding instead and fits on one line at every width.
   const ctl=el('div','ftabs');
   if(fmts.length>1){
+    const g=el('div','ftab-grp');
     fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===fmt);
-      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};ctl.appendChild(b);});
+      b.onclick=()=>{teamState.fmt=f;renderTeamOverview();};g.appendChild(b);});
+    ctl.appendChild(g);
+    // 10px past the row's own gap, so the format and scope pairs read as two controls
     ctl.appendChild(el('span',null,'&nbsp;')).style.flex='0 0 10px';
   }
+  const sg=el('div','ftab-grp');
   [['all','All time'],['current','At current SL']].forEach(([v,lab])=>{
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.scope===v);
-    b.onclick=()=>{teamState.scope=v;renderTeamOverview();};ctl.appendChild(b);});
+    b.onclick=()=>{teamState.scope=v;renderTeamOverview();};sg.appendChild(b);});
+  ctl.appendChild(sg);
   card.appendChild(ctl);
 
   if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}

@@ -36,8 +36,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from apa_pull import APA, DATA  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+# current:false is past sessions ONLY (it omits the session in play), so ask for both.
 Q_SESSIONS = """query($id:Int!){ member(id:$id){ id firstName lastName
-  players(current:false){ __typename skillLevel team{ id name } session{ id name } } } }"""
+  past: players(current:false){ __typename skillLevel team{ id name } session{ id name } }
+  now: players(current:true){ __typename skillLevel team{ id name } session{ id name } } } }"""
 FMT = {"EightBallPlayer": "8", "NineBallPlayer": "9"}
 
 
@@ -102,7 +104,7 @@ def main():
             continue
         rec = {"name": "%s %s" % (m.get("firstName") or "", m.get("lastName") or ""), "fmt": fmt,
                "last": None, "lastTeam": None, "current": None, "currentTeam": None}
-        for p in m.get("players") or []:
+        for p in (m.get("past") or []) + (m.get("now") or []):
             if FMT.get(p.get("__typename")) != fmt or not p.get("skillLevel"):
                 continue
             sname = (p.get("session") or {}).get("name")
