@@ -16,21 +16,19 @@ newly-discovered team's full match list, then any newly-discovered match.
 Usage: python3 pipeline/backfill_members.py <memberId> [<memberId> ...]
        python3 pipeline/backfill_members.py --teammates   (our active-roster teammates only)
 """
-import csv, json, sys, time
+import csv, json, sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from apa_pull import APA, Q_TEAM_MATCHES, Q_MATCH, normalize_match, DATA  # noqa: E402
+from apa_pull import (APA, Q_TEAM_MATCHES, Q_MATCH, DATA,  # noqa: E402
+                      load_corpus, merge_matches, save_corpus)
 
 CONCURRENCY = 6
+CHECKPOINT = 1000
+# current:false is past sessions ONLY (it omits the session in play), so ask for both.
 Q_MEMBER_PLAYERS = """query($id:Int!){ member(id:$id){ id firstName lastName
-  players(current:false){ team{ id } } } }"""
-
-
-def load_raw():
-    p = DATA / "matches_raw.json"
-    return json.loads(p.read_text()) if p.exists() else {}
+  past: players(current:false){ team{ id } } now: players(current:true){ team{ id } } } }"""
 
 
 def all_known_member_ids():
@@ -46,7 +44,7 @@ def all_known_member_ids():
 
 
 def teammate_ids():
-    site = DATA.parent / "site" / "data.json"
+    site = DATA.parent / "data.json"
     d = json.loads(site.read_text())
     ids = set()
     for tid in d.get("myActiveTeams", []):
@@ -69,8 +67,8 @@ def main():
     print("Member-centric sweep for %d member(s): %s" % (len(member_ids), sorted(member_ids)))
 
     api = APA(); api.mint()
-    raw = load_raw()
-    known_teams = {t.get("id") for m in raw.values() for t in (m.get("home"), m.get("away")) if t and t.get("id")}
+    matches, games = load_corpus()
+    known_teams = {t for v in matches.values() for t in (v["meta"].get("homeTeam"), v["meta"].get("awayTeam")) if t}
     print("Teams already in corpus: %d" % len(known_teams))
 
     def fetch_member_teams(mid):
@@ -78,7 +76,7 @@ def main():
         m = (d.get("data") or {}).get("member")
         if not m:
             return mid, [], (None, None)
-        tids = [p["team"]["id"] for p in (m.get("players") or []) if p.get("team")]
+        tids = [p["team"]["id"] for p in (m.get("past") or []) + (m.get("now") or []) if p.get("team")]
         return mid, tids, (m.get("firstName"), m.get("lastName"))
 
     new_team_ids = set()
@@ -103,7 +101,7 @@ def main():
         if not t:
             return tid, []
         return tid, [m["id"] for m in (t.get("matches") or [])
-                     if (m.get("isFinalized") or m.get("isScored")) and str(m["id"]) not in raw]
+                     if (m.get("isFinalized") or m.get("isScored")) and str(m["id"]) not in matches]
 
     new_match_ids = set()
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
@@ -117,41 +115,24 @@ def main():
         return mid, (d.get("data") or {}).get("match")
 
     pulled = failed = 0
+    batch = []
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
         for fut in as_completed({ex.submit(fetch_match, mid): mid for mid in new_match_ids}):
             mid, m = fut.result()
             if m:
-                raw[str(mid)] = m; pulled += 1
+                batch.append(m); pulled += 1
             else:
                 failed += 1
-            # Checkpoint-save often (crash safety) but print rarely — at this scale (tens of
-            # thousands of matches) a log line every 100 floods the caller with hundreds of
-            # notifications. Save every 500, print progress only every 5000.
-            if (pulled + failed) % 500 == 0:
-                (DATA / "matches_raw.json").write_text(json.dumps(raw))
+            # Checkpoint often (crash safety) but print rarely — at this scale (tens of
+            # thousands of matches) a log line every 100 floods the caller with notifications.
+            if len(batch) >= CHECKPOINT:
+                games = merge_matches(matches, games, batch); batch = []
+                save_corpus(matches, games)
             if (pulled + failed) % 5000 == 0:
                 print("  ...pulled %d/%d (failed %d)" % (pulled, len(new_match_ids), failed))
-    (DATA / "matches_raw.json").write_text(json.dumps(raw))
-    print("Pulled +%d matches (%d failed). Corpus now %d matches total." % (pulled, failed, len(raw)))
-
-    matches, games = {}, []
-    for mid, m in raw.items():
-        meta, _rows, persp = normalize_match(m)
-        matches[mid] = {"meta": meta}
-        games.extend(persp)
-    (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
-    cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "pts", "fmt", "date", "matchId"]
-    with open(DATA / "games.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
-        for g in games:
-            w.writerow({k: g.get(k) for k in cols})
-    old_meta = json.loads((DATA / "meta.json").read_text()) if (DATA / "meta.json").exists() else {}
-    old_meta.update({"generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                     "counts": {"matches": len(matches), "games": len(games)}})
-    (DATA / "meta.json").write_text(json.dumps(old_meta, indent=1))
-    print("Re-normalized: %d total matches, %d total game-rows" % (len(matches), len(games)))
-
+    games = merge_matches(matches, games, batch)
+    save_corpus(matches, games)
+    print("Pulled +%d matches (%d failed)." % (pulled, failed))
 
 if __name__ == "__main__":
     main()

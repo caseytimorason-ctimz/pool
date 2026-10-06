@@ -15,9 +15,10 @@ Refresh token source (one-time, kept OFF Google Drive and out of any transcript)
   (Rotate/replace with `security add-generic-password ... -U`.)
 
 Outputs (durable, in this project, NOT in Drive/.secrets and NOT in any SP repo):
-  data/matches.json        raw match+scores, normalized
-  data/games.csv           one row per player per game (analysis-ready "perspectives")
+  data/matches.json        one summary per match (the corpus index, committed)
+  data/games.csv           one row per player per game (analysis-ready "perspectives", committed)
   data/meta.json           run metadata + team/session index
+  Each run merges into these instead of rewriting them (see load_corpus / save_corpus).
 """
 import json, subprocess, sys, time, urllib.request, os, csv, io
 from pathlib import Path
@@ -28,6 +29,7 @@ DATA.mkdir(exist_ok=True)
 KEYCHAIN_SERVICE = "apa-refresh-token"
 
 # ---- confirmed field shapes (from live Apollo cache, 2026-09-02) ----
+RECENT_DAYS = 35
 MEMBER_ID = 3041011  # Casey; `viewer` resolves null server-side, so query member(id) directly
 
 Q_MEMBER = """query($id:Int!){ member(id:$id) {
@@ -54,7 +56,9 @@ Q_MATCH = """query($id:Int!){ match(id:$id){
 
 def keychain_refresh_token():
     # Cloud sessions have no Keychain: they get the token from the environment instead.
-    env = os.environ.get("APA_REFRESH_TOKEN", "").strip()
+    # Strip wrapping a pasted value can pick up — quotes from copy(), or the <> of a
+    # "<token>" placeholder — which APA rejects as "Failed to decode token".
+    env = os.environ.get("APA_REFRESH_TOKEN", "").strip().strip("<>\"'").strip()
     if env:
         return env
     try:
@@ -148,7 +152,12 @@ def normalize_match(m):
                          "w8": s.get("eightBallWins"), "mpe8": s.get("eightBallMatchPointsEarned"),
                          "br8": s.get("eightBallBreakAndRun"), "eob": s.get("eightOnBreak")})
     # pair opponents by matchPositionNumber -> perspective rows (both directions)
-    fmt = "9" if (sides["HOME"] and sides["HOME"][0].get("nineBallPoints") is not None) else "8"
+    # Format from the players' types; an empty forfeit slot has no player, so don't trust slot 0.
+    types = {(sc.get("player") or {}).get("__typename") for side in sides.values() for sc in side}
+    if "NineBallPlayer" in types or "EightBallPlayer" in types:
+        fmt = "9" if "NineBallPlayer" in types else "8"
+    else:
+        fmt = "9" if any(sc.get("nineBallPoints") is not None for side in sides.values() for sc in side) else "8"
     byp = {"HOME": {}, "AWAY": {}}
     for side in ("HOME", "AWAY"):
         for s in sides[side]:
@@ -161,20 +170,71 @@ def normalize_match(m):
             h, a = H[i], A[i]; hp = h.get("player") or {}; ap = a.get("player") or {}
             hmid = (hp.get("member") or {}).get("id"); amid = (ap.get("member") or {}).get("id")
             date = (m.get("startTime") or "")[:10]
-            pts = lambda sc: (sc.get("nineBallMatchPointsEarned")
-                              if sc.get("nineBallMatchPointsEarned") is not None
-                              else sc.get("eightBallMatchPointsEarned"))
+            # Read the format's own field: APA leaves a stray nineBallMatchPointsEarned (15) on an
+            # 8-ball forfeit slot.
+            pts = lambda sc: sc.get("nineBallMatchPointsEarned" if fmt == "9" else "eightBallMatchPointsEarned")
             persp.append({"mid": hmid, "pid": hp.get("id"), "name": hp.get("displayName"),
                           "team": home.get("id"), "sl": h.get("skillLevel"),
                           "oppMid": amid, "oppPid": ap.get("id"), "oppName": ap.get("displayName"),
                           "oppSl": a.get("skillLevel"), "win": h.get("winLoss") == "W",
-                          "pts": pts(h), "fmt": fmt, "date": date, "matchId": m["id"]})
+                          "pts": pts(h), "oppPts": pts(a), "fmt": fmt, "date": date, "matchId": m["id"]})
             persp.append({"mid": amid, "pid": ap.get("id"), "name": ap.get("displayName"),
                           "team": away.get("id"), "sl": a.get("skillLevel"),
                           "oppMid": hmid, "oppPid": hp.get("id"), "oppName": hp.get("displayName"),
                           "oppSl": h.get("skillLevel"), "win": a.get("winLoss") == "W",
-                          "pts": pts(a), "fmt": fmt, "date": date, "matchId": m["id"]})
+                          "pts": pts(a), "oppPts": pts(h), "fmt": fmt, "date": date, "matchId": m["id"]})
     return meta, rows, persp
+
+
+# ---- the corpus: data/matches.json + data/games.csv, committed to the repo ----
+# Every pull ADDS to these rather than rewriting them, so a weekly run of this script never
+# throws away the league-wide history backfill.py / backfill_members.py built up.
+GAME_COLS = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
+             "win", "pts", "oppPts", "fmt", "date", "matchId"]
+
+
+def load_corpus():
+    """-> (matches {matchId str: {"meta": ...}}, games [row dicts as read from games.csv])."""
+    mp, gp = DATA / "matches.json", DATA / "games.csv"
+    matches = json.loads(mp.read_text()) if mp.exists() else {}
+    games = list(csv.DictReader(open(gp, newline=""))) if gp.exists() else []
+    return matches, games
+
+
+def merge_matches(matches, games, raw_matches):
+    """Normalize raw match dicts into the corpus, replacing any earlier copy of the same match."""
+    fresh = {}
+    for m in raw_matches:
+        meta, _rows, persp = normalize_match(m)
+        fresh[str(m["id"])] = (meta, persp)
+    if not fresh:
+        return games
+    games = [g for g in games if str(g.get("matchId")) not in fresh]
+    for mid, (meta, persp) in fresh.items():
+        matches[mid] = {"meta": meta}
+        games.extend(persp)
+    return games
+
+
+def save_corpus(matches, games, **meta_update):
+    # One match per line and games sorted by date, so a weekly refresh is a small text diff.
+    order = sorted(matches, key=lambda k: ((matches[k]["meta"].get("start") or ""), int(k)))
+    (DATA / "matches.json").write_text(
+        "{\n" + ",\n".join("%s:%s" % (json.dumps(k), json.dumps(matches[k], separators=(",", ":")))
+                             for k in order) + "\n}\n")
+    games = sorted(games, key=lambda g: (str(g.get("date") or ""), int(g.get("matchId") or 0),
+                                         str(g.get("mid") or ""), str(g.get("oppMid") or "")))
+    with open(DATA / "games.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=GAME_COLS); w.writeheader()
+        for g in games:
+            w.writerow({k: g.get(k) for k in GAME_COLS})
+    mp = DATA / "meta.json"
+    meta = json.loads(mp.read_text()) if mp.exists() else {}
+    meta.update(meta_update)
+    meta.update({"generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                 "counts": {"matches": len(matches), "games": len(games)}})
+    mp.write_text(json.dumps(meta, indent=1) + "\n")
+    print("Corpus: %d matches, %d game-rows -> %s" % (len(matches), len(games), DATA))
 
 
 def main():
@@ -205,34 +265,27 @@ def main():
                 match_ids.add(mm["id"])
     print("Finalized matches to pull: %d" % len(match_ids))
 
-    matches, games, raw = {}, [], {}
-    for i, mid in enumerate(sorted(match_ids), 1):
+    # Fetch only what the corpus lacks, plus anything from the last few weeks so a score APA
+    # corrects after the fact still lands. Everything already in the corpus stays as it is.
+    matches, games = load_corpus()
+    recent = time.strftime("%Y-%m-%d", time.localtime(time.time() - RECENT_DAYS * 86400))
+    want = sorted(mid for mid in match_ids
+                  if str(mid) not in matches
+                  or (matches[str(mid)]["meta"].get("start") or "")[:10] >= recent)
+    print("Fetching %d (new or from the last %d days); %d already in the corpus"
+          % (len(want), RECENT_DAYS, len(match_ids) - len(want)))
+    pulled = []
+    for i, mid in enumerate(want, 1):
         d = api.q(Q_MATCH, {"id": mid})
         m = (d.get("data") or {}).get("match")
-        if not m:
-            continue
-        raw[mid] = m  # keep raw so re-normalization never needs a re-pull
-        meta, _rows, persp = normalize_match(m)
-        matches[mid] = {"meta": meta}
-        games.extend(persp)
+        if m:
+            pulled.append(m)
         if i % 10 == 0:
-            print("  ...%d/%d" % (i, len(match_ids)))
+            print("  ...%d/%d" % (i, len(want)))
         time.sleep(0.15)
 
-    (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
-    (DATA / "matches_raw.json").write_text(json.dumps(raw))
-    cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "pts", "fmt", "date", "matchId"]
-    with open(DATA / "games.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
-        for g in games:
-            w.writerow({k: g.get(k) for k in cols})
-    (DATA / "meta.json").write_text(json.dumps({
-        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "memberId": mem.get("id"), "teams": team_index,
-        "counts": {"matches": len(matches), "games": len(games)}}, indent=1))
-    print("Wrote %d matches, %d game-rows -> %s" % (len(matches), len(games), DATA))
-
+    games = merge_matches(matches, games, pulled)
+    save_corpus(matches, games, memberId=mem.get("id"), teams=team_index)
 
 if __name__ == "__main__":
     main()
