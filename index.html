@@ -1140,6 +1140,19 @@ function buildGapPriors(bl){
 }
 function gapPrior(A,Q,fmt){const c=GAP[fmt]; if(!c)return 0.5; const g=Math.max(-8,Math.min(8,A.sl-Q.sl)); return c[g]!=null?c[g]:0.5;}
 
+/* Games in OTHER leagues. APA hands us scoresheets for our own league only; elsewhere it gives
+   season totals (pipeline: build_site_data.outside_records). No opponents or SLs, so they never
+   enter the vs-SL grids or the odds — but they do mean a player is not "new". */
+const allGames=pr=>pr?(pr.totalGames||0)+((pr.outside||{}).played||0):0;
+function outsideTxt(pr){
+  const o=pr&&pr.outside; if(!o||!o.played)return '';
+  return o.leagues.map(L=>{
+    const yrs=L.from&&L.to&&L.from!==L.to?`${L.from}–${String(L.to).slice(2)}`:(L.from||'');
+    const sl=L.slMin?(L.slMin===L.slMax?` at SL${L.slMin}`:` at SL${L.slMin}–${L.slMax}`):'';
+    return `${esc(L.name)}${yrs?' '+yrs:''}: ${L.won}-${L.played-L.won}${sl}`;
+  }).join(' · ');
+}
+
 /* engine: P(A beats Q) + evidence for confidence + direct H2H tag */
 function score(A,Q,fmt){
   const base=(B[fmt]||{})[`${A.sl}-${Q.sl}`]||[0.5,0];
@@ -1167,7 +1180,7 @@ function score(A,Q,fmt){
   // actually run a rack. Pull their number toward a coin flip in proportion to how little we
   // know, so an unrated 3 doesn't outrank a proven pick on borrowed confidence. A direct
   // head-to-head record (rare for a new player) is real evidence and is left to stand.
-  const games=prof?(prof.totalGames||0):0;
+  const games=allGames(prof);   // a long record in another league is not "new"
   const unrated=!!A.new || games<K_NEW;
   if(unrated && !(h2h&&h2h.meetings>=3)){
     const known=Math.min(games,K_NEW)/K_NEW;   // 0 games -> fall back to the SL/handicap prior
@@ -1212,7 +1225,7 @@ function explain(A,Q,fmt){
        :A.sl<Q.sl?'In 8-ball the lower skill level is the underdog':'Evenly matched on skill');
   out.push(`Handicap start: SL ${A.sl} vs SL ${Q.sl}. ${gapTxt}, so begin around ${Math.round(shrunk*100)}%.`);
   const prof=P[`${A.mid}:${fmt}`];
-  const games=prof?prof.totalGames||0:0;
+  const games=allGames(prof);
   let hadH2H=false;
   if(prof){
     const c=(prof.predictiveVsSL||[]).find(x=>x.vsSL===Q.sl);
@@ -1230,6 +1243,10 @@ function explain(A,Q,fmt){
   }
   if((A.new||games<K_NEW)&&!hadH2H)
     out.push(`No real track record yet (unrated) — this leans on the handicap, so treat it as a guess.`);
+  for(const [who,pr] of [[A,prof],[Q,P[`${Q.mid}:${fmt}`]]]){
+    const t=outsideTxt(pr);
+    if(t)out.push(`${esc(who.name)} in other leagues: ${t}. Totals only (APA shares no scoresheets there), so not counted in these odds.`);
+  }
   const ep=expPts(A,Q,fmt), M=PMOM[fmt];
   if(prof && prof.nPtsWin>=10){
     const tallWin=prof.avgPtsWin>M.win.m+0.6, tallLoss=prof.avgPtsLoss>M.loss.m+0.6, lowLoss=prof.avgPtsLoss<M.loss.m-0.6;
@@ -1526,6 +1543,12 @@ function scoutCard(m){
     if(q)q.value=p.name; fillPlayers((p.name||'').toLowerCase());
   });
   sc.appendChild(stbl||el('p','sub muted',`No ${fmt}-ball history on record for their roster yet.`));
+  // Players whose record is mostly somewhere this table cannot see.
+  const away=theirs.map(p=>[p,P[`${p.mid}:${fmt}`]]).filter(([p,pr])=>outsideTxt(pr))
+    .sort((a,b)=>b[1].outside.played-a[1].outside.played);
+  if(away.length)
+    sc.appendChild(el('p','sub',`<b>Also played in other leagues</b> (season totals only, not in this table): `+
+      away.map(([p,pr])=>`${esc(p.name)} — ${outsideTxt(pr)}`).join('; ')+'.'));
 
   const frag=document.createDocumentFragment();
   frag.appendChild(c); frag.appendChild(sc);
@@ -2390,12 +2413,15 @@ function makePlayerView(outSel,opts){
     const w=filtered?fw:pr.wins, g=filtered?fg:pr.totalGames;
     const wr=g?Math.round(w/g*100):0;
     const hd=el('div','phd');
+    const none=!g&&!filtered;   // only games in other leagues
     // In the "Me" view the identity pill directly above already shows badge + name, so
     // repeating it here is pure duplication; the Players tab has no pill and keeps it.
     hd.innerHTML=(opts.hideName?'':`${sl(pr.currentSL)}<span class="nm">${esc(pr.name)}</span>`)+
-      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${w}-${g-w} (${wr}%)`+
+      `<span class="stat"><b>SL${pr.currentSL}</b> now · ${none?'no games in this league':`${w}-${g-w} (${wr}%)`}`+
       (filtered?` <span class="muted">${st.ownSL==='0'?'unrated':'as SL'+st.ownSL}</span>`:'')+`</span>`;
     c.appendChild(hd);
+    const ot=outsideTxt(pr);
+    if(ot)c.appendChild(el('p','sub',`<b>Other leagues:</b> ${ot}. APA shares only season totals outside our league, so these games are not in the grids below.`));
     if(fmts.length>1){const ft=el('div','ftabs');
       fmts.forEach(f=>{const b=el('button','ftab',f+'-ball');b.setAttribute('aria-pressed',f===st.fmt);
         b.onclick=()=>{st.fmt=f;st.ownSL='all';draw();};ft.appendChild(b);});c.appendChild(ft);}
