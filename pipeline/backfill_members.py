@@ -68,8 +68,6 @@ def main():
 
     api = APA(); api.mint()
     matches, games = load_corpus()
-    known_teams = {t for v in matches.values() for t in (v["meta"].get("homeTeam"), v["meta"].get("awayTeam")) if t}
-    print("Teams already in corpus: %d" % len(known_teams))
 
     def fetch_member_teams(mid):
         d = api.q(Q_MEMBER_PLAYERS, {"id": mid})
@@ -79,20 +77,23 @@ def main():
         tids = [p["team"]["id"] for p in (m.get("past") or []) + (m.get("now") or []) if p.get("team")]
         return mid, tids, (m.get("firstName"), m.get("lastName"))
 
+    # Check EVERY team these members have played on, not only teams the corpus has never seen:
+    # a team that appears in the corpus only as someone's opponent never had its own match list
+    # pulled, and skipping it left e.g. 99 of one opponent's matches out. A team's match list is
+    # one cheap request; only matches the corpus lacks are fetched below.
     new_team_ids = set()
     done = 0
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
         for fut in as_completed({ex.submit(fetch_member_teams, mid): mid for mid in member_ids}):
             mid, tids, name = fut.result()
-            fresh = [t for t in tids if t not in known_teams]
-            new_team_ids.update(fresh)
+            new_team_ids.update(tids)
             done += 1
             if done % 50 == 0:
-                print("  ...discovered %d/%d members, %d new teams so far" % (done, len(member_ids), len(new_team_ids)))
+                print("  ...discovered %d/%d members, %d teams so far" % (done, len(member_ids), len(new_team_ids)))
 
-    print("New teams discovered beyond existing corpus: %d" % len(new_team_ids))
+    print("Teams to check: %d" % len(new_team_ids))
     if not new_team_ids:
-        print("Nothing new — these members' histories were already fully covered.")
+        print("Nothing to check — no teams found for these members.")
         return
 
     def fetch_team_matches(tid):
