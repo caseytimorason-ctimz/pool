@@ -21,21 +21,30 @@ For each pairing (our A vs their Q) it blends, weighted by sample size:
 3. Direct head-to-head A vs Q (by member id), if any.
 Thin evidence falls back to baseline and is flagged low-confidence. Full spec: ANALYSIS-DESIGN.md.
 
-## Weekly refresh (laptop)
-Data via APA's GraphQL API, headless auth with a refresh token in macOS Keychain
-(service `apa-refresh-token`) — no secrets in this repo. A cloud session reads the token from
-the `APA_REFRESH_TOKEN` environment variable instead and needs `gql.poolplayers.com` in its
-allowed domains.
+## Weekly refresh (cloud or laptop)
+Data via APA's GraphQL API, headless auth with a refresh token: in a cloud session from the
+`APA_REFRESH_TOKEN` environment variable (needs `gql.poolplayers.com` in its allowed domains),
+on the Mac from the Keychain (service `apa-refresh-token`). No secrets in this repo.
 ```
-python3 pipeline/apa_pull.py && python3 pipeline/analyze.py && python3 pipeline/build_site_data.py
+python3 pipeline/apa_pull.py && python3 pipeline/backfill.py --current \
+  && python3 pipeline/analyze.py && python3 pipeline/build_site_data.py
 git add -A && git commit -m "weekly refresh" && git push
 ```
-There is no HTML rebuild step — see the warning above.
+- The match history is **committed** (`data/matches.json`, `data/games.csv`), so a fresh
+  checkout has the whole league and each step only adds to it. `apa_pull.py` brings in our
+  teams' matches, `backfill.py --current` the rest of this season's divisions. Both re-fetch the
+  last few weeks so a score APA corrects later still lands.
+- `build_site_data.py` writes `data.json` directly, including the Team tab's `results` feed.
+  It **refuses to write** a bundle that lost data the current one has (an empty or shrunken
+  feed, fewer players, a scheduled opponent with no roster) and prints what it lost. Re-run
+  the pull rather than reaching for `--force`. A shorter `schedule` is normal: played matches
+  leave it.
+- Hand-maintained inputs live in `data/`: `league.json` (bylaws, events), `postseason.json`,
+  `official_rules.json`. Edit those, not `data.json`, or the next refresh undoes the edit.
+- Rebuilding the whole history from scratch (rarely needed): `python3 pipeline/backfill.py`
+  then `python3 pipeline/backfill_members.py --all-known` — tens of thousands of requests.
 
-`build_site_data.py` writes `site/data.json` and `site/data.full.json`. It does **not** rebuild the
-root `data.json` the app loads; that file is the 09-03 snapshot with later league nights merged
-in (the 2026-10-05 refresh merged Sep 14–30 from the fresh `data/games.csv`, league teams only,
-since tournament games come from `data/postseason.json`).
+There is no HTML rebuild step — see the warning above.
 
 ### Before a tournament (Tri-Cup, playoffs)
 Tournaments play everyone at the **higher of the SL they ended last session at and their SL
@@ -48,27 +57,3 @@ git add data/tourney_sl.json data.json && git commit -m "tournament SL check" &&
 It reads the tournament event in `data/league.json` (set `prevSession.label` and
 `currentSession` on it) and checks every player on both sides. The Match tab then raises anyone
 listed too low and names anyone it still couldn't verify.
-
-### Check the bundle before you push
-Every refresh since 09-11 has shipped a damaged `data.json` — 09-12 (`teams` 0, `results` 0),
-09-15 (`teams` 7, `results` 0), 09-16 (`teams` 19, `results` 0) — and the app fails quietly when
-they do: an empty `results` feed takes out the rotation tracker, the team record and the match
-list, and makes the Last 8/4/2 chips silently no-op; a short `teams` map takes out opponent
-scouting for whichever nights those teams are on. All three needed repairing by hand. Until the
-builder refuses to emit a shrunken bundle, diff it against the last good one before committing:
-
-```
-python3 - <<'PY'
-import json, subprocess
-new = json.load(open('data.json'))
-old = json.loads(subprocess.run(['git','show','HEAD:data.json'],capture_output=True,text=True).stdout)
-for k in ('teams','results','schedule','players','sessionStats'):
-    a, b = len(old.get(k) or {}), len(new.get(k) or {})
-    print(f'{"FAIL" if b < a else "ok  "} {k:<14} {a} -> {b}')
-missing = [m['oppTeam'] for m in new['schedule']
-           if not (new['teams'].get(str(m['oppTeamId'])) or {}).get('roster')]
-print(('FAIL scheduled opponents with no roster: ' + ', '.join(sorted(set(missing)))) if missing
-      else 'ok   every scheduled opponent has a roster')
-PY
-```
-Any `FAIL` means the pull came back short — re-run it rather than committing.

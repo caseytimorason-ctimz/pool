@@ -18,6 +18,14 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 MIN_N = 5
+MARGIN_MIN = 10   # fewer games than this at the current SL -> margins use the whole career
+
+
+def _num(v):
+    try:
+        return int(float(v))
+    except (TypeError, ValueError):
+        return None
 
 
 def load():
@@ -30,7 +38,16 @@ def load():
                 r["sl"] = int(r["sl"]); r["oppSl"] = int(r["oppSl"])
             except (ValueError, TypeError):
                 continue
-            if r["sl"] <= 0 or r["oppSl"] <= 0:   # drop forfeits/byes (SL 0)
+            r["pts"] = _num(r.get("pts")); r["oppPts"] = _num(r.get("oppPts"))
+            # APA reports an unrated player's SL as 0. Both sides 0 is a bye/placeholder. One
+            # side 0 is a real game against an unrated player IF that side scored; if it
+            # scored 0, a shutout and a forfeit look the same, so leave it out rather than
+            # invent a loss.
+            if r["sl"] <= 0 and r["oppSl"] <= 0:
+                continue
+            if r["sl"] <= 0 and not r["pts"]:
+                continue
+            if r["oppSl"] <= 0 and not r["oppPts"]:
                 continue
             r["win"] = (r["win"] == "True")
             rows.append(r)
@@ -78,7 +95,17 @@ def analyze_player(mid, fmt, games, cur):
             w = widened[cell["vsSL"]]
             cell["widened"] = {"games": w["games"], "wins": w["wins"], "winPct": w["winPct"]}
 
+    # V2 margin model: points this player banks in games they win vs games they lose
+    # (index.html expPts shrinks these toward the league means by nPtsWin / nPtsLoss). SL is
+    # time-dependent, so use games at the current SL; a thin current-SL record falls back to
+    # the whole career rather than reporting a margin from a handful of games.
+    basis = at_current if len(at_current) >= MARGIN_MIN else games
+    pw = [g["pts"] for g in basis if g["win"] and g["pts"] is not None]
+    pl = [g["pts"] for g in basis if not g["win"] and g["pts"] is not None]
+
     return {"mid": mid, "name": name, "format": fmt, "currentSL": csl,
+            "avgPtsWin": round(sum(pw) / len(pw), 2) if pw else None, "nPtsWin": len(pw),
+            "avgPtsLoss": round(sum(pl) / len(pl), 2) if pl else None, "nPtsLoss": len(pl),
             "firstSeen": min(g["date"] for g in games) if games else None,
             "lastSeen": max(g["date"] for g in games) if games else None,
             "totalGames": len(games), "wins": sum(1 for g in games if g["win"]),
@@ -94,10 +121,12 @@ def head_to_head(games_by_mid, mid, fmt):
     out = []
     for (omid, oname), gs in opp.items():
         gs = sorted(gs, key=lambda x: x["date"])
+        ps = [g["pts"] for g in gs if g["pts"] is not None]
         out.append({"oppMid": omid, "oppName": oname, "meetings": len(gs),
                     "wins": sum(1 for g in gs if g["win"]),
+                    "avgPts": round(sum(ps) / len(ps), 2) if ps else None, "ptsN": len(ps),
                     "games": [{"date": g["date"], "mySL": g["sl"], "oppSL": g["oppSl"],
-                               "won": g["win"]} for g in gs]})
+                               "won": g["win"], "pts": g["pts"], "oppPts": g["oppPts"]} for g in gs]})
     return sorted(out, key=lambda x: -x["meetings"])
 
 

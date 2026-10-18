@@ -13,47 +13,44 @@ Scope:
   For each team in that set: pull its FULL match list (team.matches has no season filter —
   it returns everything), then fetch any finalized match not already in our archive.
 
-Merges into the SAME data/matches_raw.json, data/games.csv, data/meta.json that apa_pull.py
-writes, so analyze.py and build_site_data.py run unchanged afterward.
+Merges into the SAME corpus (data/matches.json, data/games.csv, data/meta.json) that
+apa_pull.py writes, so analyze.py and build_site_data.py run unchanged afterward.
+
+  python3 pipeline/backfill.py            every division and team the corpus has ever seen
+  python3 pipeline/backfill.py --current  weekly: just the divisions our teams play in now
 """
-import csv, json, sys, time
+import json, sys, time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from apa_pull import APA, Q_TEAM_MATCHES, Q_MATCH, normalize_match, DATA  # noqa: E402
+from apa_pull import (APA, Q_TEAM_MATCHES, Q_MATCH, DATA, RECENT_DAYS,  # noqa: E402
+                      load_corpus, merge_matches, save_corpus)
 
 CONCURRENCY = 6
+CHECKPOINT = 1000
+CURRENT_DAYS = 150   # --current: divisions we've played in this long ago count as "this season"
 Q_DIVISION_TEAMS = """query($id:Int!){ division(id:$id){ id name format teams{ id name } } }"""
 
 
-def load_raw():
-    p = DATA / "matches_raw.json"
-    return json.loads(p.read_text()) if p.exists() else {}
-
-
-def known_team_ids(raw):
-    ids = set()
-    for m in raw.values():
-        for side in ("home", "away"):
-            t = m.get(side) or {}
-            if t.get("id"):
-                ids.add(t["id"])
-    return ids
-
-
-def known_division_ids(raw):
-    return {(m.get("division") or {}).get("id") for m in raw.values() if (m.get("division") or {}).get("id")}
-
-
 def main():
+    current = "--current" in sys.argv[1:]
     api = APA(); api.mint()
-    raw = load_raw()
-    print("Starting corpus: %d matches already pulled" % len(raw))
+    matches, games = load_corpus()
+    print("Starting corpus: %d matches" % len(matches))
+    metas = [v["meta"] for v in matches.values()]
 
-    team_ids = known_team_ids(raw)
-    div_ids = known_division_ids(raw)
-    print("Seed: %d divisions, %d teams already touched" % (len(div_ids), len(team_ids)))
+    if current:
+        # Weekly mode: only the divisions our teams are playing in now, and only their teams.
+        ours = {int(t) for t in (json.loads((DATA / "meta.json").read_text()).get("teams") or {})}
+        since = time.strftime("%Y-%m-%d", time.localtime(time.time() - CURRENT_DAYS * 86400))
+        div_ids = {m["div"] for m in metas if m.get("div") and (m.get("start") or "")[:10] >= since
+                   and ({m.get("homeTeam"), m.get("awayTeam")} & ours)}
+        team_ids = set()
+    else:
+        div_ids = {m["div"] for m in metas if m.get("div")}
+        team_ids = {t for m in metas for t in (m.get("homeTeam"), m.get("awayTeam")) if t}
+    print("Seed: %d divisions, %d teams" % (len(div_ids), len(team_ids)))
 
     # expand via Division.teams (division rosters shift slightly season to season)
     added_via_division = 0
@@ -67,14 +64,18 @@ def main():
                 team_ids.add(t["id"]); added_via_division += 1
     print("Division enumeration added %d new teams -> %d total target teams" % (added_via_division, len(team_ids)))
 
-    # for each team, pull its FULL match list and find match ids not already in our archive
+    # for each team, pull its FULL match list and find matches the corpus lacks (or that are
+    # recent enough that APA may still correct them)
+    recent = time.strftime("%Y-%m-%d", time.localtime(time.time() - RECENT_DAYS * 86400))
+
     def fetch_team_matches(tid):
         d = api.q(Q_TEAM_MATCHES, {"id": tid})
         t = (d.get("data") or {}).get("team")
         if not t:
             return tid, []
         ids = [m["id"] for m in (t.get("matches") or [])
-               if (m.get("isFinalized") or m.get("isScored")) and str(m["id"]) not in raw]
+               if (m.get("isFinalized") or m.get("isScored"))
+               and (str(m["id"]) not in matches or (m.get("startTime") or "")[:10] >= recent)]
         return tid, ids
 
     new_match_ids = set()
@@ -85,9 +86,9 @@ def main():
             tid, ids = fut.result()
             new_match_ids.update(ids)
             done += 1
-            if done % 25 == 0:
-                print("  ...enumerated %d/%d teams, %d new match ids so far" % (done, len(team_ids), len(new_match_ids)))
-    print("Total NEW finalized matches to pull: %d" % len(new_match_ids))
+            if done % 100 == 0:
+                print("  ...enumerated %d/%d teams, %d match ids to fetch so far" % (done, len(team_ids), len(new_match_ids)))
+    print("Matches to fetch: %d" % len(new_match_ids))
 
     if not new_match_ids:
         print("Nothing new to backfill — corpus is already complete for this team set.")
@@ -97,41 +98,23 @@ def main():
         d = api.q(Q_MATCH, {"id": mid})
         return mid, (d.get("data") or {}).get("match")
 
-    pulled = 0; failed = 0
+    pulled, failed, batch = 0, 0, []
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
         futs = {ex.submit(fetch_match, mid): mid for mid in new_match_ids}
         for fut in as_completed(futs):
             mid, m = fut.result()
             if m:
-                raw[str(mid)] = m; pulled += 1
+                batch.append(m); pulled += 1
             else:
                 failed += 1
-            if (pulled + failed) % 100 == 0:
+            if len(batch) >= CHECKPOINT:  # checkpoint: a dropped run keeps what it pulled
+                games = merge_matches(matches, games, batch); batch = []
+                save_corpus(matches, games)
                 print("  ...pulled %d/%d (failed %d)" % (pulled, len(new_match_ids), failed))
-                (DATA / "matches_raw.json").write_text(json.dumps(raw))  # checkpoint
 
-    (DATA / "matches_raw.json").write_text(json.dumps(raw))
-    print("Backfill done: +%d matches pulled, %d failed. Corpus now %d matches total." % (pulled, failed, len(raw)))
-
-    # re-normalize the FULL corpus (old + new) into games.csv / matches.json / meta.json
-    matches, games = {}, []
-    for mid, m in raw.items():
-        meta, _rows, persp = normalize_match(m)
-        matches[mid] = {"meta": meta}
-        games.extend(persp)
-    (DATA / "matches.json").write_text(json.dumps(matches, indent=1))
-    cols = ["mid", "pid", "name", "team", "sl", "oppMid", "oppPid", "oppName", "oppSl",
-            "win", "pts", "fmt", "date", "matchId"]
-    with open(DATA / "games.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=cols); w.writeheader()
-        for g in games:
-            w.writerow({k: g.get(k) for k in cols})
-    old_meta = json.loads((DATA / "meta.json").read_text()) if (DATA / "meta.json").exists() else {}
-    old_meta.update({"generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                     "counts": {"matches": len(matches), "games": len(games)},
-                     "backfilledTeams": len(team_ids)})
-    (DATA / "meta.json").write_text(json.dumps(old_meta, indent=1))
-    print("Re-normalized: %d total matches, %d total game-rows -> %s" % (len(matches), len(games), DATA))
+    games = merge_matches(matches, games, batch)
+    save_corpus(matches, games, **({} if current else {"backfilledTeams": len(team_ids)}))
+    print("Backfill done: +%d matches pulled, %d failed." % (pulled, failed))
 
 
 if __name__ == "__main__":
