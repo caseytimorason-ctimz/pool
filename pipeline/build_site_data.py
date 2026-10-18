@@ -234,6 +234,60 @@ def apply_overrides(bundle, add, rename):
                 p["name"] = rename[str(p["mid"])]
 
 
+Q_MEMBER_RECORDS = """query($id:Int!){ member(id:$id){
+  past: players(current:false){ __typename matchesPlayed matchesWon skillLevel session{ name } team{ id division{ league{ name } } } }
+  now: players(current:true){ __typename matchesPlayed matchesWon skillLevel session{ name } team{ id division{ league{ name } } } } } }"""
+PLAYER_FMT_ALL = {"EightBallPlayer": "8", "NineBallPlayer": "9"}
+
+
+def outside_records(bundle, tok):
+    """APA returns scoresheets only for our own league, so a player's games in other leagues
+    (another county, another state) never reach games.csv: Trevor Heal's 126 Tampa Bay matches
+    were invisible and he read as a 19-game player. APA does return each season's totals for
+    every league, so for everyone on a roster here, sum the seasons on teams we hold no games
+    for. -> {"mid:fmt": {"played", "won", "leagues": [{"name", "played", "won", "from", "to",
+    "slMin", "slMax"}]}}. Totals only: no opponents, so the engine cannot score them by SL."""
+    import re
+    from concurrent.futures import ThreadPoolExecutor
+    mids = {str(p["mid"]) for t in bundle["teams"].values() for p in t.get("roster") or []
+            if str(p.get("mid") or "").isdigit()}
+    seen = defaultdict(set)   # (mid, fmt) -> teams we hold games on
+    with open(DATA / "games.csv") as f:
+        for r in csv.DictReader(f):
+            if r.get("mid") in mids:
+                seen[(r["mid"], r["fmt"])].add(str(r["team"]))
+
+    def fetch(mid):
+        d = post(Q_MEMBER_RECORDS, {"id": int(mid)}, tok)
+        m = (d.get("data") or {}).get("member") or {}
+        return mid, (m.get("past") or []) + (m.get("now") or [])
+
+    out = {}
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for mid, recs in ex.map(fetch, sorted(mids)):
+            for p in recs:
+                fmt = PLAYER_FMT_ALL.get(p.get("__typename"))
+                team = p.get("team") or {}
+                if not fmt or not p.get("matchesPlayed") or str(team.get("id")) in seen[(mid, fmt)]:
+                    continue
+                lg = ((team.get("division") or {}).get("league") or {}).get("name") or "another league"
+                yr = re.search(r"(19|20)\d\d", (p.get("session") or {}).get("name") or "")
+                yr = int(yr.group()) if yr else None
+                o = out.setdefault("%s:%s" % (mid, fmt), {"played": 0, "won": 0, "leagues": {}})
+                o["played"] += p["matchesPlayed"]; o["won"] += p.get("matchesWon") or 0
+                L = o["leagues"].setdefault(lg, {"name": lg, "played": 0, "won": 0, "from": yr, "to": yr,
+                                                 "slMin": None, "slMax": None})
+                L["played"] += p["matchesPlayed"]; L["won"] += p.get("matchesWon") or 0
+                if yr:
+                    L["from"] = min(L["from"] or yr, yr); L["to"] = max(L["to"] or yr, yr)
+                sl = p.get("skillLevel")
+                if sl:
+                    L["slMin"] = min(L["slMin"] or sl, sl); L["slMax"] = max(L["slMax"] or sl, sl)
+    for o in out.values():
+        o["leagues"] = sorted(o["leagues"].values(), key=lambda L: -L["played"])
+    return out
+
+
 def check_bundle(new, old):
     """Every refresh from 09-12 to 09-16 shipped a damaged bundle (empty results, missing
     teams) and the app failed quietly. Compare against the bundle being replaced and list
@@ -476,6 +530,27 @@ def main():
     # JSON object keys are strings; match what index.html reads (teams["13139509"]).
     full["teams"] = {str(k): v for k, v in full["teams"].items()}
     apply_overrides(full, add, rename)
+
+    # Each rostered player's record in other leagues, which APA's scoresheets don't reach.
+    outside = outside_records(full, tok)
+    on_roster = {"%s:%s" % (p["mid"], t["fmt"]): (p, t) for t in full["teams"].values()
+                 for p in t.get("roster") or [] if p.get("mid")}
+    for k, o in outside.items():
+        if k in full["players"]:
+            full["players"][k]["outside"] = o
+        elif k in on_roster:
+            # Rostered here in this format with no games in our league at all: without a profile
+            # they would not appear in the scouting table, so give them one that is empty here
+            # and carries only the outside record.
+            p, t = on_roster[k]
+            full["players"][k] = {"mid": str(p["mid"]), "name": p["name"], "format": t["fmt"],
+                                  "currentSL": p.get("sl"), "firstSeen": None, "lastSeen": None,
+                                  "totalGames": 0, "wins": 0, "gamesAtCurrentSL": 0,
+                                  "avgPtsWin": None, "nPtsWin": 0, "avgPtsLoss": None, "nPtsLoss": 0,
+                                  "trajectory": [], "predictiveVsSL": [], "descriptiveByEra": {},
+                                  "headToHead": [], "outside": o}
+    print("outside-league records: %d players, %d matches" % (
+        sum(1 for k in outside if k in full["players"]), sum(o["played"] for o in outside.values())))
 
     old = json.loads(OUT.read_text()) if OUT.exists() else {}
     problems = check_bundle(full, old)

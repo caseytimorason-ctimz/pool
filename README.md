@@ -39,6 +39,11 @@ git add -A && git commit -m "weekly refresh" && git push
   feed, fewer players, a scheduled opponent with no roster) and prints what it lost. Re-run
   the pull rather than reaching for `--force`. A shorter `schedule` is normal: played matches
   leave it.
+- APA returns scoresheets for **our league only**. For other leagues (another county or
+  state) it gives just season totals, so `build_site_data.py` attaches those to each rostered
+  player's profile as `outside` and the app shows them ("Other leagues: Tampa Bay APA 2023–25:
+  93-33 at SL7"). They have no opponents or SLs, so they never enter the vs-SL grids or the odds;
+  they only stop a player with a long record elsewhere from being treated as new.
 - Hand-maintained inputs live in `data/`: `league.json` (bylaws, events), `postseason.json`,
   `official_rules.json`. Edit those, not `data.json`, or the next refresh undoes the edit.
 - Rebuilding the whole history from scratch (rarely needed): `python3 pipeline/backfill.py`
