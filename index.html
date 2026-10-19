@@ -1232,9 +1232,15 @@ function explain(A,Q,fmt){
     if(c&&c.games)out.push(`Record vs SL ${Q.sl} at their current level: ${c.wins}-${c.games-c.wins} (${Math.round(100*c.wins/c.games)}%).`);
     const h=(prof.headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
     if(h&&h.meetings){hadH2H=true;
-      out.push(`Head-to-head vs ${esc(Q.name)}: ${h.wins}-${h.meetings-h.wins}${h.meetings>=3?' — a real sample, weighted heavily':' — small sample so far'}.`);
+      out.push(`Head-to-head vs ${esc(Q.name)} in ${fmt}-ball: ${h.wins}-${h.meetings-h.wins}${h.meetings>=3?' — a real sample, weighted heavily':' — small sample so far'}.`);
     }
   }
+  // The scouting card counts meetings in both formats; say so here too, so the two never
+  // look like they disagree. Context only: it predicts this format poorly (backtest_h2h.py).
+  const of=fmt==='8'?'9':'8';
+  const ho=((P[`${A.mid}:${of}`]||{}).headToHead||[]).find(x=>String(x.oppMid)===String(Q.mid));
+  if(ho&&ho.meetings)
+    out.push(`Also ${ho.wins}-${ho.meetings-ho.wins} vs ${esc(Q.name)} in ${of}-ball — shown on the scouting card, but not counted in these ${fmt}-ball odds.`);
   const edge=provenEdge(A,Q,fmt);
   if(edge>0){
     const qp=P[`${Q.mid}:${fmt}`];
@@ -1506,8 +1512,14 @@ function scoutCard(m){
   }));
   weOwn.sort((a,b)=>b.strength-a.strength);
   theyOwn.sort((a,b)=>b.strength-a.strength);
-  const src=r=>r.same&&r.other?' <span class="muted">both formats</span>'
-            :!r.same?` <span class="muted">${r.otherFmt}-ball</span>`:'';
+  // Say which format each meeting was in. A bare "both formats" read as a contradiction next to
+  // the matchup explanation, which (like the odds) counts only this format: Casey "6-1" over
+  // Brett Deloach here, "2-1" there, when it was 2-1 in 8-ball and 4-0 in 9-ball.
+  // `theirs` flips each record to the opponent's side for the "They own" column.
+  const wl=(r,theirs)=>theirs?`${r.meetings-r.wins}-${r.wins}`:`${r.wins}-${r.meetings-r.wins}`;
+  const src=(r,theirs)=>r.same&&r.other
+      ? ` <span class="muted">(${fmt}-ball ${wl(r.same,theirs)} · ${r.otherFmt}-ball ${wl(r.other,theirs)})</span>`
+      :!r.same?` <span class="muted">${r.otherFmt}-ball</span>`:'';
   const grid=el('div','scout-grid');
   const col=(title,items,cls,empty)=>{
     const d=el('div');d.innerHTML=`<div class="scout-h ${cls}">${title}</div>`;
@@ -1521,7 +1533,7 @@ function scoutCard(m){
     `${esc(shortName(x.A.name))} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>${src(x.rec)}`),
     'good','Nobody on our side has a winning record over them yet — no repeat meetings on record.'));
   grid.appendChild(col('They own', theyOwn.slice(0,5).map(x=>
-    `${esc(x.Q.name)} over ${esc(shortName(x.A.name))} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>${src(x.rec)}`),
+    `${esc(x.Q.name)} over ${esc(shortName(x.A.name))} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>${src(x.rec,true)}`),
     'bad','None of them has a winning record over us — nothing to avoid.'));
   c.appendChild(grid);
 
