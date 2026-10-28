@@ -166,7 +166,9 @@ def results_feed(tid, team, tok, rename=None):
         us, them = pm.get("total") or 0, pt.get("total") or 0
         out.append({"date": (m.get("startTime") or "")[:10], "week": m.get("week"),
                     "opp": ((m.get("away") if home else m.get("home")) or {}).get("name"),
-                    "us": us, "them": them, "won": us > them,
+                    # Level points is a tie, not a loss: regular-season standings run on points,
+                    # so each side just banks its share (10/21 vs Right on Cue went 9-9).
+                    "us": us, "them": them, "won": us > them, "tied": us == them,
                     "bonus": pm.get("bonus") or 0, "oppBonus": pt.get("bonus") or 0,
                     "pen": pm.get("penalty") or 0, "oppPen": pt.get("penalty") or 0,
                     "adj": adj(pm), "oppAdj": adj(pt), "line": line})
@@ -484,7 +486,8 @@ def main():
         ms = results_feed(int(tid), ft, tok, rename)
         results[str(tid)] = {"name": ft["name"], "fmt": fmt, "matches": ms,
                              "wins": sum(1 for m in ms if m["won"]),
-                             "losses": sum(1 for m in ms if not m["won"]),
+                             "losses": sum(1 for m in ms if not m["won"] and not m["tied"]),
+                             "ties": sum(1 for m in ms if m["tied"]),
                              "pointsFor": sum(m["us"] for m in ms),
                              "pointsAgainst": sum(m["them"] for m in ms)}
 
