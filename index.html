@@ -185,6 +185,16 @@ table.rot-tbl td.pin,table.rot-tbl th.pin{position:sticky;right:0;z-index:1;back
 table.rot-tbl th.pin{background:var(--panel-2);z-index:2}
 table.rot-tbl tr:hover td.pin{background:var(--panel-2)}
 table.tt td.rot{font-family:Oswald;font-size:15px}
+/* Phones: the form and rotation tables must fit without a sideways scroll (the Trend and Idle
+   columns were cut off at 360-412px). Only the padding gives — every column stays. */
+@media (max-width:480px){
+  table.qt th,table.qt td{padding:8px 4px}
+  table.qt .fpips{gap:2px}
+  table.qt .fpips .fp{width:8px;height:8px}
+  table.qt td.who,table.qt th.who{padding-left:8px}
+  table.tt.rot-tbl th,table.tt.rot-tbl td{padding:8px 4px}
+  table.tt.rot-tbl td.who,table.tt.rot-tbl th.who{padding-left:8px}
+}
 .qchip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);background:var(--panel-2)}
 .qchip.yes{background:var(--good-wash);color:var(--good);border-color:var(--good)}
@@ -1876,7 +1886,7 @@ function iceBreaker(A,fmt){
    'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
-const teamState={fmt:null,scope:'all',view:'roster',window:'all'};
+const teamState={fmt:null,scope:'all',view:'roster',window:'all',rotAll:false};
 // scope = the opponent's vs-SL chart; by = whose side the pairing list is organised from
 // ('them' = who to throw at each of theirs, 'us' = the draw each of ours would most want)
 const scoutState={scope:'all',by:'them'};
@@ -2252,10 +2262,18 @@ function renderRotation(fmt,tid,win){
   if(!dates.length)return null;
   const card=el('div','card');
   card.appendChild(el('h2',null,'<span class="eyebrow">Rotation — who has played</span>'));
-  card.appendChild(el('p','sub',`The ${dates.length} ${fmt}-ball match${dates.length===1?'':'es'} in this window. Status stays pinned on the right; scroll left for the history. Least-played sits at the top — that's who's owed a game.`));
+  // Open on the last couple of weeks so the whole table fits on a phone with no sideways
+  // scroll: the names, the two most recent nights, and Played / Idle — which still count the
+  // whole window. The full week-by-week history is one tap away.
+  const RECENT=2, all=teamState.rotAll||dates.length<=RECENT;
+  const shown=all?dates:dates.slice(-RECENT), off=dates.length-shown.length;
+  card.appendChild(el('p','sub',(all
+      ? `The ${dates.length} ${fmt}-ball match${dates.length===1?'':'es'} in this window.`
+      : `The last ${RECENT} of ${dates.length} ${fmt}-ball matches in this window; Played and Idle count all ${dates.length}.`)+
+    ` Least-played sits at the top — that's who's owed a game.`));
   const wrap=el('div','tt-wrap'),t=el('table','tt rot-tbl');
   t.appendChild(el('thead',null,'<tr><th class="who">Player</th>'+
-    dates.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
+    shown.map(d=>{const[,mo,dd]=d.split('-');return `<th>${MON[+mo-1]} ${+dd}</th>`;}).join('')+
     '<th>Played</th><th class="pin">Idle</th></tr>'));
   const tb=el('tbody');
   const rows=tm.map(p=>({p,...(info.by[String(p.mid)]||{marks:dates.map(()=>false),n:0,idle:dates.length,run:0})}))
@@ -2269,12 +2287,22 @@ function renderRotation(fmt,tid,win){
         `${idle===0?(run>1?run+' wks':'played'):idle+' wk'+(idle===1?'':'s')}`+
         `<span class="n">${idle===0?'in a row':'since'}</span></td>`;
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span></td>`+
-      marks.map(v=>`<td class="cell rot"><span class="${v?'rot-yes':'rot-no'}">${v?'●':'○'}</span></td>`).join('')+
+      marks.slice(off).map(v=>`<td class="cell rot"><span class="${v?'rot-yes':'rot-no'}">${v?'●':'○'}</span></td>`).join('')+
       `<td class="cell">${n}<span class="n">of ${dates.length}</span></td>`+idleCell;
     tb.appendChild(tr);
   });
   t.appendChild(tb);wrap.appendChild(t);card.appendChild(wrap);
-  // Open on the most recent weeks next to the pinned status; scrolling LEFT walks back through
+  if(dates.length>RECENT){
+    const tg=el('button','ftab rot-more',all?`Show last ${RECENT} weeks only`:`Show all ${dates.length} weeks`);
+    tg.style.marginTop='10px';
+    tg.onclick=()=>{teamState.rotAll=!all;const nc=renderRotation(fmt,tid,win);if(nc)card.replaceWith(nc);};
+    card.appendChild(tg);
+  }
+  // On a phone the name column is deliberately not pinned (mobile Chrome left pinned cells
+  // blank — see the max-width:600px rule), so snapping to the latest weeks would scroll the
+  // names off-screen. There the expanded table opens at the names; scroll right for later weeks.
+  if(!all||matchMedia('(max-width:600px)').matches)return card;
+  // Expanded: open on the most recent weeks next to the pinned status; scrolling LEFT walks back through
   // the history. No-op when the table already fits, so it can't strand a narrow roster.
   // Re-applied across layout settling AND webfont load: measured on the first frame the table
   // is still at fallback-font width, so there is no overflow yet and the scroll silently does
