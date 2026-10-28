@@ -1778,7 +1778,10 @@ function formOf(pr){
   let run=1; const won=last.won;
   for(let i=g.length-2;i>=0&&g[i].won===won;i--)run++;
   const daysSince=Math.round((Date.now()-new Date(last.date))/864e5);
-  return {run,won,daysSince,lastDate:last.date,recent:g.slice(-8),total:g.length,
+  // The game that ended the previous run: the last loss before a winning run, the last win
+  // before a losing one. null when the run goes back to their first game on record.
+  const brk=g[g.length-run-1]||null;
+  return {run,won,daysSince,lastDate:last.date,breakDate:brk&&brk.date,recent:g.slice(-8),total:g.length,
           tourneyInRun:g.slice(g.length-run).filter(x=>x.tourney).length};
 }
 /* How far the data trails the calendar for one format: the last match night in the results feed,
@@ -1823,8 +1826,14 @@ function renderStreaks(rows,fmt){
   items.forEach(({p,f,kind,badge,stale})=>{
     const row=el('div','strk '+(stale?'':kind));
     const tt=f.tourneyInRun?` · incl. ${f.tourneyInRun} tournament`:'';
-    const when=stale?`${f.run} straight${tt}, but last played ${f.lastDate}`
-                    :`${f.run} straight${tt} · last played ${f.lastDate}`;
+    // When the run started is what a captain asks ("when did he last lose?"), so name the
+    // result that ended the previous run. A cooled-off run also says how long it has sat.
+    const other=f.won?'loss':'win';
+    const yr=String(new Date().getFullYear());   // a long run can start in an earlier year
+    const nd=d=>niceDate(d)+(d.slice(0,4)===yr?'':` '${d.slice(2,4)}`);
+    const brk=f.breakDate?`last ${other} ${nd(f.breakDate)}`:`no ${other} on record`;
+    const when=stale?`${f.run} straight${tt} · ${brk}, but no games since ${nd(f.lastDate)}`
+                    :`${f.run} straight${tt} · ${brk}`;
     row.innerHTML=`<span class="strk-badge">${stale?'Cooled off':badge}</span>`+
       `<span class="strk-nm"><span class="strk-top">${sl(p.sl)}<span class="who">${esc(p.name)}</span></span>`+
       `<span class="strk-sub">${when}</span></span>`+
