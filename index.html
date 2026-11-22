@@ -286,6 +286,8 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .cell .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 .cell .v{font-family:Oswald;font-weight:600;font-size:18px;margin:1px 0}
 .cell .n{font-size:11px}
+.cell .pmv{font-family:Oswald;font-weight:600;font-size:13px;margin-top:5px}.cell .pmv span{font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
+.cell .pmv.win{color:var(--good)}.cell .pmv.lose{color:var(--bad)}
 .cell.thin{opacity:.6;border-style:dashed}
 /* Every bar carries a tick at 50% — in a handicapped APA race that IS the expectation,
    so "past the tick" reads instantly as beating the spot, short of it as under. */
@@ -1531,9 +1533,14 @@ function scoutCard(m){
   // Brett Deloach here, "2-1" there, when it was 2-1 in 8-ball and 4-0 in 9-ball.
   // `theirs` flips each record to the opponent's side for the "They own" column.
   const wl=(r,theirs)=>theirs?`${r.meetings-r.wins}-${r.wins}`:`${r.wins}-${r.meetings-r.wins}`;
-  const src=(r,theirs)=>r.same&&r.other
-      ? ` <span class="muted">(${fmt}-ball ${wl(r.same,theirs)} · ${r.otherFmt}-ball ${wl(r.other,theirs)})</span>`
-      :!r.same?` <span class="muted">${r.otherFmt}-ball</span>`:'';
+  // Net points in THIS format (scales differ, so the other format is never mixed in), from the
+  // owner's side: ours for "We own", theirs for "They own".
+  const pmx=(A,Q,theirs,f)=>{const x=oppPoints(A.mid,f,Q.mid); if(!x)return '';
+    const v=theirs?-x.net:x.net; return ` <span class="${v>0?(theirs?'bad':'good'):v<0?(theirs?'good':'bad'):'muted'}">${sgn(v)} pts</span>`;};
+  // Points sit with the format they were scored in: "(9-ball 1-0 +8 pts · 8-ball 1-0 +1 pts)".
+  const src=(r,theirs,A,Q)=>r.same&&r.other
+      ? ` <span class="muted">(${fmt}-ball ${wl(r.same,theirs)}${pmx(A,Q,theirs,fmt)} · ${r.otherFmt}-ball ${wl(r.other,theirs)}${pmx(A,Q,theirs,r.otherFmt)})</span>`
+      :!r.same?` <span class="muted">${r.otherFmt}-ball</span>${pmx(A,Q,theirs,r.otherFmt)}`:pmx(A,Q,theirs,fmt);
   const grid=el('div','scout-grid');
   const col=(title,items,cls,empty)=>{
     const d=el('div');d.innerHTML=`<div class="scout-h ${cls}">${title}</div>`;
@@ -1544,10 +1551,10 @@ function scoutCard(m){
   };
   grid.appendChild(col('Toughest for us', threats.map(t=>`${sl(t.Q.sl)}${esc(t.Q.name)} <span class="muted">best we have ${Math.round(t.best*100)}%</span>`),'warn'));
   grid.appendChild(col('We own', weOwn.slice(0,5).map(x=>
-    `${esc(shortName(x.A.name))} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>${src(x.rec)}`),
+    `${esc(shortName(x.A.name))} over ${esc(x.Q.name)} <span class="good">${x.rec.wins}-${x.rec.meetings-x.rec.wins}</span>${src(x.rec,false,x.A,x.Q)}`),
     'good','Nobody on our side has a winning record over them yet — no repeat meetings on record.'));
   grid.appendChild(col('They own', theyOwn.slice(0,5).map(x=>
-    `${esc(x.Q.name)} over ${esc(shortName(x.A.name))} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>${src(x.rec,true)}`),
+    `${esc(x.Q.name)} over ${esc(shortName(x.A.name))} <span class="bad">${x.rec.meetings-x.rec.wins}-${x.rec.wins}</span>${src(x.rec,true,x.A,x.Q)}`),
     'bad','None of them has a winning record over us — nothing to avoid.'));
   c.appendChild(grid);
 
@@ -1564,7 +1571,7 @@ function scoutCard(m){
     const b=el('button','ftab',lab);b.setAttribute('aria-pressed',scoutState.scope===v);
     b.onclick=()=>{scoutState.scope=v;renderMatch(m);};sctl.appendChild(b);});
   sc.appendChild(sctl);
-  const stbl=vsSLTable(theirs,fmt,allTime,p=>{
+  const stbl=vsSLTable(theirs,fmt,allTime,'win',p=>{
     setMode('players'); const q=$('#pSearch');
     if(q)q.value=p.name; fillPlayers((p.name||'').toLowerCase());
   });
@@ -1890,7 +1897,7 @@ function iceBreaker(A,fmt){
    'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
-const teamState={fmt:null,scope:'all',view:'roster',window:'season',rotAll:false};
+const teamState={fmt:null,scope:'all',view:'roster',window:'season',rotAll:false,metric:'win'};
 // scope = the opponent's vs-SL chart; by = whose side the pairing list is organised from
 // ('them' = who to throw at each of theirs, 'us' = the draw each of ours would most want)
 const scoutState={scope:'all',by:'them'};
@@ -1934,6 +1941,27 @@ function netPoints(mid,fmt,since){
   const gs=playerGames(mid,fmt).filter(g=>g.date>=(since||'0000')&&g.pts!=null&&g.oppPts!=null);
   return {net:gs.reduce((a,g)=>a+g.pts-g.oppPts,0),n:gs.length};
 }
+// Net points by the opponent's skill level. `mySL`: 'all' (whole career), 'current' (only games
+// at their current SL — what the Matchup engine uses) or an SL ('5') for one era.
+function slPoints(mid,fmt,mySL){
+  const pr=P[`${mid}:${fmt}`], out={};
+  const want=mySL==null||mySL==='all'?null:mySL==='current'?String(pr&&pr.currentSL):String(mySL);
+  playerGames(mid,fmt).forEach(g=>{
+    if(g.pts==null||g.oppPts==null||g.oppSL==null)return;
+    if(want!=null&&String(g.mySL)!==want)return;
+    const a=out[g.oppSL]=out[g.oppSL]||{net:0,n:0}; a.net+=g.pts-g.oppPts; a.n++;
+  });
+  return out;
+}
+// Net points vs one opponent in one format (the two formats score on different scales, so they
+// are never added together). null when no meeting has both scores on record.
+function oppPoints(mid,fmt,oppMid,games){
+  const gs=(games||((P[`${mid}:${fmt}`]||{}).headToHead||[]).filter(x=>String(x.oppMid)===String(oppMid)).flatMap(x=>x.games||[]))
+    .filter(g=>g.pts!=null&&g.oppPts!=null);
+  return gs.length?{net:gs.reduce((a,g)=>a+g.pts-g.oppPts,0),n:gs.length}:null;
+}
+// Colour class for a net over n games, judged per game against the format's pool.
+const pmCls=(x,fmt)=>x&&x.n?cls(0.5+(x.net/x.n)/(2*PMOM[fmt].total)):'';
 /* Where the session stands: nights left, points banked, what is still winnable, and where the
    current pace lands. All of it derives from data we actually ship — the team's own results and
    its remaining schedule.
@@ -2388,9 +2416,15 @@ function renderTeamOverview(){
     b.onclick=()=>{teamState.scope=v;renderTeamOverview();};sg.appendChild(b);});
   ctl.appendChild(sg);
   card.appendChild(ctl);
+  // Same grid, two readings: win rate, or net points (banked minus conceded) per skill level.
+  const mt=el('div','ftabs'), mg=el('div','ftab-grp');
+  [['win','Win %'],['pm','+/− points']].forEach(([v,lab])=>{
+    const b=el('button','ftab',lab);b.setAttribute('aria-pressed',teamState.metric===v);
+    b.onclick=()=>{teamState.metric=v;renderTeamOverview();};mg.appendChild(b);});
+  mt.appendChild(mg); card.appendChild(mt);
 
   if(!tm.length){card.appendChild(el('p','sub muted','No roster posted for the '+fmt+'-ball team yet.'));out.appendChild(card);return;}
-  const tbl=vsSLTable(tm,fmt,allTime,p=>{
+  const tbl=vsSLTable(tm,fmt,allTime,teamState.metric,p=>{
     setMode('me'); const s=$('#meSel');
     if(s){ s.value=p.mid; try{localStorage.setItem('rs-me',p.mid)}catch(e){} meView.render(p.mid); }
   });
@@ -2402,13 +2436,13 @@ function renderTeamOverview(){
    view (the opponent's), so both read identically — same columns, colouring and thin-sample
    dashing. `onName(player)` wires up what tapping a name does; null leaves names inert.
    Returns null when nobody on the roster has history in this format. */
-function vsSLTable(roster,fmt,allTime,onName){
+function vsSLTable(roster,fmt,allTime,metric,onName){
   // Pick the row set per scope: merged career totals, or current-SL-only.
   const rows=roster.map(p=>{
     const pr=P[`${p.mid}:${fmt}`];
     if(!pr)return null;
     const cells=allTime?mergeEras(pr.descriptiveByEra||{},'all'):(pr.predictiveVsSL||[]);
-    return {p,pr,cells};
+    return {p,pr,cells,pts:metric==='pm'?slPoints(p.mid,fmt,allTime?'all':'current'):null};
   }).filter(Boolean);
   if(!rows.length)return null;
 
@@ -2423,7 +2457,7 @@ function vsSLTable(roster,fmt,allTime,onName){
   table.appendChild(el('thead',null,
     '<tr><th class="who">Player</th>'+slCols.map(s=>`<th>vs SL${s}</th>`).join('')+'</tr>'));
   const tb=el('tbody');
-  rows.forEach(({p,pr,cells})=>{
+  rows.forEach(({p,pr,cells,pts})=>{
     const tr=el('tr');
     const who=el('td','who'); who.innerHTML=`<span class="nm">${sl(p.sl||pr.currentSL)}<span class="who-nm">${esc(p.name)}</span></span>`;
     if(onName){ who.style.cursor='pointer'; who.onclick=()=>onName(p,pr); }
@@ -2434,7 +2468,14 @@ function vsSLTable(roster,fmt,allTime,onName){
       const td=el('td','cell');
       // keep .cell so an empty column keeps the same box, padding and borders as a filled one —
       // dropping it made rows with a gap (Casey/Silfredo vs SL1) visibly misalign.
-      if(!c){ td.className='cell empty'; td.textContent='—'; }
+      const x=pts&&pts[sl0];
+      if(pts){
+        // +/- mode: net points with the per-game rate under it; faded under 5 games.
+        if(!x||!x.n){ td.className='cell empty'; td.textContent='—'; }
+        else{ td.className='cell'+(x.n<5?' thin':'')+' '+pmCls(x,fmt);
+          td.innerHTML=`${sgn(x.net)}<span class="n">${sgn(x.net/x.n,1)}/g · ${x.n}</span>`; }
+      }
+      else if(!c){ td.className='cell empty'; td.textContent='—'; }
       else{
         const thin=c.games<5;
         td.className='cell'+(thin?' thin':'')+' '+(c.winPct>=55?'win':c.winPct<=45?'lose':'evn');
@@ -2455,15 +2496,16 @@ function mergeEras(byEra,ownSL){
   });
   return Object.values(acc).sort((a,b)=>a.vsSL-b.vsSL).map(r=>({...r,winPct:r.games?Math.round(r.wins/r.games*100):0}));
 }
-function vsGrid(rows){
+function vsGrid(rows,pm,fmt){
   if(!rows.length)return '<p class="muted" style="font-size:13px">No games in this filter.</p>';
   const anyThin=rows.some(c=>c.games<5);
   return '<div class="grid">'+rows.map(c=>{const thin=c.games<5,col=c.winPct>=55?'good':c.winPct<=45?'bad':'even';
     return `<div class="cell${thin?' thin':''}" title="${c.wins} wins, ${c.games-c.wins} losses in ${c.games} games">
       <div class="k">vs SL${c.vsSL}</div>
       <div class="v ${c.winPct>=55?'win':c.winPct<=45?'lose':'evn'}">${c.wins}-${c.games-c.wins}</div>
-      <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div></div>`;}).join('')+'</div>'+
-    `<p class="muted" style="font-size:11.5px;margin:8px 0 0">Win–loss, then win rate. The tick marks 50%.${anyThin?' Faded = under 5 games, small sample.':''}</p>`;
+      <div class="n muted">${c.winPct}%</div><div class="barm"><i style="width:${c.winPct}%;background:var(--${col})"></i></div>${
+      (()=>{const x=pm&&pm[c.vsSL]; return x&&x.n?`<div class="pmv ${pmCls(x,fmt)}">${sgn(x.net)}<span> pts · ${sgn(x.net/x.n,1)}/g</span></div>`:'';})()}</div>`;}).join('')+'</div>'+
+    `<p class="muted" style="font-size:11.5px;margin:8px 0 0">Win–loss, then win rate. The tick marks 50%.${pm?' Under it, net points (banked minus conceded) and per game.':''}${anyThin?' Faded = under 5 games, small sample.':''}</p>`;
 }
 /* Each mount point (My Record vs Players) gets its OWN state — a shared object here was the
    bug: clicking a filter chip in one tab silently redrew the OTHER tab's hidden container. */
@@ -2523,7 +2565,7 @@ function makePlayerView(outSel,opts){
       const b=el('button','chip',lab);b.setAttribute('aria-pressed',String(st.ownSL)===v);
       b.onclick=()=>{st.ownSL=v;draw();};row.appendChild(b);});
     chips.appendChild(row);c.appendChild(chips);
-    c.appendChild(el('div',null,vsGrid(cells)));
+    c.appendChild(el('div',null,vsGrid(cells,slPoints(mid,st.fmt,st.ownSL),st.fmt)));
     out.appendChild(c);
     const tl=slTimeline(pr,st.fmt); if(tl)out.appendChild(tl);
     drawH2H(out,pr,st.fmt,st.ownSL);
@@ -2649,6 +2691,7 @@ function drawH2H(out,pr,fmt,ownSL){
     {key:'name', label:'Opponent', cls:'', get:o=>(o.oppName||'').toLowerCase(), dir:1},
     {key:'sl',   label:'Their SL', cls:'', get:o=>{const g=o.games||[];return g.length?g[g.length-1].oppSL:null;}, dir:-1},
     {key:'rec',  label:'Record',   cls:'right', get:o=>o.wins/o.meetings, dir:-1},
+    {key:'pm',   label:'+/−',      cls:'right', get:o=>{const x=oppPoints(null,fmt,null,o.games||[]);return x?x.net:null;}, dir:-1},
   ];
   const sort={key:null,dir:-1};
   const tbl=el('table','h2h');
@@ -2693,11 +2736,12 @@ function drawH2H(out,pr,fmt,ownSL){
        const lastSL=games.length?games[games.length-1].oppSL:null;
        const tr=el('tr',games.length?'op':'');
        tr.innerHTML=`<td>${esc(o.oppName||'Unknown')}</td><td>${lastSL!=null?sl(lastSL):'<span class="muted">—</span>'}</td>
-         <td class="rec ${cls(p)}">${o.wins}-${o.meetings-o.wins}</td>`;
+         <td class="rec ${cls(p)}">${o.wins}-${o.meetings-o.wins}</td>`+
+         (()=>{const x=oppPoints(null,fmt,null,games);return `<td class="rec ${x?pmCls(x,fmt):''}">${x?sgn(x.net):'<span class="muted">—</span>'}</td>`;})();
        tb.appendChild(tr);
        if(games.length){
          const det=el('tr');det.className='hide';
-         det.innerHTML=`<td colspan="3" class="log">`+games.slice().reverse().map(g=>
+         det.innerHTML=`<td colspan="4" class="log">`+games.slice().reverse().map(g=>
            `<div>${g.date} — you ${g.mySL?'SL'+g.mySL:'unrated'} vs ${g.oppSL?'SL'+g.oppSL:'unrated'} · <b class="${g.won?'win':'lose'}">${g.won?'W':'L'}</b>`+
            (g.pts!=null&&g.oppPts!=null?` <span class="sc">${g.pts}–${g.oppPts}</span>`
             :g.pts!=null?` <span class="sc">${g.pts} pt${g.pts===1?'':'s'}</span>`:'')+`</div>`).join('')+`</td>`;
@@ -2705,7 +2749,7 @@ function drawH2H(out,pr,fmt,ownSL){
          tb.appendChild(det);
        }
      });
-    if(!tb.children.length)tb.innerHTML='<tr><td colspan="3" class="muted">No opponents match.</td></tr>';
+    if(!tb.children.length)tb.innerHTML='<tr><td colspan="4" class="muted">No opponents match.</td></tr>';
   }
   paint('');q.oninput=e=>paint(e.target.value.toLowerCase());
 }
