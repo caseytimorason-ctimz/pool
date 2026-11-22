@@ -286,6 +286,9 @@ table.tt td.rot{font-family:Oswald;font-size:15px}
 .cell .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
 .cell .v{font-family:Oswald;font-weight:600;font-size:18px;margin:1px 0}
 .cell .n{font-size:11px}
+table.lb{font-size:13px}table.lb td{padding:7px 4px}table.lb th{padding:4px 4px;letter-spacing:.04em}table.lb td:first-child{width:1%;white-space:nowrap}table.lb .nm{display:flex;align-items:center;gap:6px}
+table.lb td .of{display:block;font-size:10px;opacity:.75;font-weight:400}table.lb tr.ours td{background:var(--panel-2)}table.lb tr.ours .nm span:last-child{font-weight:700}
+.lb-more{margin-top:10px}
 .cell .pmv{font-family:Oswald;font-weight:600;font-size:13px;margin-top:5px}.cell .pmv span{font-family:Barlow;font-weight:400;font-size:10px;color:var(--ink-soft)}
 .cell .pmv.win{color:var(--good)}.cell .pmv.lose{color:var(--bad)}
 .cell.thin{opacity:.6;border-style:dashed}
@@ -667,7 +670,9 @@ table.tt tr:hover td.who{background:var(--panel-2)}
     <div id="matchOut"></div>
   </section>
   <section id="m-players" class="hide">
-    <div class="bar"><label class="fld">Find a player<input type="search" id="pSearch" placeholder="Type a name…" autocomplete="off"></label>
+    <div class="ftabs" id="findNav" style="margin-bottom:8px"><button class="ftab" data-v="look" aria-pressed="true">Look up</button><button class="ftab" data-v="lb" aria-pressed="false">Leaderboard</button></div>
+    <div id="lbOut" class="hide"></div>
+    <div class="bar" id="lookBar"><label class="fld">Find a player<input type="search" id="pSearch" placeholder="Type a name…" autocomplete="off"></label>
       <label class="fld" style="max-width:260px">&nbsp;<select id="pSel"></select></label></div>
     <div id="playerOut"></div>
   </section>
@@ -1572,8 +1577,7 @@ function scoutCard(m){
     b.onclick=()=>{scoutState.scope=v;renderMatch(m);};sctl.appendChild(b);});
   sc.appendChild(sctl);
   const stbl=vsSLTable(theirs,fmt,allTime,'win',p=>{
-    setMode('players'); const q=$('#pSearch');
-    if(q)q.value=p.name; fillPlayers((p.name||'').toLowerCase());
+    setMode('players'); findShow('look',String(p.mid));
   });
   sc.appendChild(stbl||el('p','sub muted',`No ${fmt}-ball history on record for their roster yet.`));
   // Players whose record is mostly somewhere this table cannot see.
@@ -1722,6 +1726,74 @@ function fillPlayers(f){
   const list=(f?PL.filter(p=>p.name.toLowerCase().includes(f)):PL).slice(0,400);
   s.innerHTML=list.map(p=>`<option value="${p.mid}">${esc(p.name)} · ${p.games} games</option>`).join('');
   list.length?playersView.render(list[0].mid):($('#playerOut').innerHTML='<div class="card"><p class="sub">No match.</p></div>');
+}
+/* ---------- Find > Leaderboard: everyone ranked by lifetime +/- ----------
+   Lifetime = every game in this league with both sides' points on record. Uses the per-game
+   logs when a profile ships them (so it agrees with My Record to the point), else the
+   builder's netPts/nPts totals. Other leagues ship no points, so they never count. */
+const lbState={fmt:'8',min:0,key:'net',dir:-1,shown:50,q:''};
+function lbRows(fmt){
+  const ours=new Set((D.myActiveTeams||[]).flatMap(t=>roster(t).map(p=>String(p.mid))));
+  return Object.values(P).filter(v=>v.format===fmt).map(v=>{
+    const logs=(v.headToHead||[]).some(h=>(h.games||[]).length);
+    const x=logs?netPoints(v.mid,fmt):{net:v.netPts||0,n:v.nPts||0};
+    return {mid:String(v.mid),name:v.name,sl:v.currentSL,net:x.net,n:x.n,rate:x.n?x.net/x.n:0,
+            total:v.totalGames||0,ours:ours.has(String(v.mid)),last:v.lastSeen||''};
+  }).filter(r=>r.n>0&&r.name);
+}
+function renderLeaderboard(){
+  const out=$('#lbOut'); out.innerHTML='';
+  const st=lbState, c=el('div','card');
+  c.appendChild(el('h2',null,'<span class="eyebrow">Lifetime +/− leaderboard</span>'));
+  c.appendChild(el('p','sub','Everyone with scored games in this league, by net points (banked minus conceded) across their whole record. Tap a column to sort, a name to open the player.'));
+  const ctl=el('div','ftabs');
+  const grp=(opts,cur,set)=>{const g=el('div','ftab-grp');opts.forEach(([v,lab])=>{const b=el('button','ftab',lab);
+    b.setAttribute('aria-pressed',cur===v);b.onclick=()=>{set(v);st.shown=50;renderLeaderboard();};g.appendChild(b);});return g;};
+  ctl.appendChild(grp([['8','8-ball'],['9','9-ball']],st.fmt,v=>st.fmt=v));
+  ctl.style.flexWrap='wrap'; ctl.style.rowGap='6px';
+  ctl.appendChild(grp([[0,'All'],[20,'20+'],[100,'100+']],st.min,v=>st.min=v));
+  c.appendChild(ctl);
+  const tools=el('div','h2h-tools');tools.innerHTML=`<input type="search" placeholder="Filter by name…" value="${esc(st.q)}">`;
+  c.appendChild(tools);
+  const all=lbRows(st.fmt).filter(r=>r.n>=st.min);
+  const get={net:r=>r.net,rate:r=>r.rate,n:r=>r.n}[st.key];
+  all.sort((a,b)=>(get(b)-get(a))*-st.dir||b.n-a.n);
+  all.forEach((r,i)=>r.rank=i+1);   // rank before the name filter, so a search keeps true ranks
+  const tblWrap=el('div');c.appendChild(tblWrap);
+  const cov=el('p','muted');cov.style.cssText='font-size:11.5px;margin:8px 0 0';c.appendChild(cov);
+  out.appendChild(c);
+  const paint=()=>{
+    const q=st.q.toLowerCase(), rows=all.filter(r=>!q||r.name.toLowerCase().includes(q));
+    const shown=rows.slice(0,st.shown);
+    const H=(k,lab)=>`<th class="sortable right${st.key===k?' sorted':''}" data-k="${k}">${lab}<span class="arrow">${st.key===k?(st.dir===-1?' ▼':' ▲'):''}</span></th>`;
+    tblWrap.innerHTML=`<table class="h2h lb"><thead><tr><th>#</th><th>Player</th>${H('net','+/−')}${H('rate','/g')}${H('n','Gms')}</tr></thead><tbody>`+
+      shown.map(r=>`<tr class="op${r.ours?' ours':''}" data-mid="${r.mid}"><td class="muted">${r.rank}</td>`+
+        `<td><span class="nm">${r.sl!=null?sl(r.sl):''}<span>${esc(r.name)}</span></span></td>`+
+        `<td class="rec ${pmCls(r,st.fmt)}">${sgn(r.net)}</td><td class="rec muted">${sgn(r.rate,1)}</td>`+
+        `<td class="rec muted">${r.n}${r.total>r.n?`<span class="of">of ${r.total}</span>`:''}</td></tr>`).join('')+
+      (shown.length?'':'<tr><td colspan="5" class="muted">Nobody matches.</td></tr>')+`</tbody></table>`+
+      (rows.length>shown.length?`<button class="ftab lb-more">Show ${Math.min(50,rows.length-shown.length)} more of ${rows.length-shown.length}</button>`:'');
+    cov.innerHTML=`${all.length.toLocaleString()} players. Games = games with both scores on record; "of N" = their total when some games have no scores yet, so the +/− covers only part of their record. Teammates highlighted.`;
+    tblWrap.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
+      if(st.key===k)st.dir=-st.dir; else{st.key=k;st.dir=-1;} st.shown=50; renderLeaderboard();});
+    tblWrap.querySelectorAll('tr[data-mid]').forEach(tr=>tr.onclick=()=>findShow('look',tr.dataset.mid,st.fmt));
+    const more=tblWrap.querySelector('.lb-more'); if(more)more.onclick=()=>{st.shown+=50;paint();};
+  };
+  const inp=tools.querySelector('input'); inp.oninput=e=>{st.q=e.target.value;st.shown=50;paint();};
+  paint();
+}
+function findShow(v,mid,fmt){
+  document.querySelectorAll('#findNav .ftab').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+  $('#lbOut').classList.toggle('hide',v!=='lb');
+  $('#lookBar').classList.toggle('hide',v!=='look'); $('#playerOut').classList.toggle('hide',v!=='look');
+  if(v==='lb')renderLeaderboard();
+  if(v==='look'&&mid){
+    // Narrow the picker to this name so the dropdown shows who is open, then open THIS player
+    // (a name search can match someone else first).
+    const pr=Object.values(P).find(x=>String(x.mid)===mid), nm=(pr&&pr.name)||'';
+    $('#pSearch').value=nm; fillPlayers(nm.toLowerCase());
+    const s=$('#pSel'); if(s&&[...s.options].some(o=>o.value===mid))s.value=mid;
+    playersView.render(mid,fmt); window.scrollTo(0,0);}
 }
 /* our teammates = players on our active teams, for the "My Record" picker */
 function teammates(){
@@ -2512,10 +2584,10 @@ function vsGrid(rows,pm,fmt){
 function makePlayerView(outSel,opts){
   const st={mid:null,fmt:null,ownSL:'all'};
   opts=opts||{};
-  function render(mid){
+  function render(mid,fmt){
     st.mid=mid;
     const fmts=['8','9'].filter(f=>P[`${mid}:${f}`]);
-    st.fmt=fmts.includes(st.fmt)?st.fmt:fmts[0];
+    st.fmt=fmt&&fmts.includes(fmt)?fmt:fmts.includes(st.fmt)?st.fmt:fmts[0];
     st.ownSL='all';
     draw();
   }
@@ -3562,6 +3634,7 @@ function init(){
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
   $('#pSearch').oninput=e=>fillPlayers(e.target.value);
   $('#pSel').onchange=e=>playersView.render(e.target.value);
+  document.querySelectorAll('#findNav .ftab').forEach(b=>b.onclick=()=>findShow(b.dataset.v));
   (function(){const r=document.documentElement;let cur=null;try{cur=localStorage.getItem('rs-theme')}catch(e){}
     if(cur)r.setAttribute('data-theme',cur);
     $('#theme').onclick=()=>{const now=r.getAttribute('data-theme');

@@ -111,6 +111,24 @@ def fill_qualifying_rosters(league, tok):
                   % (ev.get("id"), t.get("name"), label, len(ev["ourRoster"])))
 
 
+def add_net_points(players):
+    """Lifetime point differential for EVERY profile: `netPts` (points banked minus points
+    conceded) over `nPts` games with both sides' points on record. The per-game logs that give
+    the same sum in the app are only shipped for players we scout, so the Find tab's
+    leaderboard needs this to rank the whole league. Same row filter as analyze.py."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from analyze import load as load_games
+    acc = defaultdict(lambda: [0, 0])
+    for r in load_games():
+        if r["pts"] is None or r["oppPts"] is None:
+            continue
+        a = acc["%s:%s" % (r["mid"], r["fmt"])]
+        a[0] += r["pts"] - r["oppPts"]; a[1] += 1
+    for k, v in players.items():
+        net, n = acc.get(k, (0, 0))
+        v["netPts"], v["nPts"] = net, n
+
+
 def baselines():
     tabs = {"8": defaultdict(lambda: {"g": 0, "w": 0}), "9": defaultdict(lambda: {"g": 0, "w": 0})}
     with open(DATA / "games.csv") as f:
@@ -529,6 +547,7 @@ def main():
             trimmed["headToHead"] = [{kk: o[kk] for kk in ("oppMid", "oppName", "meetings", "wins", "avgPts", "ptsN") if kk in o}
                                      for o in v.get("headToHead", [])]
             full_players[k] = trimmed
+    add_net_points(full_players)
     full = dict(base, players=full_players)
     # JSON object keys are strings; match what index.html reads (teams["13139509"]).
     full["teams"] = {str(k): v for k, v in full["teams"].items()}
