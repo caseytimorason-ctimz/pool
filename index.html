@@ -445,6 +445,7 @@ table.tt tr:hover td.who{background:var(--panel-2)}
 .season-fig span{display:block;margin-top:2px;font-size:10.5px;letter-spacing:.04em;
   text-transform:uppercase;color:var(--ink-soft)}
 .sub.good{color:var(--good)}
+.sub b.good{color:var(--good)}.sub b.bad{color:var(--bad)}
 .sub code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
   background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:1px 4px}
 .rlist{display:flex;flex-direction:column;gap:5px;margin-top:8px}
@@ -1123,6 +1124,8 @@ function fmtDate(d){
 }
 const K_SL=8,K_H2H=1.5,K_NEW=10,K_BASE=30,H2H_CAP=0.9,CAL_SHRINK=0.30;
 const cls=p=>p>=.55?'win':p<=.45?'lose':'evn';
+// Signed point differential: "+24", "−7", "0". dp = decimals (per-game averages use 1).
+const sgn=(d,dp=0)=>{const r=+d.toFixed(dp); return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(dp);};
 
 // The SL-vs-SL handicap curve, per format, as a function of skill-level GAP (A.sl - Q.sl),
 // built once from the well-sampled baseline cells. This is what thin/flukey cells regress
@@ -2031,7 +2034,9 @@ function renderTeamForm(out){
       if(sp.nights)bits.push(`<b>${sp.available}</b> still on the table`+
         (sp.lastDate?` through ${niceDate(sp.lastDate).replace(/^\w+, /,'')}`:''));
       if(sp.played&&sp.nights)bits.push(`this pace finishes near <b>${sp.projected}</b>`);
-      bits.push(`for ${res.pointsFor} · against ${res.pointsAgainst}`);
+      {const d=res.pointsFor-res.pointsAgainst, nn=res.matches.length;
+        bits.push(`for ${res.pointsFor} · against ${res.pointsAgainst} · <b class="${d>0?'good':d<0?'bad':''}">${sgn(d)}</b>`+
+          (nn?` (${sgn(d/nn,1)} a night)`:''));}
       c.appendChild(el('p','sub',bits.join(' · ')+'.'));
       if(ch&&!ch.unknown&&ch.place===1){
         c.appendChild(el('p','sub good',`<b>1st of ${ch.of}.</b> Nobody to chase — the gap is yours to defend.`));
@@ -2056,10 +2061,12 @@ function renderTeamForm(out){
           `Add a <code>standings</code> block to data/league.json and it appears here.`));
       }
     }else{
-      c.appendChild(el('p','sub',`Points for ${res.pointsFor} · against ${res.pointsAgainst}.`));
+      {const d=res.pointsFor-res.pointsAgainst;
+      c.appendChild(el('p','sub',`Points for ${res.pointsFor} · against ${res.pointsAgainst} · <b class="${d>0?'good':d<0?'bad':''}">${sgn(d)}</b>.`));}
     }
     c.appendChild(el('p','sub',teamState.window==='all'?'Every match this session.'
-      :`Last ${ms.length} match${ms.length===1?'':'es'}: ${wlt(w,ms.length-w-t,t)}.`));
+      :`Last ${ms.length} match${ms.length===1?'':'es'}: ${wlt(w,ms.length-w-t,t)}`+
+        (ms.length?`, ${sgn(ms.reduce((a,m)=>a+m.us-m.them,0))} on points.`:'.')));
     const list=el('div','rlist');
     (teamState.window==='all'?res.matches.slice().reverse():ms).forEach(m=>{
       const row=el('div','rrow'+(m.line&&m.line.length?' open':''));
@@ -2105,6 +2112,11 @@ function renderTeamForm(out){
     const w=gs.filter(g=>g.won).length, n=gs.length;
     const pts=gs.filter(g=>g.pts!=null).map(g=>g.pts);
     const avg=pts.length?pts.reduce((a,b)=>a+b,0)/pts.length:null;
+    // Point differential per game: points banked minus points conceded, over games where both
+    // sides' points are on record. Says HOW a player wins or loses — a 50% player who wins big
+    // and loses close is worth more on a points night than one who does the reverse.
+    const both=gs.filter(g=>g.pts!=null&&g.oppPts!=null);
+    const diff=both.length?both.reduce((a,g)=>a+g.pts-g.oppPts,0)/both.length:null;
     // Trend = RECENT form vs the player's own baseline. The old half-vs-half split compared a
     // 200-game career's first half to its second, which always converges — every player read
     // "flat" on the All-time window. Anchoring on the last few games gives it something to say.
@@ -2118,7 +2130,7 @@ function renderTeamForm(out){
             : d<=-12 ? `<span class="dn">▼ ${Math.abs(d)}</span>`
             : `<span class="flat">—</span>`;
     }
-    return {p,n,w,avg,arrow,gs};
+    return {p,n,w,avg,diff,arrow,gs};
   }).sort((a,b)=>b.n-a.n);
   const wrap=el('div','qt-wrap'),t=el('table','qt');
   // Record folded into the Win% cell: six columns crushed the numbers to slivers on a phone.
@@ -2126,24 +2138,27 @@ function renderTeamForm(out){
   // bare "4.5" reads as fine until you know it's a 16-4 hiding. Name the scale in the header and
   // colour each value against an even split.
   const PM=PMOM[fmt];
-  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Avg pts<span class="of">of ${PM.total}</span></th><th>Last 5</th><th>Trend</th></tr>`));
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Pts<span class="of">+/− a game</span></th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
   const THIS_YEAR=new Date().getFullYear();
   const LOG_CAP=30;   // an all-time window can be hundreds of games; show the recent ones
-  rows.forEach(({p,n,w,avg,arrow,gs})=>{
+  rows.forEach(({p,n,w,avg,diff,arrow,gs})=>{
     const tr=el('tr');
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span>${n?'<i class="caret"></i>':''}</td>`+
       `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
-      `<td class="cell ${avg!=null?cls(avg/PM.total):''}">${avg!=null
-        ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
+      // Differential is the headline; the average banked (of the pool) sits underneath so the
+      // number still has its scale: +4.0 in 9-ball is 12-8, in 8-ball it can't happen.
+      `<td class="cell ${diff!=null?cls(0.5+diff/(2*PM.total)):avg!=null?cls(avg/PM.total):''}">${diff!=null
+        ? sgn(diff,1)+`<span class="n">${avg.toFixed(1)} of ${PM.total}</span>`
+        : avg!=null ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
         : '<span class="muted">—</span>'}</td>`+
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
       `<td>${arrow||'<span class="muted">—</span>'}</td>`;
     tb.appendChild(tr);
     // Tap a player to see the games behind their numbers: date, result, score, who they played.
     // Deliberately the SAME games the row is computed from (the window filter already applied),
-    // so the log always reconciles to the Win% and Avg pts sitting next to it.
+    // so the log always reconciles to the Win% and Pts sitting next to it.
     if(!n)return;
     const det=el('tr','pg-row hide');
     const cell=el('td'); cell.colSpan=5;
