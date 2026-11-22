@@ -2129,9 +2129,10 @@ function renderTeamForm(out){
     // Point differential per game: points banked minus points conceded, over games where both
     // sides' points are on record. Says HOW a player wins or loses — a 50% player who wins big
     // and loses close is worth more on a points night than one who does the reverse.
-    const both=gs.filter(g=>g.pts!=null&&g.oppPts!=null);
+    // Always THIS SEASON, whatever the window chips say (lifetime lives on My Record).
     // Total, not an average: two 3-0 sweeps is +6. The per-game rate rides underneath.
-    const net=both.length?both.reduce((a,g)=>a+g.pts-g.oppPts,0):null, diff=both.length?net/both.length:null;
+    const sz=netPoints(p.mid,fmt,seasonStart(fmt)||'0000');
+    const net=sz.n?sz.net:null, diff=sz.n?sz.net/sz.n:null;
     // Trend = RECENT form vs the player's own baseline. The old half-vs-half split compared a
     // 200-game career's first half to its second, which always converges — every player read
     // "flat" on the All-time window. Anchoring on the last few games gives it something to say.
@@ -2153,7 +2154,7 @@ function renderTeamForm(out){
   // bare "4.5" reads as fine until you know it's a 16-4 hiding. Name the scale in the header and
   // colour each value against an even split.
   const PM=PMOM[fmt];
-  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>+/−<span class="of">points</span></th><th>Last 5</th><th>Trend</th></tr>`));
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>+/−<span class="of">season</span></th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
   const THIS_YEAR=new Date().getFullYear();
   const LOG_CAP=30;   // an all-time window can be hundreds of games; show the recent ones
@@ -2162,11 +2163,9 @@ function renderTeamForm(out){
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span>${n?'<i class="caret"></i>':''}</td>`+
       `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
-      // Net points over the window is the headline (two 3-0 sweeps = +6); the per-game rate sits
-      // underneath so an all-time total and a two-match total can be compared.
-      `<td class="cell ${diff!=null?cls(0.5+diff/(2*PM.total)):avg!=null?cls(avg/PM.total):''}">${diff!=null
+      // Season net points is the headline (two 3-0 sweeps = +6), per-game rate underneath.
+      `<td class="cell ${diff!=null?cls(0.5+diff/(2*PM.total)):''}">${diff!=null
         ? sgn(net)+`<span class="n">${sgn(diff,1)} a game</span>`
-        : avg!=null ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
         : '<span class="muted">—</span>'}</td>`+
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
       `<td>${arrow||'<span class="muted">—</span>'}</td>`;
@@ -2501,14 +2500,14 @@ function makePlayerView(outSel,opts){
       `<span class="stat"><b>SL${pr.currentSL}</b> now · ${none?'no games in this league':`${w}-${g-w} (${wr}%)`}`+
       (filtered?` <span class="muted">${st.ownSL==='0'?'unrated':'as SL'+st.ownSL}</span>`:'')+`</span>`;
     c.appendChild(hd);
-    // Point differential: season and lifetime side by side (two 3-0 sweeps = +6). Lifetime is
-    // this league only — other leagues ship season totals without points.
+    // Lifetime point differential (two 3-0 sweeps = +6); the season figure lives on Team > Form.
+    // This league only — other leagues ship season totals without points.
     if(g){
-      const ss=seasonStart(st.fmt), life=netPoints(mid,st.fmt), szn=ss?netPoints(mid,st.fmt,ss):null;
+      const life=netPoints(mid,st.fmt);
       const fig=(lab,x)=>`<div class="season-fig"><b class="${x.net>0?'good':x.net<0?'bad':''}">${sgn(x.net)}</b>`+
         `<span>${lab} · ${x.n} game${x.n===1?'':'s'}</span></div>`;
       if(life.n){const box=el('div','season pm');
-        box.innerHTML=(szn&&szn.n?fig('Season +/−',szn):'')+fig('Lifetime +/−',life);
+        box.innerHTML=fig('Lifetime +/−',life);
         c.appendChild(box);}
     }
     const ot=outsideTxt(pr);
