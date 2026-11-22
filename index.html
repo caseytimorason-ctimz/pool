@@ -1890,7 +1890,7 @@ function iceBreaker(A,fmt){
    'current' = only games played at their CURRENT skill level (what the Matchup engine uses).
    Showing only 'current' by default read as missing data — whole columns disappear when a
    player has never faced that SL *at their present level*. Default to the complete picture. */
-const teamState={fmt:null,scope:'all',view:'roster',window:'all',rotAll:false};
+const teamState={fmt:null,scope:'all',view:'roster',window:'season',rotAll:false};
 // scope = the opponent's vs-SL chart; by = whose side the pairing list is organised from
 // ('them' = who to throw at each of theirs, 'us' = the draw each of ours would most want)
 const scoutState={scope:'all',by:'them'};
