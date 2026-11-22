@@ -2116,7 +2116,8 @@ function renderTeamForm(out){
     // sides' points are on record. Says HOW a player wins or loses — a 50% player who wins big
     // and loses close is worth more on a points night than one who does the reverse.
     const both=gs.filter(g=>g.pts!=null&&g.oppPts!=null);
-    const diff=both.length?both.reduce((a,g)=>a+g.pts-g.oppPts,0)/both.length:null;
+    // Total, not an average: two 3-0 sweeps is +6. The per-game rate rides underneath.
+    const net=both.length?both.reduce((a,g)=>a+g.pts-g.oppPts,0):null, diff=both.length?net/both.length:null;
     // Trend = RECENT form vs the player's own baseline. The old half-vs-half split compared a
     // 200-game career's first half to its second, which always converges — every player read
     // "flat" on the All-time window. Anchoring on the last few games gives it something to say.
@@ -2130,7 +2131,7 @@ function renderTeamForm(out){
             : d<=-12 ? `<span class="dn">▼ ${Math.abs(d)}</span>`
             : `<span class="flat">—</span>`;
     }
-    return {p,n,w,avg,diff,arrow,gs};
+    return {p,n,w,avg,net,diff,arrow,gs};
   }).sort((a,b)=>b.n-a.n);
   const wrap=el('div','qt-wrap'),t=el('table','qt');
   // Record folded into the Win% cell: six columns crushed the numbers to slivers on a phone.
@@ -2138,19 +2139,19 @@ function renderTeamForm(out){
   // bare "4.5" reads as fine until you know it's a 16-4 hiding. Name the scale in the header and
   // colour each value against an even split.
   const PM=PMOM[fmt];
-  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>Pts<span class="of">+/− a game</span></th><th>Last 5</th><th>Trend</th></tr>`));
+  t.appendChild(el('thead',null,`<tr><th class="who">Player</th><th>Win%</th><th>+/−<span class="of">points</span></th><th>Last 5</th><th>Trend</th></tr>`));
   const tb=el('tbody');
   const THIS_YEAR=new Date().getFullYear();
   const LOG_CAP=30;   // an all-time window can be hundreds of games; show the recent ones
-  rows.forEach(({p,n,w,avg,diff,arrow,gs})=>{
+  rows.forEach(({p,n,w,avg,net,diff,arrow,gs})=>{
     const tr=el('tr');
     const pips=gs.slice(0,5).reverse().map(g=>`<span class="fp ${g.won?'w':'l'}"></span>`).join('');
     tr.innerHTML=`<td class="who"><span class="nm">${sl(p.sl)}<span class="who-nm">${esc(shortName(p.name))}</span></span>${n?'<i class="caret"></i>':''}</td>`+
       `<td class="cell ${n?cls(w/n):''}">${n?Math.round(100*w/n)+'%'+`<span class="n">${w}-${n-w}</span>`:'<span class="muted">—</span>'}</td>`+
-      // Differential is the headline; the average banked (of the pool) sits underneath so the
-      // number still has its scale: +4.0 in 9-ball is 12-8, in 8-ball it can't happen.
+      // Net points over the window is the headline (two 3-0 sweeps = +6); the per-game rate sits
+      // underneath so an all-time total and a two-match total can be compared.
       `<td class="cell ${diff!=null?cls(0.5+diff/(2*PM.total)):avg!=null?cls(avg/PM.total):''}">${diff!=null
-        ? sgn(diff,1)+`<span class="n">${avg.toFixed(1)} of ${PM.total}</span>`
+        ? sgn(net)+`<span class="n">${sgn(diff,1)} a game</span>`
         : avg!=null ? avg.toFixed(1)+`<span class="n">of ${PM.total}</span>`
         : '<span class="muted">—</span>'}</td>`+
       `<td><span class="fpips">${pips||'<span class="muted">—</span>'}</span></td>`+
